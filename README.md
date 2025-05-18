@@ -16,11 +16,13 @@
 
 ## セットアップと実行 (Docker Compose)
 
+（内容準備中）
 
 X.  **アプリケーションへのアクセス:**
-     *   API ドキュメント (Swagger UI): [http://localhost:8000/docs](http://localhost:8000/docs)
-    *   API ドキュメント (ReDoc): [http://localhost:8000/redoc](http://localhost:8000/redoc)
-    *   ルートエンドポイント: [http://localhost:8000/](http://localhost:8000/)
+
+*   API ドキュメント (Swagger UI): [http://localhost:8000/docs](http://localhost:8000/docs)
+*   API ドキュメント (ReDoc): [http://localhost:8000/redoc](http://localhost:8000/redoc)
+*   ルートエンドポイント: [http://localhost:8000/](http://localhost:8000/)
 ## テストの実行
 
 
