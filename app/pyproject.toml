@@ -1,0 +1,16 @@
+[project]
+name = "koiki-app"
+version = "0.3.0"
+description = "Application built with KOIKI Framework."
+authors = [{ name = "KOIKI Team" }]
+license = {text = "MIT"}
+requires-python = ">=3.11.7"
+dependencies = [
+    "libkoiki",
+    "pytest",
+    "pytest-asyncio"
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

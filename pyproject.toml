@@ -1,0 +1,67 @@
+[project]
+name = "koiki-pyfw"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11.7,<4.0"
+dependencies = []
+
+[tool.poetry]
+name = "koiki-pyfw"
+version = "0.3.0"
+description = ""
+authors = ["Shuichi Kataoka <shu01k9@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.11.7,<4.0"
+fastapi = ">=0.104.0,<1.0.0"
+uvicorn = ">=0.24.0,<1.0.0"
+sqlalchemy = {version = ">=2.0.23,<3.0.0", extras = ["asyncio"]}
+asyncpg = ">=0.29.0,<1.0.0"
+alembic = ">=1.12.1,<2.0.0"
+pydantic = ">=2.5.0,<3.0.0"
+python-jose = ">=3.3.0,<4.0.0"
+passlib = {version = ">=1.7.4,<2.0.0", extras = ["bcrypt"]}
+httpx = ">=0.25.0,<1.0.0"
+structlog = ">=23.2.0,<24.0.0"
+redis = ">=5.0.1,<6.0.0"
+slowapi = ">=0.1.8,<0.2.0"
+libkoiki = {path = "libkoiki", develop = true}
+pydantic-settings = "^2.9.1"
+email-validator = "^2.1.0"  # 追加: email検証用
+prometheus-fastapi-instrumentator = "^5.7.1"  # 追加: Prometheusモニタリング用（必要な場合）
+python-multipart = "^0.0.20"
+aiosqlite = "^0.21.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.4.0,<8.0.0"
+pytest-asyncio = ">=0.23.0,<1.0.0"
+pytest-cov = "^6.1.1"
+pytest-mock = "^3.14.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[tool.coverage.run]
+source = ["app", "libkoiki"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError"
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

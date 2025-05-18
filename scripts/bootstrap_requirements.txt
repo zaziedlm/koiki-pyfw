@@ -1,0 +1,6 @@
+# filepath: c:\Users\kataoka\Desktop\KOIKI-FW\KOIKI-FW-VSCodeProj\koiki-pyfw\scripts\bootstrap_requirements.txt
+# 基本的なブートストラップに必要なパッケージ
+setuptools>=68.0.0
+wheel>=0.42.0
+pip>=23.3.0
+packaging>=23.0

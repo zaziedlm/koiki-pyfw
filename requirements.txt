@@ -1,0 +1,17 @@
+# 注意: このプロジェクトはpoetryによる依存関係管理に完全移行しています。
+# このファイルは参照用として残されていますが、依存関係の管理にはpyproject.tomlとpoetry.lockを使用してください。
+# Python 3.11.7 との互換性が確認されているバージョン
+fastapi>=0.104.0,<1.0.0
+uvicorn>=0.24.0,<1.0.0
+sqlalchemy[asyncio]>=2.0.23,<3.0.0
+asyncpg>=0.29.0,<1.0.0
+alembic>=1.12.1,<2.0.0
+pydantic>=2.5.0,<3.0.0
+python-jose>=3.3.0,<4.0.0
+passlib[bcrypt]>=1.7.4,<2.0.0
+httpx>=0.25.0,<1.0.0
+structlog>=23.2.0,<24.0.0
+redis>=5.0.1,<6.0.0
+slowapi>=0.1.8,<0.2.0
+pytest>=7.4.0,<8.0.0
+pytest-asyncio>=0.23.0,<1.0.0

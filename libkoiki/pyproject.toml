@@ -1,0 +1,50 @@
+[project]
+name = "libkoiki"
+version = "0.3.0"
+description = "Enterprise-grade FastAPI application framework."
+authors = [{ name = "KOIKI Team" }]
+license = {text = "MIT"}
+requires-python = ">=3.11.7,<4.0"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "sqlalchemy[asyncio]",
+    "asyncpg",
+    "alembic",
+    "pydantic",
+    "pydantic-settings",
+    "python-jose",
+    "passlib[bcrypt]",
+    "httpx",
+    "structlog",
+    "redis",
+    "slowapi"
+]
+
+[tool.poetry]
+name = "libkoiki"
+version = "0.3.0"
+description = "Enterprise-grade FastAPI application framework."
+authors = ["KOIKI Team"]
+license = "MIT"
+packages = [{include = "*"}]
+
+[tool.poetry.dependencies]
+python = ">=3.11.7,<4.0"
+fastapi = "*"
+uvicorn = "*"
+sqlalchemy = {extras = ["asyncio"], version = "*"}
+asyncpg = "*"
+alembic = "*"
+pydantic = "*"
+pydantic-settings = "*"
+python-jose = "*"
+passlib = {extras = ["bcrypt"], version = "*"}
+httpx = "*"
+structlog = "*"
+redis = "*"
+slowapi = "*"
+
+[build-system]
+requires = ["setuptools", "poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
