@@ -26,19 +26,16 @@ if (Test-Path $bootstrapRequirements) {
     # ブートストラップパッケージのインストール
     # Poetry取得前の初期段階では、pip を使う必要があります
     try {
-        # UTF-8エンコーディングでrequirementsファイルを読み込む
-        $requirementLines = Get-Content -Path $bootstrapRequirements -Encoding UTF8 | 
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and -not $_.StartsWith("#") }
-        
-        foreach ($requirement in $requirementLines) {
-            Write-Host "Installing $requirement..." -ForegroundColor Cyan
-            & python -m pip install -q $requirement
+        Write-Host "Installing bootstrap packages from $bootstrapRequirements..." -ForegroundColor Cyan
+        # pip install -r コマンドを使用して要件ファイル全体を一度に処理
+        # これにより、パッケージ名とバージョン指定が正しく解釈される
+        & python -m pip install -q -r $bootstrapRequirements
             
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "Failed to install $requirement." -ForegroundColor Red
-                exit 1
-            }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Failed to install bootstrap packages." -ForegroundColor Red
+            exit 1
         }
+        
         Write-Host "Bootstrap packages installed successfully." -ForegroundColor Green
     }
     catch {
