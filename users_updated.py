@@ -64,14 +64,11 @@ async def create_user(
 )
 async def read_user_me(
     current_user: ActiveUserDep, # 認証済みのアクティブユーザーを取得
-    user_service: UserServiceDep,
-    db: DBSessionDep
 ) -> Any:
     """現在のログインユーザー情報を取得します。"""
-    logger.debug("Fetching current user info with roles", user_id=current_user.id)
-    # 非同期リレーション参照エラー回避のため、ロールを含めて取得
-    user = await user_service.get_user_with_roles(current_user.id, db)
-    return user
+    logger.debug("Fetching current user info", user_id=current_user.id)
+    # rolesなどのリレーションがロードされているか確認が必要な場合がある (dependenciesで対応済み想定)
+    return current_user
 
 # --- 自分の情報更新 ---
 @router.put(
@@ -92,10 +89,7 @@ async def update_user_me(
     logger.info("Updating current user info", user_id=current_user.id, data=user_in.dict(exclude_unset=True))
     updated_user = await user_service.update_user(current_user.id, user_in, db)
     logger.info("Current user info updated successfully", user_id=current_user.id)
-    
-    # 非同期リレーション参照エラー回避のため、更新後にロールを含めて再取得
-    user_with_roles = await user_service.get_user_with_roles(current_user.id, db)
-    return user_with_roles
+    return updated_user
 
 # --- ユーザー一覧取得 (管理者/特定権限持ち) ---
 @router.get(
@@ -120,10 +114,9 @@ async def read_users(
     - **skip**: スキップする件数
     - **limit**: 取得する最大件数
     """
-    logger.debug("Fetching user list with roles", skip=skip, limit=limit)
-    # 非同期リレーション参照エラーを回避するために、ロールを含めて取得するメソッドを使用
-    users = await user_service.get_users_with_roles(skip=skip, limit=limit, db=db)
-    logger.debug(f"Found {len(users)} users with roles preloaded")
+    logger.debug("Fetching user list", skip=skip, limit=limit)
+    users = await user_service.get_users(skip=skip, limit=limit, db=db)
+    logger.debug(f"Found {len(users)} users")
     return users
 
 # --- 特定ユーザー取得 (管理者/特定権限持ち) ---
@@ -143,9 +136,8 @@ async def read_user_by_id(
     db: DBSessionDep
 ) -> Any:
     """指定したIDのユーザー情報を取得します (権限が必要)。"""
-    logger.debug("Fetching user with roles by ID", user_id=user_id)
-    # 非同期リレーションエラー回避のため、ロールを含めて取得するメソッドを使用
-    user = await user_service.get_user_with_roles(user_id, db)
+    logger.debug("Fetching user by ID", user_id=user_id)
+    user = await user_service.get_user_by_id(user_id, db)
     # get_user_by_idがNoneを返す場合（リポジトリの実装による）のエラーハンドリング
     if user is None:
         logger.warning("User not found by ID", user_id=user_id)

@@ -2,6 +2,8 @@
 from typing import Optional, List, Sequence, Any # Sequence, Any をインポート
 from sqlalchemy.ext.asyncio import AsyncSession
 import structlog
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from libkoiki.repositories.user_repository import UserRepository
 from libkoiki.models.user import UserModel
@@ -43,8 +45,38 @@ class UserService:
         logger.debug("Service: Getting user list", skip=skip, limit=limit)
         self.repository.set_session(db)
         return await self.repository.get_multi(skip=skip, limit=limit)
-
-    @transactional
+        
+    async def get_user_with_roles(self, user_id: int, db: AsyncSession) -> Optional[UserModel]:
+        """IDでユーザーをロール情報も含めて取得します"""
+        logger.debug("Service: Getting user with roles by ID", user_id=user_id)
+        self.repository.set_session(db)
+        
+        # selectinloadを使用してロールを一度に取得
+        stmt = select(UserModel).options(
+            selectinload(UserModel.roles)
+        ).where(UserModel.id == user_id)
+        
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            logger.info("Service: User not found by ID", user_id=user_id)
+            return None
+        
+        return user
+        
+    async def get_users_with_roles(self, skip: int, limit: int, db: AsyncSession) -> Sequence[UserModel]:
+        """ユーザーリストをロール情報も含めて取得します"""
+        logger.debug("Service: Getting user list with roles", skip=skip, limit=limit)
+        self.repository.set_session(db)
+        
+        # selectinloadを使用してロールを一度に取得
+        stmt = select(UserModel).options(
+            selectinload(UserModel.roles)
+        ).offset(skip).limit(limit)
+        
+        result = await db.execute(stmt)
+        return result.scalars().all()    @transactional
     async def create_user(self, user_in: UserCreate, db: AsyncSession) -> UserModel:
         """
         新規ユーザーを作成します。
@@ -74,9 +106,7 @@ class UserService:
         user_data["hashed_password"] = hashed_password
         # is_active, is_superuser はスキーマのデフォルト値が使われる (UserCreateに定義があれば)
         # もしなければここで明示的に設定: user_data["is_active"] = True, user_data["is_superuser"] = False
-        new_user = UserModel(**user_data)
-
-        # リポジトリで作成
+        new_user = UserModel(**user_data)        # リポジトリで作成
         created_user = await self.repository.create(new_user)
         logger.info("Service: User created successfully", user_id=created_user.id, email=created_user.email)
 
@@ -92,7 +122,18 @@ class UserService:
             except Exception as e:
                 # イベント発行失敗はログに残すが、ユーザー作成自体は成功とする
                 logger.error("Failed to publish user_created event", user_id=created_user.id, exc_info=True)
-
+        
+        # 明示的にロールをロードして返す（非同期リレーション参照エラー回避）
+        stmt = select(UserModel).options(
+            selectinload(UserModel.roles)
+        ).where(UserModel.id == created_user.id)
+        
+        result = await db.execute(stmt)
+        user_with_roles = result.scalar_one_or_none()
+        if user_with_roles:
+            return user_with_roles
+            
+        # 万が一ロードに失敗した場合は作成したユーザーをそのまま返す
         return created_user
 
     @transactional
@@ -135,9 +176,7 @@ class UserService:
 
         # is_superuser の更新は特別な権限が必要かもしれない (API層でチェック済み想定)
         # if 'is_superuser' in update_data and not calling_user.is_superuser:
-        #     raise AuthorizationException(...)
-
-        # リポジトリで更新
+        #     raise AuthorizationException(...)        # リポジトリで更新
         updated_user = await self.repository.update(user, update_data)
         logger.info("Service: User updated successfully", user_id=user_id)
 
@@ -147,6 +186,18 @@ class UserService:
                  await self.event_publisher.publish("user_updated", {"user_id": updated_user.id})
              except Exception as e:
                  logger.error("Failed to publish user_updated event", user_id=updated_user.id, exc_info=True)
+        
+        # 非同期リレーション参照エラー回避のため、明示的にロールを取得
+        stmt = select(UserModel).options(
+            selectinload(UserModel.roles)
+        ).where(UserModel.id == updated_user.id)
+        
+        result = await db.execute(stmt)
+        user_with_roles = result.scalar_one_or_none()
+        if user_with_roles:
+            return user_with_roles
+            
+        # 万が一ロードに失敗した場合は更新したユーザーをそのまま返す
 
         return updated_user
 
@@ -190,6 +241,19 @@ class UserService:
                  logger.error("Failed to publish user_deleted event", user_id=deleted_user.id, exc_info=True)
 
         return deleted_user
+
+    async def get_user_with_roles(self, user_id: int, db: AsyncSession) -> Optional[UserModel]:
+        """IDでユーザーを取得し、ロールを含めて返します"""
+        logger.debug("Service: Getting user with roles by ID", user_id=user_id)
+        self.repository.set_session(db)
+        result = await db.execute(
+            select(UserModel).options(selectinload(UserModel.roles)).filter(UserModel.id == user_id)
+        )
+        user = result.scalars().first()
+        if not user:
+            logger.info("Service: User not found by ID", user_id=user_id)
+            return None
+        return user
 
     # --- ロール・権限関連メソッド (必要に応じて) ---
     # @transactional
