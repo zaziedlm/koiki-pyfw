@@ -76,7 +76,7 @@ def do_run_migrations(connection):
     with context.begin_transaction():
         context.run_migrations()
 
-async def run_migrations_online() -> None:
+def run_migrations_online() -> None:  # async を削除
     """Run migrations in 'online' mode.
 
     In this scenario we need to create an Engine
@@ -88,9 +88,7 @@ async def run_migrations_online() -> None:
     # 設定から同期URLを取得 (非同期マイグレーションではなく、接続確認に使用)
     connectable_config['sqlalchemy.url'] = sync_db_url
 
-    # 非同期エンジンを作成 (Alembic 1.7+ では非同期エンジンでの実行もサポートされる方向だが、
-    # 標準的な `run_migrations_online` は同期接続を期待することが多い)
-    # ここでは同期エンジンを使用する
+    # 同期エンジンを使用する
     connectable = engine_from_config(
         connectable_config,
         prefix="sqlalchemy.",
@@ -98,22 +96,16 @@ async def run_migrations_online() -> None:
         # future=True # SQLAlchemy 2.0 スタイル
     )
 
-    # # 非同期エンジンを使用する場合 (Alembic/SQLAlchemyのバージョンと設定に注意)
-    # connectable = create_async_engine(
-    #     sync_db_url, # 非同期URLを使用
-    #     poolclass=pool.NullPool,
-    # )
+    with connectable.connect() as connection:  # async を削除
+        do_run_migrations(connection)  # await connection.run_sync を変更
 
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
-
-    # # 非同期エンジンを使用する場合は dispose が非同期
-    # await connectable.dispose()
+    # 同期エンジンの場合、disposeは通常不要 (特にNullPoolの場合)
+    # connectable.dispose()
 
 
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    import asyncio
-    asyncio.run(run_migrations_online())
+    # import asyncio # asyncioを削除
+    run_migrations_online() # asyncio.runを削除
 

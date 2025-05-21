@@ -39,13 +39,20 @@ COPY ./main.py ./
 # 依存関係のインストール
 COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --no-interaction --no-ansi
+    && poetry install --no-interaction --no-ansi
 
-# ファイル所有者を変更
-RUN chown -R appuser:appuser /app
+# docker-entrypoint.shをコピーして実行権限を付与
+COPY docker-entrypoint.sh ./
+RUN chmod +x /app/docker-entrypoint.sh
+
+# alembic/versionsディレクトリの作成と所有者変更
+RUN mkdir -p /app/alembic/versions && chown -R appuser:appuser /app
 
 # 非rootユーザーに切り替え
 USER appuser
+
+# エントリポイントとコマンドの設定
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
 # ヘルスチェック設定
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
