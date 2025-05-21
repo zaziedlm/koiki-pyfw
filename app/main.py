@@ -68,25 +68,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     app.state.limiter = None    # --- データベース接続確認 ---
     await connect_db()
     
-    # --- SQLite使用時はテーブルを自動作成 ---
-    if settings.USE_SQLITE:
-        try:
-            from sqlalchemy.ext.asyncio import AsyncEngine
-            from libkoiki.db.base import Base
-            from libkoiki.db.session import engine
-            
-            async def init_models():
-                async with engine.begin() as conn:
-                    # テーブルを作成（存在する場合は無視）
-                    await conn.run_sync(Base.metadata.create_all)
-            
-            await init_models()
-            logger.info("SQLite database tables created successfully.")
-        except Exception as e:
-            logger.warning(f"Could not create SQLite tables: {e}", exc_info=True)
-
-    # --- Redis 接続プールとクライアント初期化 ---
-    if settings.REDIS_URL and REDIS_AVAILABLE:
+    # --- データベーススキーマは Alembic マイグレーションで管理 ---
+    # PostgreSQL環境ではAlembicを使用してスキーマを管理するのが望ましいです
+    logger.info("Database connection established. Tables should be managed by Alembic migrations.")    # --- Redis 接続プールとクライアント初期化 ---
+    # シンプル版では Redis は使用しない
+    if settings.REDIS_ENABLED and REDIS_AVAILABLE and settings.REDIS_URL:
         try:
             logger.info("Initializing Redis connection pool...", redis_url=settings.REDIS_URL)
             app.state.redis_pool = ConnectionPool.from_url(
@@ -102,12 +88,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             logger.info("Event publisher initialized.")
 
             # --- イベントハンドラー初期化とリスニング開始 (Redisが必要) ---
-            app.state.event_handler = EventHandler(redis_client=app.state.redis)
-            app.state.event_handler.register("user_created", user_created_handler) # ハンドラ登録
-            # TODO: 他のイベントハンドラも登録
-            asyncio.create_task(app.state.event_handler.start_listening()) # バックグラウンドでリスニング開始
-            logger.info("Event handler initialized and listening started.")
-
+            # 初期版では非同期イベント配信を無効化
+            logger.info("Event handling is disabled in initial version.")
         except Exception as e:
             logger.error(f"Failed to connect to or initialize Redis components: {e}", exc_info=True)
             # Redis接続失敗時の処理 (必要なら起動中止など)
@@ -157,9 +139,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Application startup sequence completed.")
     yield # アプリケーション実行
     logger.info("Application shutdown sequence initiated.")    # --- イベントハンドラー停止 ---
-    if app.state.event_handler:
-        logger.info("Stopping event handler listening.")
-        await app.state.event_handler.stop_listening()
+    # 初期版では無効化
+    # if app.state.event_handler:
+    #     logger.info("Stopping event handler listening.")
+    #     await app.state.event_handler.stop_listening()
 
     # --- Redis 接続プール切断 ---
     if app.state.redis and REDIS_AVAILABLE:

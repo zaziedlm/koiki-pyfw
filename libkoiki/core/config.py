@@ -22,16 +22,12 @@ class Settings(BaseSettings):
 
     # ログ設定
     LOG_LEVEL: str = "INFO"  # デフォルトでINFOログレベルを設定
-    LOG_FORMAT: str = "json"  # "json" または "console"
-
-    # 環境設定 - エラー解消のために追加
+    LOG_FORMAT: str = "json"  # "json" または "console"    # 環境設定
     APP_ENV: str = "development"  # "development", "testing", "production"
     DEBUG: bool = True  # デバッグモードの有効/無効
     
-    # データベース設定 - SQLite含む
-    DATABASE_URL: Optional[str] = None  # PostgreSQLやSQLite接続文字列
-    USE_SQLITE: bool = True  # SQLiteを使用するかどうか（デフォルトでTrue）
-    SQLITE_DB_PATH: str = "sqlite_db.db"  # SQLiteのDBファイルパス
+    # データベース設定 - PostgreSQL専用
+    DATABASE_URL: Optional[str] = None  # PostgreSQL接続文字列
     
     # レートリミット設定
     RATE_LIMIT_ENABLED: bool = True
@@ -49,8 +45,8 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "app"
     POSTGRES_PORT: int = 5432
-    SQLALCHEMY_DATABASE_URI: Optional[str] = None
-
+    SQLALCHEMY_DATABASE_URI: Optional[str] = None    # Redis設定（オプション）
+    REDIS_ENABLED: bool = False  # Redisを使用するかどうか
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_URL: Optional[str] = None
@@ -68,22 +64,10 @@ class Settings(BaseSettings):
             return [i.strip() for i in v.split(",")]
         elif isinstance(v, (list, str)):
             return v
-        raise ValueError(v)
-
-    @validator("DATABASE_URL", pre=True)
+        raise ValueError(v)    @validator("DATABASE_URL", pre=True)
     def assemble_db_url(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
-            
-        # USE_SQLITEが有効ならSQLiteのURLを返す
-        if values.get("USE_SQLITE", False):
-            sqlite_path = values.get("SQLITE_DB_PATH", "sqlite_db.db")
-            # 相対パスなら絶対パスに変換
-            if not sqlite_path.startswith("/") and ":" not in sqlite_path:
-                import os
-                sqlite_path = os.path.join(os.getcwd(), sqlite_path)
-            # asyncioに対応したSQLiteドライバを使用
-            return f"sqlite+aiosqlite:///{sqlite_path}"
             
         # PostgreSQLのURLを構築
         user = values.get("POSTGRES_USER")
@@ -92,7 +76,7 @@ class Settings(BaseSettings):
         port = values.get("POSTGRES_PORT", 5432)
         db = values.get("POSTGRES_DB", "")
         
-        # SQLAlchemy URI を手動で構築
+        # PostgreSQL接続URI
         return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}"
 
     model_config = SettingsConfigDict(
@@ -100,21 +84,13 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=True,
     )
-
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # アプリケーション初期化時の追加設定
         # Redis URL がない場合は構築する
         if not self.REDIS_URL and self.REDIS_HOST:
             self.REDIS_URL = f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
-            
-        # 開発環境では必ずSQLiteを使用するように変更
-        if self.APP_ENV == "development":
-            self.USE_SQLITE = True
-            # 既存のURLをオーバーライド
-            import os
-            sqlite_path = os.path.join(os.getcwd(), self.SQLITE_DB_PATH)
-            self.DATABASE_URL = f"sqlite+aiosqlite:///{sqlite_path}"
 
 # グローバル設定オブジェクト
 settings = Settings()

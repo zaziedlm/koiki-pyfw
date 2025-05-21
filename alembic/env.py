@@ -31,13 +31,9 @@ if config.config_file_name is not None:
 if not settings.DATABASE_URL:
     raise ValueError("DATABASE_URL is not configured in settings")
 
-# 同期用のDB URLに変換
-if settings.USE_SQLITE:
-    # SQLiteの場合は aiosqlite -> sqlite3 に変換
-    sync_db_url = str(settings.DATABASE_URL).replace("sqlite+aiosqlite", "sqlite")
-else:
-    # PostgreSQLの場合は asyncpg -> psycopg2 に変換
-    sync_db_url = str(settings.DATABASE_URL).replace("+asyncpg", "")
+# PostgreSQL用に同期DB URLに変換
+# asyncpg -> psycopg2 に変換
+sync_db_url = str(settings.DATABASE_URL).replace("+asyncpg", "")
 
 config.set_main_option("sqlalchemy.url", sync_db_url)
 
