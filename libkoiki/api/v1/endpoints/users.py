@@ -12,6 +12,8 @@ from libkoiki.api.dependencies import (
     DBSessionDep,
     has_permission,
 )
+# トランザクションデコレータを使用
+from libkoiki.core.transaction import transactional
 from libkoiki.core.exceptions import ValidationException, ResourceNotFoundException
 from libkoiki.core.logging import get_logger
 from libkoiki.core.rate_limiter import limiter
@@ -28,6 +30,7 @@ router = APIRouter()
     description="Creates a new user. By default, any user can create an account. Can be restricted (e.g., superuser only).",
     # dependencies=[Depends(RateLimitDep("5/minute"))] # ヘルパーを使用する場合
 )
+@transactional  # このデコレータがあるか確認
 @limiter.limit("10/minute") # slowapi デコレータを使用
 async def create_user(
     request: Request, # デコレータ使用時は Request が必要
