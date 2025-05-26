@@ -17,3 +17,6 @@ class RoleModel(Base):
     
     # usersリレーションシップを追加
     users = relationship("UserModel", secondary="user_roles", back_populates="roles")
+    
+    # permissionsリレーションシップを追加
+    permissions = relationship("PermissionModel", secondary="role_permissions", lazy="joined")

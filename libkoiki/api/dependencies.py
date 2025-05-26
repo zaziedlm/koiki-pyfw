@@ -128,13 +128,27 @@ TodoServiceDep = Annotated[TodoService, Depends(get_todo_service)]
 CurrentUserDep = Annotated[UserModel, Depends(get_current_user_from_token)]
 
 # アクティブユーザーチェック
-def get_current_active_user(current_user: CurrentUserDep):
+async def get_current_active_user(
+    user_id: CurrentUserDep,
+    db: DBSessionDep
+):
     """現在認証されているアクティブなユーザーを取得"""
-    if not current_user: # get_current_user_from_tokenがNoneを返す場合（エラー処理はそちらで行われる想定）
+    if not user_id: # get_current_user_from_tokenがNoneを返す場合（エラー処理はそちらで行われる想定）
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    
+    # ユーザーIDからユーザーオブジェクトを取得
+    user_repo = UserRepository()
+    user_repo.set_session(db)
+    current_user = await user_repo.get_user_with_roles_permissions(user_id)
+    
+    if not current_user:
+        logger.warning("User not found in DB", user_id=user_id)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    
     if not current_user.is_active:
         logger.warning("Attempt to access by inactive user", user_id=current_user.id)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+    
     return current_user
 
 ActiveUserDep = Annotated[UserModel, Depends(get_current_active_user)]
@@ -177,6 +191,10 @@ def has_permission(required_permission: str):
              logger.error("User role information still not available after loading attempt.", user_id=current_user.id)
              raise HTTPException(status_code=500, detail="User role information not loaded")
 
+        # スーパーユーザーは常に全ての権限を持つ
+        if current_user.is_superuser:
+            return None  # 権限チェックをパス
+        
         user_permissions = set()
         for role in current_user.roles:
             # Role に permissions がロードされているか確認 (get_user_with_roles_permissionsでロードされる想定)

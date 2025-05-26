@@ -76,7 +76,9 @@ class UserService:
         ).offset(skip).limit(limit)
         
         result = await db.execute(stmt)
-        return result.scalars().all()    @transactional
+        return result.scalars().all()
+    
+    @transactional
     async def create_user(self, user_in: UserCreate, db: AsyncSession) -> UserModel:
         """
         新規ユーザーを作成します。
