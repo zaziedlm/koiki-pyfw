@@ -201,13 +201,13 @@ class UserService:
 
         return updated_user
 
-    async def authenticate_user(self, email: str, password: str, db: AsyncSession) -> Optional[UserModel]:
+    async def authenticate_user(self, email: str, password: str) -> Optional[UserModel]:
         """
         ユーザーを認証します。
         成功した場合はユーザーモデルを、失敗した場合は None を返します。
         """
         logger.debug("Service: Authenticating user", email=email)
-        self.repository.set_session(db)
+        # リポジトリは既にコンストラクタでセットされたセッションを使用
         user = await self.repository.get_by_email(email)
         if not user:
             logger.info("Authentication failed: User not found", email=email)

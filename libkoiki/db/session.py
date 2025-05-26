@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngin
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import text  # connect_dbで使用するためここで先にインポート
 from fastapi import HTTPException
 
 from libkoiki.core.config import settings
@@ -138,6 +139,3 @@ async def connect_db():
 async def disconnect_db():
     """アプリケーション終了時のDBエンジン破棄"""
     await dispose_db_engine()
-
-# --- text インポート ---
-from sqlalchemy import text # connect_db で使用
