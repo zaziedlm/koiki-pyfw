@@ -129,6 +129,18 @@ async def read_users(
     logger.debug(f"Found {len(users)} users with roles preloaded")
     return users
 
+# --- 権限ベースのエンドポイント例 ---
+@router.get(
+    "/protected-resource",
+    summary="Example protected resource",
+    description="Access requires 'read:protected_resource' permission.",
+    dependencies=[has_permission("read:protected_resource")]
+)
+async def get_protected_resource(current_user: ActiveUserDep):
+    """特定の権限を持つユーザーのみアクセス可能なリソース (サンプル)"""
+    logger.debug("Access granted to protected resource", user_id=current_user.id)
+    return {"message": f"Welcome {current_user.email}, you have the required permission ('read:protected_resource')!"}
+
 # --- 特定ユーザー取得 (管理者/特定権限持ち) ---
 @router.get(
     "/{user_id}",
@@ -227,15 +239,3 @@ async def delete_user_by_id(
     except ResourceNotFoundException:
         logger.warning("User not found for deletion by admin", target_user_id=user_id, admin_user_id=current_admin.id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with ID {user_id} not found")
-
-# --- 権限ベースのエンドポイント例 ---
-@router.get(
-    "/protected-resource",
-    summary="Example protected resource",
-    description="Access requires 'read:protected_resource' permission.",
-    dependencies=[has_permission("read:protected_resource")]
-)
-async def get_protected_resource(current_user: ActiveUserDep):
-    """特定の権限を持つユーザーのみアクセス可能なリソース (サンプル)"""
-    logger.debug("Access granted to protected resource", user_id=current_user.id)
-    return {"message": f"Welcome {current_user.email}, you have the required permission ('read:protected_resource')!"}
