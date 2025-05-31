@@ -6,7 +6,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
-      - .env.example # 環境変数を参照
+      - .env # 環境変数を参照
     ports:
       - "5432:5432" # ローカルで直接DBに接続したい場合
     environment:
@@ -14,7 +14,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-koiki_password}
       POSTGRES_DB: ${POSTGRES_DB:-koiki_todo_db}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -36,7 +36,7 @@ services:
       db:
         condition: service_healthy
     env_file:
-      - .env.example
+      - .env
     ports:
       - "8000:8000"
     volumes:
