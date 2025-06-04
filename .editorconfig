@@ -1,0 +1,32 @@
+# top-most EditorConfig file
+root = true
+
+# 全ファイルに共通するデフォルト設定
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Markdownファイルでは末尾のスペースが必要なことがあるので除外
+[*.md]
+trim_trailing_whitespace = false
+
+# JSONやYAMLでは2スペースが好まれることが多い
+[*.json]
+indent_size = 2
+
+[*.yml]
+indent_size = 2
+
+# Windowsスクリプトは CRLF に
+[*.bat]
+end_of_line = crlf
+
+[*.cmd]
+end_of_line = crlf
+
+[*.ps1]
+end_of_line = crlf

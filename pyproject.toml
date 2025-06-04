@@ -13,7 +13,6 @@ description = ""
 authors = ["Shuichi Kataoka <shu01k9@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.11.7,<4.0"
@@ -35,6 +34,7 @@ email-validator = "^2.1.0"  # 追加: email検証用
 prometheus-fastapi-instrumentator = "^5.7.1"  # 追加: Prometheusモニタリング用（必要な場合）
 python-multipart = "^0.0.20"
 aiosqlite = "^0.21.0"
+psycopg2-binary = "^2.9.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.4.0,<8.0.0"

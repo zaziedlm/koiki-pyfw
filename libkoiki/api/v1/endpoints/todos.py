@@ -8,12 +8,14 @@ from libkoiki.services.todo_service import TodoService
 from libkoiki.api.dependencies import (
     TodoServiceDep,
     ActiveUserDep,
+    DBSessionDep,  # DBセッション依存関係を追加
     # RateLimitDep, # ヘルパーを使う場合
 )
 from libkoiki.models.user import UserModel
 from libkoiki.core.exceptions import ResourceNotFoundException, AuthorizationException
 from libkoiki.core.logging import get_logger
 from libkoiki.core.rate_limiter import limiter
+from libkoiki.core.transaction import transactional  # transactionalデコレータを追加
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -26,12 +28,14 @@ router = APIRouter()
     summary="Create a new ToDo item for the current user",
     description="Creates a new ToDo item associated with the logged-in user.",
 )
+@transactional  # トランザクションデコレータを追加
 @limiter.limit("30/minute") # 例: 30回/分までに制限
 async def create_todo(
     request: Request, # limiter用
     todo_in: TodoCreate,
     current_user: ActiveUserDep, # 認証済みアクティブユーザーを取得
     todo_service: TodoServiceDep,
+    db: DBSessionDep,  # DBセッションを追加
 ) -> Any:
     """
     新しいToDo項目を作成します。
@@ -40,8 +44,8 @@ async def create_todo(
     - **description**: ToDoの説明 (任意)
     """
     logger.info("Creating new todo", user_id=current_user.id, title=todo_in.title)
-    # サービスメソッドに owner_id を渡す
-    new_todo = await todo_service.create_todo(todo_in=todo_in, owner_id=current_user.id)
+    # サービスメソッドに owner_id とdb を渡す
+    new_todo = await todo_service.create_todo(todo_in=todo_in, owner_id=current_user.id, db=db)
     logger.info("Todo created successfully", todo_id=new_todo.id, user_id=current_user.id)
     return new_todo
 
@@ -57,6 +61,7 @@ async def read_todos(
     request: Request, # limiter用
     current_user: ActiveUserDep,
     todo_service: TodoServiceDep,
+    db: DBSessionDep,  # DBセッションを追加
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
@@ -68,7 +73,7 @@ async def read_todos(
     """
     logger.debug("Fetching todos for user", user_id=current_user.id, skip=skip, limit=limit)
     todos = await todo_service.get_todos_by_owner(
-        owner_id=current_user.id, skip=skip, limit=limit
+        owner_id=current_user.id, skip=skip, limit=limit, db=db
     )
     logger.debug(f"Found {len(todos)} todos for user", user_id=current_user.id)
     return todos
@@ -89,6 +94,7 @@ async def read_todo(
     todo_id: int,
     current_user: ActiveUserDep,
     todo_service: TodoServiceDep,
+    db: DBSessionDep,  # DBセッションを追加
 ) -> Any:
     """
     指定されたIDのToDo項目を取得します。
@@ -96,7 +102,7 @@ async def read_todo(
     """
     logger.debug("Fetching todo by id", todo_id=todo_id, user_id=current_user.id)
     try:
-        todo = await todo_service.get_todo_by_id(todo_id=todo_id, owner_id=current_user.id)
+        todo = await todo_service.get_todo_by_id(todo_id=todo_id, owner_id=current_user.id, db=db)
         return todo
     except ResourceNotFoundException:
         logger.warning("Todo not found or access denied", todo_id=todo_id, user_id=current_user.id)
@@ -117,6 +123,7 @@ async def read_todo(
         status.HTTP_403_FORBIDDEN: {"description": "User not authorized to update this ToDo"},
     },
 )
+@transactional  # トランザクションデコレータを追加
 @limiter.limit("50/minute")
 async def update_todo(
     request: Request, # limiter用
@@ -124,6 +131,7 @@ async def update_todo(
     todo_in: TodoUpdate,
     current_user: ActiveUserDep,
     todo_service: TodoServiceDep,
+    db: DBSessionDep,  # DBセッションを追加
 ) -> Any:
     """
     指定されたIDのToDo項目を更新します。
@@ -136,7 +144,7 @@ async def update_todo(
     logger.info("Updating todo", todo_id=todo_id, user_id=current_user.id, data=todo_in.dict(exclude_unset=True))
     try:
         updated_todo = await todo_service.update_todo(
-            todo_id=todo_id, todo_in=todo_in, owner_id=current_user.id
+            todo_id=todo_id, todo_in=todo_in, owner_id=current_user.id, db=db
         )
         logger.info("Todo updated successfully", todo_id=todo_id, user_id=current_user.id)
         return updated_todo
@@ -158,12 +166,14 @@ async def update_todo(
         status.HTTP_403_FORBIDDEN: {"description": "User not authorized to delete this ToDo"},
     },
 )
+@transactional  # トランザクションデコレータを追加
 @limiter.limit("50/minute")
 async def delete_todo(
     request: Request, # limiter用
     todo_id: int,
     current_user: ActiveUserDep,
     todo_service: TodoServiceDep,
+    db: DBSessionDep,  # DBセッションを追加
 ) -> None:
     """
     指定されたIDのToDo項目を削除します。
@@ -171,7 +181,7 @@ async def delete_todo(
     """
     logger.info("Deleting todo", todo_id=todo_id, user_id=current_user.id)
     try:
-        await todo_service.delete_todo(todo_id=todo_id, owner_id=current_user.id)
+        await todo_service.delete_todo(todo_id=todo_id, owner_id=current_user.id, db=db)
         logger.info("Todo deleted successfully", todo_id=todo_id, user_id=current_user.id)
         # 204 No Content はレスポンスボディがないため、return None
         return None

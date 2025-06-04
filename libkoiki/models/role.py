@@ -15,4 +15,8 @@ class RoleModel(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # users リレーションシップは user.py の backref で定義されているため省略可能
+    # usersリレーションシップを追加
+    users = relationship("UserModel", secondary="user_roles", back_populates="roles")
+    
+    # permissionsリレーションシップを追加
+    permissions = relationship("PermissionModel", secondary="role_permissions", lazy="joined")

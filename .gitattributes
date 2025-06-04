@@ -1,0 +1,7 @@
+# デフォルト改行コードを LF にする（すべてのファイルに対して）
+* text=auto eol=lf
+
+# Windowsスクリプトは CRLF にする
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf

@@ -20,5 +20,7 @@ class UserModel(Base):
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
     
+    # todos = relationship("TodoModel", back_populates="user")
+    todos = relationship("TodoModel", back_populates="owner", cascade="all, delete-orphan")
     # ロールとの関係
-    roles = relationship("Role", secondary=user_roles, back_populates="users")
+    roles = relationship("RoleModel", secondary=user_roles, back_populates="users")

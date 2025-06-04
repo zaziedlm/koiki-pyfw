@@ -1,6 +1,6 @@
 # src/core/transaction.py
 import functools
-from typing import Callable, Any, TypeVar
+from typing import Optional, Callable, Any, TypeVar
 from sqlalchemy.ext.asyncio import AsyncSession
 # from fastapi import Depends # Depends はここでは使わない
 import structlog

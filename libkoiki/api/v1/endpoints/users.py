@@ -12,6 +12,8 @@ from libkoiki.api.dependencies import (
     DBSessionDep,
     has_permission,
 )
+# トランザクションデコレータを使用
+from libkoiki.core.transaction import transactional
 from libkoiki.core.exceptions import ValidationException, ResourceNotFoundException
 from libkoiki.core.logging import get_logger
 from libkoiki.core.rate_limiter import limiter
@@ -28,12 +30,13 @@ router = APIRouter()
     description="Creates a new user. By default, any user can create an account. Can be restricted (e.g., superuser only).",
     # dependencies=[Depends(RateLimitDep("5/minute"))] # ヘルパーを使用する場合
 )
+@transactional  # このデコレータがあるか確認
 @limiter.limit("10/minute") # slowapi デコレータを使用
 async def create_user(
     request: Request, # デコレータ使用時は Request が必要
     user_in: UserCreate,
     user_service: UserServiceDep,
-    # db: DBSessionDep # transactionalデコレータがセッションを管理するため不要
+    db: DBSessionDep, # トランザクショナルデコレータを使用するため必要
     # current_user: Optional[SuperUserDep] = None # 例: 管理者のみ作成可能にする場合。None許容にすると認証不要でも叩ける
 ) -> Any:
     """
@@ -50,7 +53,7 @@ async def create_user(
     logger.info("Attempting to create user", email=user_in.email)
     # サービス層でValidationExceptionが発生する可能性がある
     # グローバル例外ハンドラで処理される
-    new_user = await user_service.create_user(user_in)
+    new_user = await user_service.create_user(user_in, db)
     logger.info("User created successfully", user_id=new_user.id, email=new_user.email)
     return new_user
 
@@ -64,11 +67,14 @@ async def create_user(
 )
 async def read_user_me(
     current_user: ActiveUserDep, # 認証済みのアクティブユーザーを取得
+    user_service: UserServiceDep,
+    db: DBSessionDep
 ) -> Any:
     """現在のログインユーザー情報を取得します。"""
-    logger.debug("Fetching current user info", user_id=current_user.id)
-    # rolesなどのリレーションがロードされているか確認が必要な場合がある (dependenciesで対応済み想定)
-    return current_user
+    logger.debug("Fetching current user info with roles", user_id=current_user.id)
+    # 非同期リレーション参照エラー回避のため、ロールを含めて取得
+    user = await user_service.get_user_with_roles(current_user.id, db)
+    return user
 
 # --- 自分の情報更新 ---
 @router.put(
@@ -83,13 +89,16 @@ async def update_user_me(
     user_in: UserUpdate,
     current_user: ActiveUserDep,
     user_service: UserServiceDep,
-    # db: DBSessionDep # transactionalデコレータが管理
+    db: DBSessionDep # transactionalデコレータにはDBセッションが必要
 ) -> Any:
     """現在のログインユーザー情報を更新します。"""
     logger.info("Updating current user info", user_id=current_user.id, data=user_in.dict(exclude_unset=True))
-    updated_user = await user_service.update_user(current_user.id, user_in)
+    updated_user = await user_service.update_user(current_user.id, user_in, db)
     logger.info("Current user info updated successfully", user_id=current_user.id)
-    return updated_user
+    
+    # 非同期リレーション参照エラー回避のため、更新後にロールを含めて再取得
+    user_with_roles = await user_service.get_user_with_roles(current_user.id, db)
+    return user_with_roles
 
 # --- ユーザー一覧取得 (管理者/特定権限持ち) ---
 @router.get(
@@ -104,9 +113,9 @@ async def update_user_me(
 async def read_users(
     request: Request, # limiter用
     user_service: UserServiceDep,
+    db: DBSessionDep, # データベース操作のため必要
     skip: int = 0,
-    limit: int = 100,
-    # db: DBSessionDep # 読み取り操作なのでトランザクション不要な場合が多い
+    limit: int = 100
 ) -> Any:
     """
     ユーザー一覧を取得します (権限が必要)。
@@ -114,11 +123,23 @@ async def read_users(
     - **skip**: スキップする件数
     - **limit**: 取得する最大件数
     """
-    logger.debug("Fetching user list", skip=skip, limit=limit)
-    # サービス層でDBセッションが必要なら渡す (BaseRepository を直接使う場合など)
-    users = await user_service.get_users(skip=skip, limit=limit)
-    logger.debug(f"Found {len(users)} users")
+    logger.debug("Fetching user list with roles", skip=skip, limit=limit)
+    # 非同期リレーション参照エラーを回避するために、ロールを含めて取得するメソッドを使用
+    users = await user_service.get_users_with_roles(skip=skip, limit=limit, db=db)
+    logger.debug(f"Found {len(users)} users with roles preloaded")
     return users
+
+# --- 権限ベースのエンドポイント例 ---
+@router.get(
+    "/protected-resource",
+    summary="Example protected resource",
+    description="Access requires 'read:protected_resource' permission.",
+    dependencies=[has_permission("read:protected_resource")]
+)
+async def get_protected_resource(current_user: ActiveUserDep):
+    """特定の権限を持つユーザーのみアクセス可能なリソース (サンプル)"""
+    logger.debug("Access granted to protected resource", user_id=current_user.id)
+    return {"message": f"Welcome {current_user.email}, you have the required permission ('read:protected_resource')!"}
 
 # --- 特定ユーザー取得 (管理者/特定権限持ち) ---
 @router.get(
@@ -134,12 +155,12 @@ async def read_user_by_id(
     request: Request, # limiter用
     user_id: int,
     user_service: UserServiceDep,
-    # db: DBSessionDep
+    db: DBSessionDep
 ) -> Any:
     """指定したIDのユーザー情報を取得します (権限が必要)。"""
-    logger.debug("Fetching user by ID", user_id=user_id)
-    # サービス層でResourceNotFoundExceptionが発生する可能性がある
-    user = await user_service.get_user_by_id(user_id)
+    logger.debug("Fetching user with roles by ID", user_id=user_id)
+    # 非同期リレーションエラー回避のため、ロールを含めて取得するメソッドを使用
+    user = await user_service.get_user_with_roles(user_id, db)
     # get_user_by_idがNoneを返す場合（リポジトリの実装による）のエラーハンドリング
     if user is None:
         logger.warning("User not found by ID", user_id=user_id)
@@ -161,27 +182,26 @@ async def update_user_by_id(
     user_id: int,
     user_in: UserUpdate,
     user_service: UserServiceDep,
-    # db: DBSessionDep # transactionalデコレータが管理
+    db: DBSessionDep, # transactionalデコレータが必要
     current_admin: ActiveUserDep, # 操作者情報をログ等で使用する場合
 ) -> Any:
     """指定したIDのユーザー情報を更新します (権限が必要)。"""
     logger.info("Updating user by ID", target_user_id=user_id, admin_user_id=current_admin.id, data=user_in.dict(exclude_unset=True))
     # is_superuser の変更など、特別な権限チェックが必要な場合がある
     if 'is_superuser' in user_in.dict(exclude_unset=True) and not current_admin.is_superuser:
-         logger.warning("Non-superuser attempting to change superuser status", admin_user_id=current_admin.id, target_user_id=user_id)
-         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only superusers can change superuser status")
+        logger.warning("Non-superuser attempting to change superuser status", admin_user_id=current_admin.id, target_user_id=user_id)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only superusers can change superuser status")
 
     try:
-        updated_user = await user_service.update_user(user_id, user_in)
+        updated_user = await user_service.update_user(user_id, user_in, db)
         logger.info("User updated successfully by admin", target_user_id=user_id, admin_user_id=current_admin.id)
         return updated_user
     except ResourceNotFoundException:
         logger.warning("User not found for update by admin", target_user_id=user_id, admin_user_id=current_admin.id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with ID {user_id} not found")
     except ValidationException as e: # パスワードポリシー違反など
-         logger.warning("Validation failed during user update by admin", target_user_id=user_id, admin_user_id=current_admin.id, error=str(e.detail))
-         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.detail)
-
+        logger.warning("Validation failed during user update by admin", target_user_id=user_id, admin_user_id=current_admin.id, error=str(e.detail))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.detail)
 
 # --- 特定ユーザー削除 (管理者/特定権限持ち) ---
 @router.delete(
@@ -202,7 +222,7 @@ async def delete_user_by_id(
     user_id: int,
     current_admin: ActiveUserDep, # ActiveUserDepでも良いが、権限チェック済み
     user_service: UserServiceDep,
-    # db: DBSessionDep # transactionalデコレータが管理
+    db: DBSessionDep # transactionalデコレータが必要
 ) -> Any:
     """指定したIDのユーザーを削除します (権限が必要)。"""
     logger.info("Deleting user by ID", target_user_id=user_id, admin_user_id=current_admin.id)
@@ -211,7 +231,7 @@ async def delete_user_by_id(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete own account")
     # サービス層でResourceNotFoundExceptionが発生する可能性がある
     try:
-        deleted_user = await user_service.delete_user(user_id)
+        deleted_user = await user_service.delete_user(user_id, db)
         # delete_userがNoneを返す場合のエラーハンドリングは不要（例外を投げる実装のため）
         logger.info("User deleted successfully by admin", target_user_id=user_id, admin_user_id=current_admin.id)
         return deleted_user # 削除されたユーザー情報を返す
@@ -219,16 +239,3 @@ async def delete_user_by_id(
     except ResourceNotFoundException:
         logger.warning("User not found for deletion by admin", target_user_id=user_id, admin_user_id=current_admin.id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with ID {user_id} not found")
-
-
-# --- 権限ベースのエンドポイント例 ---
-@router.get(
-    "/protected-resource",
-    summary="Example protected resource",
-    description="Access requires 'read:protected_resource' permission.",
-    dependencies=[has_permission("read:protected_resource")]
-)
-async def get_protected_resource(current_user: ActiveUserDep):
-     """特定の権限を持つユーザーのみアクセス可能なリソース (サンプル)"""
-     logger.debug("Access granted to protected resource", user_id=current_user.id)
-     return {"message": f"Welcome {current_user.email}, you have the required permission ('read:protected_resource')!"}

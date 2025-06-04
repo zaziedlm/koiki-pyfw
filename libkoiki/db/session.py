@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngin
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import text  # connect_dbで使用するためここで先にインポート
 from fastapi import HTTPException
 
 from libkoiki.core.config import settings
@@ -27,21 +28,12 @@ def init_db_engine():
     global AsyncSessionFactory  # 追加
     
     try:
-        # SQLiteかPostgreSQLかを判断
         db_url = settings.DATABASE_URL
         
-        # SQLite特有の設定（URLに基づいてドライバを判断）
+        # PostgreSQL接続初期化
         connect_args = {}
-        if db_url and "sqlite" in db_url:
-            logger.info("Initializing SQLite database engine.", db_url="sqlite+aiosqlite:///<db_path>")
-            # SQLite特有の設定は非同期APIでは不要なので空のままにします
-        else:
-            # PostgreSQL接続
-            if hasattr(settings, "POSTGRES_SERVER"):
-                logger.info("Initializing PostgreSQL database engine.", 
-                            db_url=f"postgresql+asyncpg://...@{settings.POSTGRES_SERVER}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}")
-            else:
-                logger.info("Initializing database engine.")
+        logger.info("Initializing PostgreSQL database engine.", 
+                    db_url=f"postgresql+asyncpg://...@{settings.POSTGRES_SERVER}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}")
         
         # エンジンの初期化
         engine = create_async_engine(
@@ -134,15 +126,7 @@ async def connect_db():
                 # 簡単なクエリを実行して接続を確認
                 await conn.execute(text("SELECT 1"))
                 logger.info("Database connection successful.")
-                
-                # SQLiteの場合、テーブルが存在しなければ作成する
-                if settings.USE_SQLITE:
-                    from libkoiki.db.base import Base
-                    # SQLAlchemy 2.0の非同期モードでテーブル作成
-                    async with engine.begin() as conn:
-                        # 既存のテーブルがあれば作成はスキップされる
-                        await conn.run_sync(Base.metadata.create_all)
-                    logger.info("SQLite tables created or verified.")
+                logger.info("PostgreSQL database connection verified.")
         except Exception as e:
             logger.error(f"Database connection failed: {e}", exc_info=True)
             # 接続失敗時の処理 (リトライ or 終了)
@@ -155,6 +139,3 @@ async def connect_db():
 async def disconnect_db():
     """アプリケーション終了時のDBエンジン破棄"""
     await dispose_db_engine()
-
-# --- text インポート ---
-from sqlalchemy import text # connect_db で使用
