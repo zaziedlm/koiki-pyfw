@@ -33,3 +33,5 @@ X.  **アプリケーションへのアクセス:**
 ## ライセンス
 
 MIT License
+
+https://opensource.org/license/mit
