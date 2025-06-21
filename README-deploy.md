@@ -2,6 +2,8 @@
 
 このドキュメントでは、KOIKIフレームワークのDockerコンテナによる各種配備シナリオと必要なコマンドを説明します。[`docker-entrypoint.sh`](docker-entrypoint.sh)の自動実行機能を考慮した最適な手順を示しています。
 
+**更新**: Poetry 2.x移行とセキュリティ修正完了（2025-06-21）
+
 ## 1. 初回環境構築時
 
 ```bash
@@ -122,6 +124,31 @@ docker-compose -f docker-compose.production.yml build
 docker-compose -f docker-compose.production.yml push
 ```
 
+## 9. セキュリティ監査とテスト (2025-06-21 追加)
+
+```bash
+# セキュリティ監査の実行
+docker-compose exec app pip-audit
+
+# 静的セキュリティ解析
+docker-compose exec app bandit -r app/ libkoiki/
+
+# 包括的APIテスト（開発環境）
+curl -s http://localhost:8000/ | jq .
+curl -s http://localhost:8000/health | jq .
+curl -s http://localhost:8000/api/v1/health | jq .
+
+# ユーザー登録テスト
+curl -X POST http://localhost:8000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "email": "test@example.com", "password": "testpass123"}' | jq .
+
+# 認証トークン取得テスト
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "password": "testpass123"}' | jq .
+```
+
 ## アプリケーションへのアクセス
 
 コンテナ起動後、以下のURLでアプリケーションにアクセスできます：
@@ -148,3 +175,22 @@ docker-compose -f docker-compose.production.yml push
    - マイグレーションファイルが存在しない場合は初期マイグレーションを自動生成
 
 この自動化により、開発者はデータベースセットアップの多くの手順を意識する必要がなくなり、アプリケーション開発に集中できます。
+
+## 最新のPoetry 2.x対応状況
+
+### 依存性管理の改善点
+- **Poetry 2.1.0**: 最新のPoetry 2.xシステムを採用
+- **PEP 621準拠**: `pyproject.toml`が標準的な設定構造に移行
+- **セキュリティ強化**: 全脆弱性（PYSEC-2024-38, PYSEC-2024-232/233, GHSA-f96h-pmfr-66vw）を修正
+- **Python 3.13対応**: 完全な互換性を確保
+
+### 主要な更新内容
+```toml
+# 主要パッケージのバージョン更新例
+fastapi = ">=0.115.13,<0.116.0"     # セキュリティ修正版
+pydantic = ">=2.11.7,<2.12.0"       # 検証機能強化版
+uvicorn = ">=0.34.3,<0.35.0"        # パフォーマンス大幅改善
+pytest = ">=8.4.1,<8.5.0"          # テストフレームワーク最新版
+```
+
+詳細な更新履歴と企業向け実装戦略については、[ENTERPRISE_DEPENDENCY_STRATEGY.md](ENTERPRISE_DEPENDENCY_STRATEGY.md)を参照してください。
