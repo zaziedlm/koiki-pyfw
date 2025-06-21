@@ -44,17 +44,44 @@ jobs:
           curl -sSL https://install.python-poetry.org | python3 - --version 2.1.0
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      - name: Configure Poetry 2.x
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          poetry config cache-dir ~/.cache/pypoetry
+          poetry config installer.parallel true
+          poetry config installer.max-workers 10
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
       - name: Verify pyproject.toml & poetry.lock consistency
         run: |
-          poetry lock --check
+          poetry check --lock
 
-      - name: Install dependencies
+      - name: Install dependencies (Poetry 2.x optimized)
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install --no-root
+          # Poetry 2.x: Install main and dev dependencies with parallel processing
+          poetry install --only=main --no-root
+          poetry install --only=dev --no-root
 
-      - name: Run tests with coverage
+      - name: Install project in development mode
         run: |
+          poetry install --only-root
+          # Poetry 2.x: Verify installation
+          poetry env info
+
+      - name: Run tests with coverage (Poetry 2.x)
+        run: |
+          # Poetry 2.x: Use dependency groups for testing
           poetry run pytest --cov=app --cov=libkoiki --cov-report=term-missing --cov-report=html tests/
+          # Poetry 2.x: Additional environment check
+          poetry show --tree --only=main
 
       - name: Upload HTML coverage report (optional)
         if: ${{ env.ACT != 'true' }}
