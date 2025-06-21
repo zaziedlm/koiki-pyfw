@@ -26,14 +26,16 @@ venv\Scripts\activate  # Windowsの場合
 #### poetry を使用する方法（推奨）
 
 ```powershell
-# poetryのインストール（初回のみ）
+# Poetry 2.x のインストール（初回のみ）
 (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
 
 # poetryを使った仮想環境の作成と依存関係のインストール
 poetry env use python
 poetry install
 
-# 仮想環境の有効化
+# 仮想環境の有効化 (Poetry 2.x 推奨方法)
+poetry env activate
+# または従来の方法（互換性のため残存）
 poetry shell
 ```
 
@@ -73,7 +75,11 @@ poetry install
 # 直接実行
 poetry run uvicorn app.main:app --reload
 
-# または、仮想環境内で実行
+# または、仮想環境内で実行 (Poetry 2.x 推奨方法)
+poetry env activate
+uvicorn app.main:app --reload
+
+# または従来の方法（互換性維持）
 poetry shell
 uvicorn app.main:app --reload
 ```

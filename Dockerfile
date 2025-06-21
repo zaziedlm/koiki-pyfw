@@ -2,7 +2,7 @@
 FROM python:3.11.7-slim
 
 # 環境変数の設定
-ENV POETRY_VERSION=1.7.1 \
+ENV POETRY_VERSION=2.1.0 \
     POETRY_HOME=/opt/poetry \
     POETRY_VENV_CREATE=false \
     POETRY_NO_INTERACTION=1 \
@@ -37,9 +37,9 @@ COPY ./alembic.ini ./
 COPY ./main.py ./
 
 # 依存関係のインストール
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml poetry.lock README.md ./
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi
+    && poetry install --no-interaction --no-ansi --no-root
 
 # docker-entrypoint.shをコピーして実行権限を付与
 COPY docker-entrypoint.sh ./

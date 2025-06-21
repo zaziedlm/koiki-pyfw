@@ -46,5 +46,5 @@ redis = "*"
 slowapi = "*"
 
 [build-system]
-requires = ["setuptools", "poetry-core>=1.0.0"]
+requires = ["setuptools", "poetry-core>=1.5.0"]
 build-backend = "poetry.core.masonry.api"
