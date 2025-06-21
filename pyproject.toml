@@ -19,6 +19,11 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
 ]
+# パッケージ構成
+packages = [
+    { include = "app" },
+    { include = "libkoiki" }
+]
 # PEP 621: Enterprise-grade dependency management
 # All runtime dependencies with strict version control for production stability
 dependencies = [
