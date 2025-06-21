@@ -1,46 +1,125 @@
 [project]
 name = "koiki-pyfw"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.3.0"
+description = "FastAPI enterprise application framework"
 readme = "README.md"
 requires-python = ">=3.11.7,<4.0"
-dependencies = []
+license = {text = "MIT"}
+authors = [
+    {name = "Shuichi Kataoka", email = "shu01k9@gmail.com"}
+]
+keywords = ["fastapi", "enterprise", "framework", "async", "sqlalchemy"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Framework :: FastAPI",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+# PEP 621: Enterprise-grade dependency management
+# All runtime dependencies with strict version control for production stability
+dependencies = [
+    # Core Web Framework
+    "fastapi>=0.115.13,<0.116.0",           # Latest stable + starlette security fix
+    "uvicorn>=0.34.3,<0.35.0",              # Updated ASGI server (major performance improvements)
+    
+    # Database Layer (Python 3.13 compatible)
+    "sqlalchemy[asyncio]>=2.0.23,<2.1.0",   # Minor version locked
+    "asyncpg>=0.30.0,<0.31.0",              # Minor version locked (Python 3.13 support)
+    "alembic>=1.16.2,<1.17.0",              # Updated database migration tool
+    "psycopg2-binary>=2.9.9,<2.10.0",       # Minor version locked
+    "aiosqlite>=0.21.0,<0.22.0",            # Minor version locked (dev/test)
+    
+    # Data Validation & Settings (Compatible versions for enterprise)
+    "pydantic>=2.11.7,<2.12.0",             # Updated for enhanced validation features
+    "pydantic-settings>=2.10.0,<2.11.0",    # Latest available version
+    "email-validator>=2.2.0,<2.3.0",        # Updated for improved validation
+    
+    # Security & Authentication
+    "python-jose>=3.4.0,<3.6.0",            # Security fix (PYSEC-2024-232,233)
+    "passlib[bcrypt]>=1.7.4,<1.8.0",        # Minor version locked
+    
+    # HTTP & Communication
+    "httpx>=0.28.1,<0.29.0",                # Updated HTTP client
+    "python-multipart>=0.0.20,<0.1.0",      # Minor version locked
+    
+    # Logging & Monitoring
+    "structlog>=25.4.0,<25.5.0",            # Updated structured logging
+    "prometheus-fastapi-instrumentator>=7.1.0,<7.2.0", # Updated monitoring instrumentation
+    
+    # Caching & Performance
+    "redis>=6.2.0,<6.3.0",                  # Updated Redis client (major version)
+    "slowapi>=0.1.8,<0.2.0",                # Current range (stable API)
+    
+    # Local Framework Dependency
+    "libkoiki",                             # Local package
+    "anyio (>=4.9.0,<5.0.0)",
+    "limits (>=5.4.0,<5.5.0)",
+    "pytest (>=8.4.1,<8.5.0)",
+    "pytest-asyncio (>=1.0.0,<1.1.0)",
+]
 
+# PEP 621: Enterprise optional dependencies with security focus
+[project.optional-dependencies]
+dev = [
+    # Testing Framework (minor version locked)
+    "pytest>=8.4.1,<8.5.0",
+    "pytest-asyncio>=1.0.0,<1.1.0",
+    "pytest-cov>=6.2.1,<6.3.0",
+    "pytest-mock>=3.14.0,<3.15.0",
+    
+    # Security & Quality Assurance (pydantic 2.7+ compatible)
+    "pip-audit>=2.9.0,<3.0.0",           # Dependency audit (pydantic independent)
+    "bandit>=1.8.0,<1.9.0",              # Security linter (pydantic independent)
+]
+test = [
+    "pytest>=8.4.1,<8.5.0",
+    "pytest-asyncio>=1.0.0,<1.1.0",
+    "pytest-cov>=6.2.1,<6.3.0",
+    "pytest-mock>=3.14.0,<3.15.0",
+]
+security = [
+    # Enterprise Security Tooling (pydantic 2.7+ compatible)
+    "pip-audit>=2.9.0,<3.0.0",           # OSV database audit (pydantic independent)
+    "bandit>=1.8.0,<1.9.0",              # Static security analysis (pydantic independent)
+    # Note: safety excluded due to pydantic <2.0 dependency conflict
+    # Alternative: Use pip-audit which covers similar vulnerability detection
+]
+
+# Poetry 2.x: Minimal configuration, PEP 621 compliant
 [tool.poetry]
-name = "koiki-pyfw"
-version = "0.3.0"
-description = ""
-authors = ["Shuichi Kataoka <shu01k9@gmail.com>"]
-license = "MIT"
-readme = "README.md"
+# Only Poetry-specific settings remain here
+# All metadata now in [project] section per PEP 621
+
+# Poetry 2.x: Dependency groups with explicit dependencies
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+# Development dependencies managed here for Poetry 2.x features
+pytest = ">=8.4.1,<8.5.0"
+pytest-asyncio = ">=1.0.0,<1.1.0"
+pytest-cov = ">=6.2.1,<6.3.0"
+pytest-mock = ">=3.14.0,<3.15.0"
+# Security tools (pydantic 2.7+ compatible)
+pip-audit = ">=2.9.0,<3.0.0"
+bandit = ">=1.8.0,<1.9.0"
+
+# Poetry 2.x: Security group for enterprise auditing
+[tool.poetry.group.security]
+optional = true
+
+[tool.poetry.group.security.dependencies]
+pip-audit = ">=2.9.0,<3.0.0"
+bandit = ">=1.8.0,<1.9.0"
 
 [tool.poetry.dependencies]
 python = ">=3.11.7,<4.0"
-fastapi = ">=0.104.0,<1.0.0"
-uvicorn = ">=0.24.0,<1.0.0"
-sqlalchemy = {version = ">=2.0.23,<3.0.0", extras = ["asyncio"]}
-asyncpg = ">=0.29.0,<1.0.0"
-alembic = ">=1.12.1,<2.0.0"
-pydantic = ">=2.5.0,<3.0.0"
-python-jose = ">=3.3.0,<4.0.0"
-passlib = {version = ">=1.7.4,<2.0.0", extras = ["bcrypt"]}
-httpx = ">=0.25.0,<1.0.0"
-structlog = ">=23.2.0,<24.0.0"
-redis = ">=5.0.1,<6.0.0"
-slowapi = ">=0.1.8,<0.2.0"
+# Poetry 2.x: Local dependency with develop mode
 libkoiki = {path = "libkoiki", develop = true}
-pydantic-settings = "^2.9.1"
-email-validator = "^2.1.0"  # 追加: email検証用
-prometheus-fastapi-instrumentator = "^5.7.1"  # 追加: Prometheusモニタリング用（必要な場合）
-python-multipart = "^0.0.20"
-aiosqlite = "^0.21.0"
-psycopg2-binary = "^2.9.9"
-
-[tool.poetry.group.dev.dependencies]
-pytest = ">=7.4.0,<8.0.0"
-pytest-asyncio = ">=0.23.0,<1.0.0"
-pytest-cov = "^6.1.1"
-pytest-mock = "^3.14.0"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -62,6 +141,7 @@ exclude_lines = [
     "raise ImportError"
 ]
 
+# Poetry 2.x: Modern build system configuration
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.5.0"]
 build-backend = "poetry.core.masonry.api"

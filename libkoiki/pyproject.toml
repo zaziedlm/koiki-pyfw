@@ -2,49 +2,92 @@
 name = "libkoiki"
 version = "0.3.0"
 description = "Enterprise-grade FastAPI application framework."
+readme = "README.md"
 authors = [{ name = "KOIKI Team" }]
 license = {text = "MIT"}
 requires-python = ">=3.11.7,<4.0"
+keywords = ["fastapi", "enterprise", "framework", "async", "sqlalchemy", "library"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Framework :: FastAPI",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+# Enterprise-grade dependency management with strict versioning
 dependencies = [
-    "fastapi",
-    "uvicorn",
-    "sqlalchemy[asyncio]",
-    "asyncpg",
-    "alembic",
-    "pydantic",
-    "pydantic-settings",
-    "python-jose",
-    "passlib[bcrypt]",
-    "httpx",
-    "structlog",
-    "redis",
-    "slowapi"
+    # Core Web Framework - Latest stable with security patches
+    "fastapi>=0.115.13,<0.116.0",         # Latest stable + starlette security fix
+    "uvicorn>=0.34.3,<0.35.0",            # Updated ASGI server (major performance improvements)
+    
+    # Database Layer - Critical for data integrity
+    "sqlalchemy[asyncio]>=2.0.23,<2.1.0", # Minor version locked
+    "asyncpg>=0.30.0,<0.31.0",            # Minor version locked (Python 3.13 support)
+    "alembic>=1.16.2,<1.17.0",            # Updated database migration tool
+    
+    # Data Validation - Security critical (Compatible versions)
+    "pydantic>=2.11.7,<2.12.0",           # Updated for enhanced validation features
+    "pydantic-settings>=2.10.0,<2.11.0",  # Latest available version
+    
+    # Security & Authentication - Highest priority for fixes
+    "python-jose>=3.4.0,<3.6.0",          # Security fix (PYSEC-2024-232,233)
+    "passlib[bcrypt]>=1.7.4,<1.8.0",      # Minor version locked
+    
+    # HTTP Client & Communication
+    "httpx>=0.28.1,<0.29.0",              # Updated HTTP client
+    
+    # Logging & Monitoring
+    "structlog>=25.4.0,<25.5.0",          # Updated structured logging
+    
+    # Caching & Performance
+    "redis>=6.2.0,<6.3.0",                # Updated Redis client (major version)
+    
+    # Rate Limiting & Security
+    "slowapi>=0.1.8,<0.2.0",              # Current range (stable API)
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.1,<8.5.0",
+    "pytest-asyncio>=1.0.0,<1.1.0",
+    "pytest-cov>=6.2.1,<7.0.0",
+    "pytest-mock>=3.14.0,<4.0.0",
+]
+
+# Poetry 2.x: Minimal configuration, PEP 621 takes precedence
 [tool.poetry]
-name = "libkoiki"
-version = "0.3.0"
-description = "Enterprise-grade FastAPI application framework."
-authors = ["KOIKI Team"]
-license = "MIT"
+# Poetry 2.x: Correct package configuration for libkoiki
 packages = [{include = "*"}]
 
+# Poetry 2.x: Development dependencies in optional groups
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+# Development tools for libkoiki specifically
+pytest = ">=8.4.1,<8.5.0"
+pytest-asyncio = ">=1.0.0,<1.1.0"
+pytest-cov = ">=6.2.1,<7.0.0"
+pytest-mock = ">=3.14.0,<4.0.0"
+
+# Poetry 2.x: Testing group for CI/CD optimization
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = ">=8.4.1,<8.5.0"
+pytest-asyncio = ">=1.0.0,<1.1.0"
+pytest-cov = ">=6.2.1,<7.0.0"
+
+# Poetry 2.x: Minimized dependencies - most moved to PEP 621
 [tool.poetry.dependencies]
 python = ">=3.11.7,<4.0"
-fastapi = "*"
-uvicorn = "*"
-sqlalchemy = {extras = ["asyncio"], version = "*"}
-asyncpg = "*"
-alembic = "*"
-pydantic = "*"
-pydantic-settings = "*"
-python-jose = "*"
-passlib = {extras = ["bcrypt"], version = "*"}
-httpx = "*"
-structlog = "*"
-redis = "*"
-slowapi = "*"
+# Only Poetry-specific dependencies remain here
 
+# Poetry 2.x: Modern build system with proper versioning
 [build-system]
-requires = ["setuptools", "poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.5.0"]
 build-backend = "poetry.core.masonry.api"

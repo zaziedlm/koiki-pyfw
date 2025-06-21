@@ -1,12 +1,15 @@
 # Dockerfile
 FROM python:3.11.7-slim
 
-# 環境変数の設定
-ENV POETRY_VERSION=1.7.1 \
+# Poetry 2.x: Optimized environment variables for performance and caching
+ENV POETRY_VERSION=2.1.0 \
     POETRY_HOME=/opt/poetry \
     POETRY_VENV_CREATE=false \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_CACHE_DIR=/opt/poetry-cache \
+    POETRY_INSTALLER_PARALLEL=true \
+    POETRY_INSTALLER_MAX_WORKERS=10 \
     PATH="$POETRY_HOME/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -36,10 +39,17 @@ COPY ./alembic ./alembic
 COPY ./alembic.ini ./
 COPY ./main.py ./
 
-# 依存関係のインストール
-COPY pyproject.toml poetry.lock ./
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi
+# Poetry 2.x: Copy dependency files for better Docker layer caching
+COPY pyproject.toml poetry.lock README.md ./
+
+# Poetry 2.x: Optimize configuration and installation
+RUN mkdir -p $POETRY_CACHE_DIR \
+    && poetry config virtualenvs.create false \
+    && poetry config installer.parallel true \
+    && poetry config installer.max-workers 10 \
+    && poetry check --lock \
+    && poetry install --no-interaction --no-ansi --no-root \
+    && poetry cache clear --all pypi
 
 # docker-entrypoint.shをコピーして実行権限を付与
 COPY docker-entrypoint.sh ./
