@@ -26,21 +26,21 @@ dependencies = [
     # Database Layer - Critical for data integrity
     "sqlalchemy[asyncio]>=2.0.23,<2.1.0", # Minor version locked
     "asyncpg>=0.30.0,<0.31.0",            # Minor version locked (Python 3.13 support)
-    "alembic>=1.12.1,<1.13.0",            # Minor version locked
+    "alembic>=1.16.2,<1.17.0",            # Updated database migration tool
     
     # Data Validation - Security critical (Compatible versions)
-    "pydantic>=2.9.0,<2.10.0",            # Minor version locked (latest stable for enterprise)
-    "pydantic-settings>=2.9.1,<2.10.0",   # Minor version locked
+    "pydantic>=2.11.7,<2.12.0",           # Updated for enhanced validation features
+    "pydantic-settings>=2.10.0,<2.11.0",  # Latest available version
     
     # Security & Authentication - Highest priority for fixes
     "python-jose>=3.4.0,<3.6.0",          # Security fix (PYSEC-2024-232,233)
     "passlib[bcrypt]>=1.7.4,<1.8.0",      # Minor version locked
     
     # HTTP Client & Communication
-    "httpx>=0.25.0,<0.26.0",              # Minor version locked
+    "httpx>=0.28.1,<0.29.0",              # Updated HTTP client
     
     # Logging & Monitoring
-    "structlog>=23.2.0,<23.3.0",          # Minor version locked
+    "structlog>=25.4.0,<25.5.0",          # Updated structured logging
     
     # Caching & Performance
     "redis>=5.0.1,<5.1.0",                # Minor version locked

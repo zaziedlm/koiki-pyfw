@@ -29,13 +29,13 @@ dependencies = [
     # Database Layer (Python 3.13 compatible)
     "sqlalchemy[asyncio]>=2.0.23,<2.1.0",   # Minor version locked
     "asyncpg>=0.30.0,<0.31.0",              # Minor version locked (Python 3.13 support)
-    "alembic>=1.12.1,<1.13.0",              # Minor version locked
+    "alembic>=1.16.2,<1.17.0",              # Updated database migration tool
     "psycopg2-binary>=2.9.9,<2.10.0",       # Minor version locked
     "aiosqlite>=0.21.0,<0.22.0",            # Minor version locked (dev/test)
     
     # Data Validation & Settings (Compatible versions for enterprise)
-    "pydantic>=2.9.0,<2.10.0",              # Minor version locked (latest stable for enterprise)
-    "pydantic-settings>=2.9.1,<2.10.0",     # Minor version locked
+    "pydantic>=2.11.7,<2.12.0",             # Updated for enhanced validation features
+    "pydantic-settings>=2.10.0,<2.11.0",    # Latest available version
     "email-validator>=2.2.0,<2.3.0",        # Updated for improved validation
     
     # Security & Authentication
@@ -43,11 +43,11 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4,<1.8.0",        # Minor version locked
     
     # HTTP & Communication
-    "httpx>=0.25.0,<0.26.0",                # Minor version locked
+    "httpx>=0.28.1,<0.29.0",                # Updated HTTP client
     "python-multipart>=0.0.20,<0.1.0",      # Minor version locked
     
     # Logging & Monitoring
-    "structlog>=23.2.0,<23.3.0",            # Minor version locked
+    "structlog>=25.4.0,<25.5.0",            # Updated structured logging
     "prometheus-fastapi-instrumentator>=5.7.1,<5.8.0", # Minor version locked
     
     # Caching & Performance
@@ -56,6 +56,8 @@ dependencies = [
     
     # Local Framework Dependency
     "libkoiki",                             # Local package
+    "anyio (>=4.9.0,<5.0.0)",
+    "limits (>=5.4.0,<5.5.0)",
 ]
 
 # PEP 621: Enterprise optional dependencies with security focus
