@@ -72,7 +72,7 @@ jobs:
 
       - name: Install project in development mode
         run: |
-          poetry install --only-root
+          poetry install --no-root
           # Poetry 2.x: Verify installation
           poetry env info
 
