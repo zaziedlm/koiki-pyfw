@@ -53,7 +53,7 @@ dependencies = [
 dev = [
     "pytest>=7.4.0,<8.0.0",
     "pytest-asyncio>=0.23.0,<1.0.0",
-    "pytest-cov>=6.1.1,<7.0.0",
+    "pytest-cov>=6.2.1,<7.0.0",
     "pytest-mock>=3.14.0,<4.0.0",
 ]
 
@@ -70,7 +70,7 @@ optional = true
 # Development tools for libkoiki specifically
 pytest = ">=7.4.0,<8.0.0"
 pytest-asyncio = ">=0.23.0,<1.0.0"
-pytest-cov = ">=6.1.1,<7.0.0"
+pytest-cov = ">=6.2.1,<7.0.0"
 pytest-mock = ">=3.14.0,<4.0.0"
 
 # Poetry 2.x: Testing group for CI/CD optimization
@@ -80,7 +80,7 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = ">=7.4.0,<8.0.0"
 pytest-asyncio = ">=0.23.0,<1.0.0"
-pytest-cov = ">=6.1.1,<7.0.0"
+pytest-cov = ">=6.2.1,<7.0.0"
 
 # Poetry 2.x: Minimized dependencies - most moved to PEP 621
 [tool.poetry.dependencies]

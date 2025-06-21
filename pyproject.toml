@@ -36,7 +36,7 @@ dependencies = [
     # Data Validation & Settings (Compatible versions for enterprise)
     "pydantic>=2.9.0,<2.10.0",              # Minor version locked (latest stable for enterprise)
     "pydantic-settings>=2.9.1,<2.10.0",     # Minor version locked
-    "email-validator>=2.1.0,<2.2.0",        # Minor version locked
+    "email-validator>=2.2.0,<2.3.0",        # Updated for improved validation
     
     # Security & Authentication
     "python-jose>=3.4.0,<3.6.0",            # Security fix (PYSEC-2024-232,233)
@@ -64,7 +64,7 @@ dev = [
     # Testing Framework (minor version locked)
     "pytest>=7.4.0,<7.5.0",
     "pytest-asyncio>=0.23.0,<0.24.0",
-    "pytest-cov>=6.1.1,<6.2.0",
+    "pytest-cov>=6.2.1,<6.3.0",
     "pytest-mock>=3.14.0,<3.15.0",
     
     # Security & Quality Assurance (pydantic 2.7+ compatible)
@@ -74,7 +74,7 @@ dev = [
 test = [
     "pytest>=7.4.0,<7.5.0",
     "pytest-asyncio>=0.23.0,<0.24.0",
-    "pytest-cov>=6.1.1,<6.2.0",
+    "pytest-cov>=6.2.1,<6.3.0",
     "pytest-mock>=3.14.0,<3.15.0",
 ]
 security = [
@@ -98,7 +98,7 @@ optional = true
 # Development dependencies managed here for Poetry 2.x features
 pytest = ">=7.4.0,<7.5.0"
 pytest-asyncio = ">=0.23.0,<0.24.0"
-pytest-cov = ">=6.1.1,<6.2.0"
+pytest-cov = ">=6.2.1,<6.3.0"
 pytest-mock = ">=3.14.0,<3.15.0"
 # Security tools (pydantic 2.7+ compatible)
 pip-audit = ">=2.9.0,<3.0.0"
