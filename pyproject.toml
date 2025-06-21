@@ -24,7 +24,7 @@ classifiers = [
 dependencies = [
     # Core Web Framework
     "fastapi>=0.115.13,<0.116.0",           # Latest stable + starlette security fix
-    "uvicorn>=0.24.0,<0.25.0",              # Minor version locked
+    "uvicorn>=0.34.3,<0.35.0",              # Updated ASGI server (major performance improvements)
     
     # Database Layer (Python 3.13 compatible)
     "sqlalchemy[asyncio]>=2.0.23,<2.1.0",   # Minor version locked
@@ -48,24 +48,26 @@ dependencies = [
     
     # Logging & Monitoring
     "structlog>=25.4.0,<25.5.0",            # Updated structured logging
-    "prometheus-fastapi-instrumentator>=5.7.1,<5.8.0", # Minor version locked
+    "prometheus-fastapi-instrumentator>=7.1.0,<7.2.0", # Updated monitoring instrumentation
     
     # Caching & Performance
-    "redis>=5.0.1,<5.1.0",                  # Minor version locked
+    "redis>=6.2.0,<6.3.0",                  # Updated Redis client (major version)
     "slowapi>=0.1.8,<0.2.0",                # Current range (stable API)
     
     # Local Framework Dependency
     "libkoiki",                             # Local package
     "anyio (>=4.9.0,<5.0.0)",
     "limits (>=5.4.0,<5.5.0)",
+    "pytest (>=8.4.1,<8.5.0)",
+    "pytest-asyncio (>=1.0.0,<1.1.0)",
 ]
 
 # PEP 621: Enterprise optional dependencies with security focus
 [project.optional-dependencies]
 dev = [
     # Testing Framework (minor version locked)
-    "pytest>=7.4.0,<7.5.0",
-    "pytest-asyncio>=0.23.0,<0.24.0",
+    "pytest>=8.4.1,<8.5.0",
+    "pytest-asyncio>=1.0.0,<1.1.0",
     "pytest-cov>=6.2.1,<6.3.0",
     "pytest-mock>=3.14.0,<3.15.0",
     
@@ -74,8 +76,8 @@ dev = [
     "bandit>=1.8.0,<1.9.0",              # Security linter (pydantic independent)
 ]
 test = [
-    "pytest>=7.4.0,<7.5.0",
-    "pytest-asyncio>=0.23.0,<0.24.0",
+    "pytest>=8.4.1,<8.5.0",
+    "pytest-asyncio>=1.0.0,<1.1.0",
     "pytest-cov>=6.2.1,<6.3.0",
     "pytest-mock>=3.14.0,<3.15.0",
 ]
@@ -98,8 +100,8 @@ optional = true
 
 [tool.poetry.group.dev.dependencies]
 # Development dependencies managed here for Poetry 2.x features
-pytest = ">=7.4.0,<7.5.0"
-pytest-asyncio = ">=0.23.0,<0.24.0"
+pytest = ">=8.4.1,<8.5.0"
+pytest-asyncio = ">=1.0.0,<1.1.0"
 pytest-cov = ">=6.2.1,<6.3.0"
 pytest-mock = ">=3.14.0,<3.15.0"
 # Security tools (pydantic 2.7+ compatible)

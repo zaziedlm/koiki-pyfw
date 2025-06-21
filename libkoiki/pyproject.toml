@@ -21,7 +21,7 @@ classifiers = [
 dependencies = [
     # Core Web Framework - Latest stable with security patches
     "fastapi>=0.115.13,<0.116.0",         # Latest stable + starlette security fix
-    "uvicorn>=0.24.0,<0.25.0",            # Minor version locked
+    "uvicorn>=0.34.3,<0.35.0",            # Updated ASGI server (major performance improvements)
     
     # Database Layer - Critical for data integrity
     "sqlalchemy[asyncio]>=2.0.23,<2.1.0", # Minor version locked
@@ -43,7 +43,7 @@ dependencies = [
     "structlog>=25.4.0,<25.5.0",          # Updated structured logging
     
     # Caching & Performance
-    "redis>=5.0.1,<5.1.0",                # Minor version locked
+    "redis>=6.2.0,<6.3.0",                # Updated Redis client (major version)
     
     # Rate Limiting & Security
     "slowapi>=0.1.8,<0.2.0",              # Current range (stable API)
@@ -51,8 +51,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.4.0,<8.0.0",
-    "pytest-asyncio>=0.23.0,<1.0.0",
+    "pytest>=8.4.1,<8.5.0",
+    "pytest-asyncio>=1.0.0,<1.1.0",
     "pytest-cov>=6.2.1,<7.0.0",
     "pytest-mock>=3.14.0,<4.0.0",
 ]
@@ -68,8 +68,8 @@ optional = true
 
 [tool.poetry.group.dev.dependencies]
 # Development tools for libkoiki specifically
-pytest = ">=7.4.0,<8.0.0"
-pytest-asyncio = ">=0.23.0,<1.0.0"
+pytest = ">=8.4.1,<8.5.0"
+pytest-asyncio = ">=1.0.0,<1.1.0"
 pytest-cov = ">=6.2.1,<7.0.0"
 pytest-mock = ">=3.14.0,<4.0.0"
 
@@ -78,8 +78,8 @@ pytest-mock = ">=3.14.0,<4.0.0"
 optional = true
 
 [tool.poetry.group.test.dependencies]
-pytest = ">=7.4.0,<8.0.0"
-pytest-asyncio = ">=0.23.0,<1.0.0"
+pytest = ">=8.4.1,<8.5.0"
+pytest-asyncio = ">=1.0.0,<1.1.0"
 pytest-cov = ">=6.2.1,<7.0.0"
 
 # Poetry 2.x: Minimized dependencies - most moved to PEP 621
