@@ -161,7 +161,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title=settings.APP_NAME,
     debug=settings.DEBUG,
-    version="0.3.0", # フレームワークバージョン
+    version="0.5.0", # フレームワークバージョン
     openapi_url="/openapi.json" if settings.APP_ENV != "production" else None, # 本番では無効化も
     docs_url="/docs" if settings.APP_ENV != "production" else None,
     redoc_url="/redoc" if settings.APP_ENV != "production" else None,

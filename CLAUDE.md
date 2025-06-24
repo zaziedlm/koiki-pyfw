@@ -170,7 +170,7 @@ poetry cache list                   # List cached packages
 
 ## Architecture Overview
 
-This is KOIKI-FW v0.3.0, an enterprise-grade FastAPI application framework optimized for Poetry 2.x and PEP 621 compliance with the following key characteristics:
+This is KOIKI-FW v0.5.0, an enterprise-grade FastAPI application framework optimized for Poetry 2.x and PEP 621 compliance with the following key characteristics:
 
 ### Project Structure
 - **Root `/`**: Main application entry point and Docker configuration

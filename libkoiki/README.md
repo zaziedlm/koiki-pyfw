@@ -1,4 +1,4 @@
-# libkoiki v0.3.0
+# libkoiki v0.5.0
 
 Enterprise-grade FastAPI application framework.
 
@@ -18,4 +18,4 @@ libkoiki は FastAPI を使用したエンタープライズアプリケーシ�
 
 ## 使用方法
 
-詳細は `../docs/KOIKI-FW_0.3.0.md` ドキュメントを参照してください。
+詳細は `../KOIKI-FW_0.5.0.md` ドキュメントを参照してください。
