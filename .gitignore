@@ -22,6 +22,9 @@ venv/
 env/
 ENV/
 
+# Python version management
+.python-version
+
 # Build & distribution
 dist/
 build/
