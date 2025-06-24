@@ -793,7 +793,7 @@ files = [
 
 [[package]]
 name = "libkoiki"
-version = "0.3.0"
+version = "0.5.0"
 description = "Enterprise-grade FastAPI application framework."
 optional = false
 python-versions = ">=3.11.7,<4.0"
@@ -2221,4 +2221,4 @@ test = ["pytest", "pytest-asyncio", "pytest-cov", "pytest-mock"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.7,<4.0"
-content-hash = "14e4f81e8cd30b837a36ed444c2723903fc8723240a2b529fe20152ae435c792"
+content-hash = "61a57fe977790975b802da01a2da56157859b7c0c46a009158c85b6d7ea51304"
