@@ -104,7 +104,7 @@ GitHub Actionsによる自動テストパイプラインが設定されており
 
 このリポジトリはパブリック公開されていますが、以下の方以外による Fork・再利用はご遠慮ください。
 
-- GitHub Enterprise Organization「FDA-ODESSEY」に所属する関係者
+- Fork にあたり指定された、GitHub Enterprise Organization に所属する関係者
 - Fork の前に、必ずリポジトリ管理者（@zaziedlm）にご連絡ください
 
 違反が確認された場合、Fork元を削除依頼することがあります。
