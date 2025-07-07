@@ -24,7 +24,7 @@ class PermissionResponseSimple(BaseModel): # user.py, role.py で定義済みだ
     description: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # 完全な情報を含むレスポンス
 class PermissionResponse(PermissionBase):
@@ -34,7 +34,7 @@ class PermissionResponse(PermissionBase):
     # roles: List["RoleResponseSimple"] = [] # この権限を持つロール一覧 (必要なら)
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- PermissionResponse の Forward Ref を解決 ---
 # from .role import RoleResponseSimple # __init__.pyで解決されるはず

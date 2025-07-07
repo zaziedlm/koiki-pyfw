@@ -12,7 +12,7 @@ class PermissionResponseSimple(BaseModel):
     description: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class RoleResponseSimple(BaseModel):
     id: int
@@ -21,7 +21,7 @@ class RoleResponseSimple(BaseModel):
     # permissions: List[PermissionResponseSimple] = [] # ロールに紐づく権限も表示する場合
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # --- Base Schemas ---
@@ -64,7 +64,7 @@ class UserResponse(UserBase):
     roles: List[RoleResponseSimple] = Field([], description="List of roles assigned to the user") # ロール情報を含める
 
     class Config:
-        orm_mode = True # SQLAlchemyモデルから変換可能にする
+        from_attributes = True # SQLAlchemyモデルから変換可能にする
 
 # 詳細情報を含むレスポンススキーマ (必要に応じて)
 # class UserDetailResponse(UserResponse):

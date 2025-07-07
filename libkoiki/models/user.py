@@ -24,3 +24,9 @@ class UserModel(Base):
     todos = relationship("TodoModel", back_populates="owner", cascade="all, delete-orphan")
     # ロールとの関係
     roles = relationship("RoleModel", secondary=user_roles, back_populates="users")
+    # リフレッシュトークンとの関係
+    refresh_tokens = relationship("RefreshTokenModel", back_populates="user", cascade="all, delete-orphan")
+    # パスワードリセットトークンとの関係
+    password_reset_tokens = relationship("PasswordResetModel", back_populates="user", cascade="all, delete-orphan")
+    # ログイン試行履歴との関係
+    login_attempts = relationship("LoginAttemptModel", back_populates="user", cascade="all, delete-orphan")

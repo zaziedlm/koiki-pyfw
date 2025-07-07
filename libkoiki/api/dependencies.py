@@ -10,8 +10,14 @@ from slowapi.util import get_remote_address
 from libkoiki.db.session import get_db as get_db_session
 from libkoiki.repositories.user_repository import UserRepository
 from libkoiki.repositories.todo_repository import TodoRepository # ★ToDoリポジトリ追加★
+from libkoiki.repositories.refresh_token_repository import RefreshTokenRepository # ★リフレッシュトークンリポジトリ追加★
+from libkoiki.repositories.password_reset_repository import PasswordResetRepository # ★パスワードリセットリポジトリ追加★
+from libkoiki.repositories.login_attempt_repository import LoginAttemptRepository # ★ログイン試行リポジトリ追加★
 from libkoiki.services.user_service import UserService
 from libkoiki.services.todo_service import TodoService # ★ToDoサービス追加★
+from libkoiki.services.auth_service import AuthService # ★認証サービス追加★
+from libkoiki.services.password_reset_service import PasswordResetService # ★パスワードリセットサービス追加★
+from libkoiki.services.login_security_service import LoginSecurityService # ★ログインセキュリティサービス追加★
 from libkoiki.events.publisher import EventPublisher
 from libkoiki.core.security import get_user_from_token as get_current_user_from_token # 名前変更
 from libkoiki.models.user import UserModel
@@ -122,6 +128,31 @@ def get_todo_service() -> TodoService:
     return TodoService(repository=todo_repo)
 
 TodoServiceDep = Annotated[TodoService, Depends(get_todo_service)]
+
+# ★ 認証サービス依存性 ★
+def get_auth_service(event_publisher: EventPublisherDep) -> AuthService:
+    """AuthServiceインスタンスを生成"""
+    refresh_token_repo = RefreshTokenRepository()
+    user_repo = UserRepository()
+    return AuthService(refresh_token_repo=refresh_token_repo, user_repo=user_repo)
+
+AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
+
+# ★ パスワードリセットサービス依存性 ★
+def get_password_reset_service() -> PasswordResetService:
+    """PasswordResetServiceインスタンスを生成"""
+    password_reset_repo = PasswordResetRepository()
+    return PasswordResetService(password_reset_repository=password_reset_repo)
+
+PasswordResetServiceDep = Annotated[PasswordResetService, Depends(get_password_reset_service)]
+
+# ★ ログインセキュリティサービス依存性 ★
+def get_login_security_service() -> LoginSecurityService:
+    """LoginSecurityServiceインスタンスを生成"""
+    login_attempt_repo = LoginAttemptRepository()
+    return LoginSecurityService(login_attempt_repository=login_attempt_repo)
+
+LoginSecurityServiceDep = Annotated[LoginSecurityService, Depends(get_login_security_service)]
 
 # --- 認証・認可 ---
 # get_current_user_from_token はトークン検証とDBアクセスを行う
