@@ -1,23 +1,27 @@
 # src/models/password_reset.py
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
 from typing import Optional
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 from libkoiki.db.base import Base
 
 
 class PasswordResetModel(Base):
     """パスワードリセットトークンモデル"""
+
     __tablename__ = "password_reset_tokens"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    # BaseからのIDカラムを使用（手動定義不要）
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     token_hash = Column(String(255), nullable=False, unique=True, index=True)
     expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
     is_used = Column(Boolean, default=False, nullable=False, index=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    # Baseからのcreated_atを使用（重複定義を削除）
     used_at = Column(DateTime(timezone=True), nullable=True)
     ip_address = Column(String(45), nullable=True)  # IPv6対応
     user_agent = Column(Text, nullable=True)
