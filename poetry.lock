@@ -2221,4 +2221,4 @@ test = ["pytest", "pytest-asyncio", "pytest-cov", "pytest-mock"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.7,<4.0"
-content-hash = "61a57fe977790975b802da01a2da56157859b7c0c46a009158c85b6d7ea51304"
+content-hash = "c663a40543f12240e81dbf3649c53fddeb971c4fbcbb9693942804b11d78b384"
