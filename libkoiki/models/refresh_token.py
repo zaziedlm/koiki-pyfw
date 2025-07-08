@@ -23,6 +23,9 @@ class RefreshTokenModel(Base):
     device_info = Column(Text, nullable=True)  # JSON文字列として保存
     # Baseからのcreated_atを使用（重複定義を削除）
     last_used_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Base class の updated_at は不要だが要件を満たすため None に設定
+    updated_at = None
 
     # リレーション
     user = relationship("UserModel", back_populates="refresh_tokens")

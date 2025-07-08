@@ -1,8 +1,8 @@
 # src/repositories/login_attempt_repository.py
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
-from sqlalchemy import and_, desc, func, select
+from sqlalchemy import and_, desc, func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from libkoiki.models.login_attempt import LoginAttemptModel
@@ -53,7 +53,7 @@ class LoginAttemptRepository:
         if not self.session:
             raise RuntimeError("Database session not initialized")
 
-        window_start = datetime.utcnow() - timedelta(minutes=minutes)
+        window_start = datetime.now(timezone.utc) - timedelta(minutes=minutes)
 
         query = (
             select(LoginAttemptModel)
@@ -77,7 +77,7 @@ class LoginAttemptRepository:
         if not self.session:
             raise RuntimeError("Database session not initialized")
 
-        window_start = datetime.utcnow() - timedelta(minutes=minutes)
+        window_start = datetime.now(timezone.utc) - timedelta(minutes=minutes)
 
         query = (
             select(LoginAttemptModel)
@@ -101,7 +101,7 @@ class LoginAttemptRepository:
         if not self.session:
             raise RuntimeError("Database session not initialized")
 
-        window_start = datetime.utcnow() - timedelta(minutes=minutes)
+        window_start = datetime.now(timezone.utc) - timedelta(minutes=minutes)
 
         query = select(func.count(LoginAttemptModel.id)).where(
             and_(
@@ -121,7 +121,7 @@ class LoginAttemptRepository:
         if not self.session:
             raise RuntimeError("Database session not initialized")
 
-        window_start = datetime.utcnow() - timedelta(minutes=minutes)
+        window_start = datetime.now(timezone.utc) - timedelta(minutes=minutes)
 
         query = select(func.count(LoginAttemptModel.id)).where(
             and_(
@@ -156,21 +156,18 @@ class LoginAttemptRepository:
         return result.scalars().first()
 
     async def cleanup_old_attempts(self, days: int = 30) -> int:
-        """古いログイン試行履歴を削除"""
+        """古いログイン試行履歴を削除（バッチ削除で最適化）"""
         if not self.session:
             raise RuntimeError("Database session not initialized")
 
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
 
-        query = select(LoginAttemptModel).where(
+        # 効率的なバッチ削除を実行
+        delete_query = delete(LoginAttemptModel).where(
             LoginAttemptModel.attempted_at < cutoff_date
         )
 
-        result = await self.session.execute(query)
-        old_attempts = result.scalars().all()
+        result = await self.session.execute(delete_query)
+        deleted_count = result.rowcount
 
-        for attempt in old_attempts:
-            await self.session.delete(attempt)
-
-        await self.session.commit()
-        return len(old_attempts)
+        return deleted_count

@@ -1,5 +1,5 @@
 # src/services/login_security_service.py
-import time
+import asyncio
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
 
@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from libkoiki.core.config import settings
 from libkoiki.core.exceptions import AuthenticationException
+from libkoiki.core.security_config import get_login_security_config
 from libkoiki.models.login_attempt import LoginAttemptModel
 from libkoiki.repositories.login_attempt_repository import LoginAttemptRepository
 
@@ -16,12 +17,25 @@ class LoginSecurityService:
 
     def __init__(self, login_attempt_repository: LoginAttemptRepository):
         self.login_attempt_repository = login_attempt_repository
-
-        # 設定値（将来的にconfigから取得）
-        self.max_attempts_per_email = 5  # メールアドレス単位の最大失敗試行数
-        self.max_attempts_per_ip = 10  # IP単位の最大失敗試行数
-        self.lockout_duration_minutes = 15  # ロックアウト期間（分）
-        self.progressive_delay_base = 2  # 段階的遅延のベース（秒）
+        
+        # 設定値を外部設定から取得
+        self.config = get_login_security_config()
+        
+    @property
+    def max_attempts_per_email(self) -> int:
+        return self.config.max_attempts_per_email
+    
+    @property
+    def max_attempts_per_ip(self) -> int:
+        return self.config.max_attempts_per_ip
+    
+    @property
+    def lockout_duration_minutes(self) -> int:
+        return self.config.lockout_duration_minutes
+    
+    @property
+    def progressive_delay_base(self) -> int:
+        return self.config.progressive_delay_base
 
     async def check_login_allowed(
         self, email: str, ip_address: str, db: AsyncSession
@@ -119,7 +133,7 @@ class LoginSecurityService:
             return 0
 
         # 指数関数的な遅延（上限あり）
-        delay = min(self.progressive_delay_base ** (max_attempts - 1), 30)  # 最大30秒
+        delay = min(self.progressive_delay_base ** (max_attempts - 1), self.config.max_progressive_delay)
         return int(delay)
 
     async def apply_progressive_delay(
@@ -128,7 +142,7 @@ class LoginSecurityService:
         """段階的遅延を適用"""
         delay = await self.get_progressive_delay(email, ip_address, db)
         if delay > 0:
-            time.sleep(delay)
+            await asyncio.sleep(delay)
 
     async def get_lockout_status(
         self, email: str, ip_address: str, db: AsyncSession

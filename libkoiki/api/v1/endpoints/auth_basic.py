@@ -15,6 +15,8 @@ from libkoiki.api.dependencies import (
 from libkoiki.core.auth_decorators import handle_auth_errors
 from libkoiki.core.rate_limiter import limiter
 from libkoiki.core.security import extract_device_info
+from libkoiki.core.security_logger import security_logger
+from libkoiki.core.security_metrics import security_metrics
 from libkoiki.schemas.auth import AuthResponse
 from libkoiki.schemas.token import TokenWithRefresh
 from libkoiki.schemas.user import UserCreate, UserResponse
@@ -64,6 +66,17 @@ async def login_for_access_token(
             ip_address=ip_address,
             reason=lockout_reason,
         )
+        
+        # セキュリティログに記録
+        security_logger.log_account_lockout(
+            email=email,
+            ip_address=ip_address,
+            lockout_type="security_policy",
+            attempt_count=0,  # 詳細な回数は後で取得可能
+            lockout_duration=retry_after or 0,
+            additional_data={"reason": lockout_reason}
+        )
+        
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=lockout_reason,
@@ -87,6 +100,21 @@ async def login_for_access_token(
             db=db,
             user_agent=device_info,
             failure_reason="invalid_credentials",
+        )
+
+        # セキュリティログとメトリクスに記録
+        security_logger.log_authentication_attempt(
+            email=email,
+            ip_address=ip_address,
+            user_agent=device_info,
+            success=False,
+            failure_reason="invalid_credentials"
+        )
+        security_metrics.record_authentication_attempt(
+            success=False,
+            email=email,
+            ip_address=ip_address,
+            failure_reason="invalid_credentials"
         )
 
         logger.warning(
@@ -130,6 +158,20 @@ async def login_for_access_token(
         db=db,
         user_id=user.id,
         user_agent=device_info,
+    )
+    
+    # セキュリティログとメトリクスに成功を記録
+    security_logger.log_authentication_attempt(
+        email=email,
+        ip_address=ip_address,
+        user_agent=device_info,
+        success=True,
+        user_id=user.id
+    )
+    security_metrics.record_authentication_attempt(
+        success=True,
+        email=email,
+        ip_address=ip_address
     )
 
     # トークンペアの生成

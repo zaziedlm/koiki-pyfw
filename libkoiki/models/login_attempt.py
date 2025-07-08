@@ -1,5 +1,5 @@
 # src/models/login_attempt.py
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -29,6 +29,12 @@ class LoginAttemptModel(Base):
     attempted_at = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )
+    
+    # Base class の created_at を attempted_at にマップ (semantically correct)
+    created_at = attempted_at
+    
+    # updated_at は不要だが Base class 要件を満たすため None に設定
+    updated_at = None
 
     # リレーションシップ（ユーザーが削除された場合はuser_idがNULLになる）
     user = relationship("UserModel", back_populates="login_attempts")
@@ -36,7 +42,7 @@ class LoginAttemptModel(Base):
     @classmethod
     def get_lockout_window_start(cls, minutes: int = 15) -> datetime:
         """アカウントロックアウトの時間枠開始時刻を取得"""
-        return datetime.utcnow() - timedelta(minutes=minutes)
+        return datetime.now(timezone.utc) - timedelta(minutes=minutes)
 
     def is_within_window(self, minutes: int = 15) -> bool:
         """指定した時間枠内の試行かどうかを確認"""

@@ -1,5 +1,7 @@
 # src/services/user_service.py
 from typing import Optional, Sequence  # 必要な型のみをインポート
+import asyncio
+import secrets
 
 import structlog
 from sqlalchemy import select
@@ -13,6 +15,7 @@ from libkoiki.core.security import (
     get_password_hash,
     verify_password,
 )
+from libkoiki.core.security_config import get_login_security_config
 from libkoiki.core.transaction import transactional  # トランザクションデコレータ
 from libkoiki.events.publisher import EventPublisher
 from libkoiki.models.user import UserModel
@@ -274,29 +277,56 @@ class UserService:
         self, email: str, password: str, db: Optional[AsyncSession] = None
     ) -> Optional[UserModel]:
         """
-        ユーザーを認証します。
+        ユーザーを認証します。タイミング攻撃対策を含む。
         成功した場合はユーザーモデルを、失敗した場合は None を返します。
         """
         logger.debug("Service: Authenticating user", email=email)
+        
+        # 最小応答時間を設定（タイミング攻撃対策）
+        config = get_login_security_config()
+        min_response_time = config.min_response_time
+        start_time = asyncio.get_event_loop().time()
+        
         # DBセッションが渡された場合は設定
         if db is not None:
             self.repository.set_session(db)
+        
         user = await self.repository.get_by_email(email)
+        
+        # ユーザーが存在しない場合でも、パスワード検証を実行してタイミングを一定にする
         if not user:
+            # ダミーのハッシュ値でパスワード検証を実行
+            dummy_hash = "$2b$12$dummy.hash.for.timing.attack.protection.abcdefghijklmnopqrstuvwxyz"
+            verify_password(password, dummy_hash)
             logger.info("Authentication failed: User not found", email=email)
+            
+            # 一定時間の応答時間を保証
+            await self._ensure_min_response_time(start_time, min_response_time)
             return None
+        
+        # パスワード検証
         if not verify_password(password, user.hashed_password):
             logger.info(
                 "Authentication failed: Incorrect password",
                 email=email,
                 user_id=user.id,
             )
-            # TODO: ログイン失敗回数を記録・ロックアウトする機能を追加検討
+            # 一定時間の応答時間を保証
+            await self._ensure_min_response_time(start_time, min_response_time)
             return None
+        
         # 認証成功
         logger.info("Authentication successful", email=email, user_id=user.id)
-        # TODO: 最終ログイン日時を更新する処理を追加検討
+        
+        # 一定時間の応答時間を保証
+        await self._ensure_min_response_time(start_time, min_response_time)
         return user
+    
+    async def _ensure_min_response_time(self, start_time: float, min_time: float) -> None:
+        """最小応答時間を保証する（タイミング攻撃対策）"""
+        elapsed = asyncio.get_event_loop().time() - start_time
+        if elapsed < min_time:
+            await asyncio.sleep(min_time - elapsed)
 
     @transactional
     async def delete_user(self, user_id: int, db: AsyncSession) -> Optional[UserModel]:
