@@ -1,12 +1,18 @@
 # src/api/v1/router.py
 from fastapi import APIRouter
 
-from libkoiki.api.v1.endpoints import auth, users, todos # ★ ToDo エンドポイントをインポート
+from libkoiki.api.v1.endpoints import (  # ★ ToDo エンドポイントをインポート
+    auth,
+    todos,
+    users,
+)
 
 api_router = APIRouter()
 
 # 認証ルーター
-api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+# api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+# タグは、認証系APIの統合ルーターで設定済
+api_router.include_router(auth.router, prefix="/auth")
 # ユーザールーター
 api_router.include_router(users.router, prefix="/users", tags=["Users"])
 # ★ ToDo ルーター ★
