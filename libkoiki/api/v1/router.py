@@ -14,9 +14,9 @@ api_router = APIRouter()
 # タグは、認証系APIの統合ルーターで設定済
 api_router.include_router(auth.router, prefix="/auth")
 # ユーザールーター
-api_router.include_router(users.router, prefix="/users", tags=["Users"])
+api_router.include_router(users.router, prefix="/users", tags=["Admin Users"])
 # ★ ToDo ルーター ★
-api_router.include_router(todos.router, prefix="/todos", tags=["ToDos"])
+api_router.include_router(todos.router, prefix="/todos", tags=["ToDos Sample"])
 
 # 他の機能のルーターもここに追加
 # api_router.include_router(items.router, prefix="/items", tags=["Items"])
