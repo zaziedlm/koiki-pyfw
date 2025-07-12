@@ -26,6 +26,7 @@ class TestUserServiceDatabase:
         
         # テストデータ
         user_data = UserCreate(
+            username="integration_user",
             email="integration_test@example.com",
             password="TestPass123@",
             full_name="Integration Test User"
@@ -61,6 +62,7 @@ class TestUserServiceDatabase:
         
         # テストデータ
         user_data = UserCreate(
+            username="duplicate_user",
             email="duplicate_test@example.com",
             password="TestPass123@",
             full_name="Duplicate Test User"
@@ -92,6 +94,7 @@ class TestUserServiceDatabase:
         
         # テストデータ
         user_data = UserCreate(
+            username="weak_password_user",
             email="weak_password@example.com",
             password="weak",
             full_name="Weak Password User"
@@ -122,6 +125,7 @@ class TestUserServiceDatabase:
         
         # テストユーザーを作成
         user_data = UserCreate(
+            username="get_test_user",
             email="get_test@example.com",
             password="TestPass123@",
             full_name="Get Test User"
@@ -172,6 +176,7 @@ class TestUserServiceDatabase:
         
         # テストユーザーを作成
         user_data = UserCreate(
+            username="get_id_test_user",
             email="get_id_test@example.com",
             password="TestPass123@",
             full_name="Get ID Test User"
@@ -207,6 +212,7 @@ class TestUserServiceDatabase:
         
         # テストユーザーを作成
         user_data = UserCreate(
+            username="auth_test_user",
             email="auth_test@example.com",
             password="TestPass123@",
             full_name="Auth Test User"
@@ -241,6 +247,7 @@ class TestUserServiceDatabase:
         
         # テストユーザーを作成
         user_data = UserCreate(
+            username="auth_invalid_user",
             email="auth_invalid@example.com",
             password="TestPass123@",
             full_name="Auth Invalid User"
@@ -294,6 +301,7 @@ class TestUserServiceDatabase:
         
         # テストユーザーを作成
         user_data = UserCreate(
+            username="update_test_user",
             email="update_test@example.com",
             password="TestPass123@",
             full_name="Update Test User"

@@ -27,6 +27,7 @@ class TestAuthServiceDatabase:
         
         # テストユーザーを作成
         user_data = UserCreate(
+            username="auth_token_user",
             email="auth_token_test@example.com",
             password="TestPass123@",
             full_name="Auth Token Test User"
@@ -67,6 +68,7 @@ class TestAuthServiceDatabase:
         
         # テストユーザーを作成
         user_data = UserCreate(
+            username="refresh_token_user",
             email="refresh_token_test@example.com",
             password="TestPass123@",
             full_name="Refresh Token Test User"
@@ -131,6 +133,7 @@ class TestAuthServiceDatabase:
         
         # テストユーザーを作成
         user_data = UserCreate(
+            username="revoke_tokens_user",
             email="revoke_tokens_test@example.com",
             password="TestPass123@",
             full_name="Revoke Tokens Test User"
@@ -177,6 +180,7 @@ class TestAuthServiceDatabase:
         
         # テストユーザーを作成
         user_data = UserCreate(
+            username="get_tokens_user",
             email="get_tokens_test@example.com",
             password="TestPass123@",
             full_name="Get Tokens Test User"

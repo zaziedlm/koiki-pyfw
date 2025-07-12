@@ -61,6 +61,7 @@ class TestUserService:
     def user_create_data(self):
         """ユーザー作成データ"""
         return UserCreate(
+            username="testuser",
             email="test@example.com",
             password="TestPass123@",
             full_name="Test User"
