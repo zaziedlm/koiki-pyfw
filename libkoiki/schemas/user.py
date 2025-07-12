@@ -26,6 +26,7 @@ class RoleResponseSimple(BaseModel):
 
 # --- Base Schemas ---
 class UserBase(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, description="User's username (unique identifier)")
     email: EmailStr = Field(..., description="User's email address (unique identifier)")
     full_name: Optional[str] = Field(None, max_length=255, description="User's full name")
     is_active: bool = Field(True, description="Whether the user account is active") # デフォルト値を True に変更
@@ -48,6 +49,7 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     # 更新時は必要なフィールドだけ送る想定なので、Baseを継承しない
     # 全てのフィールドをオプショナルにする
+    username: Optional[str] = Field(None, min_length=3, max_length=50, description="New username for the user")
     email: Optional[EmailStr] = Field(None, description="New email address for the user")
     full_name: Optional[str] = Field(None, max_length=255, description="New full name for the user")
     is_active: Optional[bool] = Field(None, description="Set user account active status")

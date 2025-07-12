@@ -122,6 +122,12 @@ class UserService:
             logger.warning("Service: Email already exists", email=user_in.email)
             raise ValidationException("This email address is already registered.")
 
+        # ユーザー名の重複チェック
+        existing_user_by_username = await self.repository.get_by_username(user_in.username)
+        if existing_user_by_username:
+            logger.warning("Service: Username already exists", username=user_in.username)
+            raise ValidationException("This username is already taken.")
+
         # パスワードポリシーチェック
         if not check_password_complexity(user_in.password):
             logger.warning(
@@ -295,8 +301,8 @@ class UserService:
         
         # ユーザーが存在しない場合でも、パスワード検証を実行してタイミングを一定にする
         if not user:
-            # ダミーのハッシュ値でパスワード検証を実行
-            dummy_hash = "$2b$12$dummy.hash.for.timing.attack.protection.abcdefghijklmnopqrstuvwxyz"
+            # ダミーのハッシュ値でパスワード検証を実行（有効なbcryptハッシュ形式）
+            dummy_hash = "$2b$12$T0xrEGNSEy98yCTLWQR2De3N2zlNFkSyXpr8TYo2VbGjDykX/ZndW"
             verify_password(password, dummy_hash)
             logger.info("Authentication failed: User not found", email=email)
             
