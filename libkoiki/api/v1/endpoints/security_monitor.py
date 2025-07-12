@@ -7,27 +7,15 @@ from typing import Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from libkoiki.api.dependencies import ActiveUserDep
+from libkoiki.api.dependencies import ActiveUserDep, has_permission
 from libkoiki.core.security_metrics import security_metrics
 from libkoiki.models.user import UserModel
 
 router = APIRouter()
 
 
-def require_admin_user(current_user: UserModel = Depends()) -> UserModel:
-    """管理者権限を要求する依存関数"""
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Administrator privileges required"
-        )
-    return current_user
-
-
-@router.get("/metrics", response_model=Dict[str, Any])
-async def get_security_metrics(
-    admin_user: UserModel = Depends(require_admin_user),
-) -> Dict[str, Any]:
+@router.get("/metrics", response_model=Dict[str, Any], dependencies=[has_permission("read:security_metrics")])
+async def get_security_metrics() -> Dict[str, Any]:
     """
     セキュリティメトリクス全体を取得
     
@@ -36,10 +24,8 @@ async def get_security_metrics(
     return security_metrics.get_metrics()
 
 
-@router.get("/metrics/authentication", response_model=Dict[str, Any])
-async def get_authentication_stats(
-    admin_user: UserModel = Depends(require_admin_user),
-) -> Dict[str, Any]:
+@router.get("/metrics/authentication", response_model=Dict[str, Any], dependencies=[has_permission("read:security_metrics")])
+async def get_authentication_stats() -> Dict[str, Any]:
     """
     認証統計情報を取得
     
@@ -48,10 +34,8 @@ async def get_authentication_stats(
     return security_metrics.get_authentication_stats()
 
 
-@router.get("/metrics/summary", response_model=Dict[str, Any])
-async def get_security_summary(
-    admin_user: UserModel = Depends(require_admin_user),
-) -> Dict[str, Any]:
+@router.get("/metrics/summary", response_model=Dict[str, Any], dependencies=[has_permission("read:security_metrics")])
+async def get_security_summary() -> Dict[str, Any]:
     """
     セキュリティサマリーを取得
     
@@ -60,10 +44,8 @@ async def get_security_summary(
     return security_metrics.get_security_summary()
 
 
-@router.post("/metrics/reset")
-async def reset_security_metrics(
-    admin_user: UserModel = Depends(require_admin_user),
-) -> Dict[str, str]:
+@router.post("/metrics/reset", dependencies=[has_permission("manage:security_metrics")])
+async def reset_security_metrics() -> Dict[str, str]:
     """
     セキュリティメトリクスをリセット
     

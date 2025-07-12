@@ -5,6 +5,7 @@ from libkoiki.api.v1.endpoints import (  # ★ ToDo エンドポイントをイ�
     auth,
     todos,
     users,
+    security_monitor,
 )
 
 api_router = APIRouter()
@@ -17,6 +18,9 @@ api_router.include_router(auth.router, prefix="/auth")
 api_router.include_router(users.router, prefix="/users", tags=["Admin Users"])
 # ★ ToDo ルーター ★
 api_router.include_router(todos.router, prefix="/todos", tags=["ToDos Sample"])
+
+# セキュリティ監視ルーター
+api_router.include_router(security_monitor.router, prefix="/security", tags=["Security Monitoring"])
 
 # 他の機能のルーターもここに追加
 # api_router.include_router(items.router, prefix="/items", tags=["Items"])
