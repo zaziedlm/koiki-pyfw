@@ -207,13 +207,29 @@ setup_exception_handlers(app)
 app.include_router(api_router_v1, prefix=settings.API_PREFIX)
 logger.info("API router v1 included.", prefix=settings.API_PREFIX)
 
-# --- ルートエンドポイント (ヘルスチェックなど) ---
-@app.get("/", tags=["Health Check"])
+# --- ヘルスチェックエンドポイント ---
+@app.get("/health", tags=["Health Check"])
+async def health_check(request: Request):
+    """システムヘルスチェック"""
+    from datetime import datetime
+    logger.debug("Health check endpoint called.")
+    return {
+        "status": "healthy",
+        "service": "koiki-framework",
+        "version": "0.5.0",
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }
+
+# --- ルートエンドポイント (API情報) ---
+@app.get("/", tags=["Service Info"])
 async def root(request: Request):
-    """基本的なヘルスチェックエンドポイント"""
+    """API情報とドキュメントリンク"""
     logger.debug("Root endpoint called.")
-    # 依存性から Limiter を取得する例（必須ではない）
-    # limiter: Limiter = request.app.state.limiter
-    return {"message": f"Welcome to {settings.APP_NAME}!"}
+    return {
+        "service": "KOIKI Framework API",
+        "version": "0.5.0",
+        "docs": "/docs",
+        "health": "/health"
+    }
 
 # Uvicorn で実行する場合: uvicorn main:app --reload
