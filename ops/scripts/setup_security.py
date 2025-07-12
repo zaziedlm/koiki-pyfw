@@ -40,7 +40,7 @@ async def setup_permissions(session: AsyncSession) -> dict:
         result = await session.execute(
             select(PermissionModel).where(PermissionModel.name == perm_data["name"])
         )
-        existing_perm = result.scalar_one_or_none()
+        existing_perm = result.unique().scalar_one_or_none()
 
         if not existing_perm:
             permission = PermissionModel(
@@ -67,7 +67,7 @@ async def setup_roles(session: AsyncSession, permissions: dict) -> dict:
         result = await session.execute(
             select(RoleModel).where(RoleModel.name == role_data["name"])
         )
-        existing_role = result.scalar_one_or_none()
+        existing_role = result.unique().scalar_one_or_none()
 
         if not existing_role:
             role = RoleModel(
@@ -110,7 +110,7 @@ async def cleanup_existing_test_users(session: AsyncSession):
     for email in test_emails:
         stmt = select(UserModel).where(UserModel.email == email)
         result = await session.execute(stmt)
-        user = result.scalar_one_or_none()
+        user = result.unique().scalar_one_or_none()
         if user:
             # 関連データが自動削除されるようにDelete処理を実行
             await session.delete(user)
@@ -120,7 +120,7 @@ async def cleanup_existing_test_users(session: AsyncSession):
     for username in test_usernames:
         stmt = select(UserModel).where(UserModel.username == username)
         result = await session.execute(stmt)
-        user = result.scalar_one_or_none()
+        user = result.unique().scalar_one_or_none()
         if user:
             await session.delete(user)
             print(f"  🗑️  削除: {username}")

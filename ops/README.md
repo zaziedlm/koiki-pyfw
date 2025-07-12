@@ -22,6 +22,70 @@ ops/
 
 ## 🚀 クイックスタート
 
+### 🎯 最新の推奨方法
+
+```bash
+# プロジェクトルートから一発実行
+./run_security_test.sh test
+
+# 初回実行（セットアップ付き）
+./run_security_test.sh setup
+```
+
+### 📋 従来の方法（opsディレクトリから）
+
+```bash
+# 1. Docker環境を起動（プロジェクトルートから）
+cd /path/to/koiki-pyfw && docker-compose up -d
+
+# 2. opsディレクトリに移動
+cd ops
+
+# 3. テスト実行
+bash scripts/security_test_manager.sh test
+```
+
+### ワンライナー実行（従来）
+
+```bash
+# プロジェクトルートから一気に実行
+docker-compose up -d && cd ops && bash scripts/security_test_manager.sh test
+```
+
+## ⚡ テスト実行方法（OS別）
+
+### 🎯 推奨方法（全OS共通）
+```bash
+# プロジェクトルートから（最も簡単）
+./run_security_test.sh test
+```
+
+### 📋 従来方法（OS別）
+
+#### macOS / Linux
+```bash
+# 基本テスト
+bash scripts/security_test_manager.sh test
+
+# 完全セットアップ + テスト
+bash scripts/security_test_manager.sh setup && bash scripts/security_test_manager.sh test
+```
+
+#### Windows (PowerShell)
+```powershell
+# 基本テスト
+.\scripts\security_test_manager.ps1 test
+
+# 完全セットアップ + テスト
+.\scripts\security_test_manager.ps1 setup; .\scripts\security_test_manager.ps1 test
+```
+
+#### Windows (Git Bash / WSL)
+```bash
+# macOS/Linuxと同じ
+bash scripts/security_test_manager.sh test
+```
+
 ## 📋 利用可能なコマンド
 
 | コマンド | 説明 |
@@ -35,6 +99,52 @@ ops/
 | `logs` | ログ確認 |
 | `db-check` | データベース内容確認 |
 | `manual-test` | 手動テスト用情報表示 |
+
+## 🔧 実行例とコマンド対応表
+
+### 🎯 推奨方法（プロジェクトルートから）
+
+```bash
+# ヘルプ表示
+./run_security_test.sh help
+
+# セキュリティ環境セットアップ（初回実行時）
+./run_security_test.sh setup
+
+# セキュリティAPIテスト実行
+./run_security_test.sh test
+
+# 統合テスト実行
+./run_security_test.sh test-full
+```
+
+### 📋 従来方法（opsディレクトリから）
+
+```bash
+# ヘルプ表示
+bash scripts/security_test_manager.sh help
+
+# セキュリティ環境セットアップ（初回実行時）
+bash scripts/security_test_manager.sh setup
+
+# セキュリティAPIテスト実行
+bash scripts/security_test_manager.sh test
+
+# 統合テスト実行
+bash scripts/security_test_manager.sh test-full
+```
+
+### 完全なコマンド対応表
+
+| 目的 | 推奨方法（ルートから） | 従来方法（opsから） | Windows PowerShell | 説明 |
+|------|---------------------|------------------|-------------------|------|
+| ヘルプ | `./run_security_test.sh help` | `bash scripts/security_test_manager.sh help` | `.\scripts\security_test_manager.ps1 help` | 利用可能なコマンド表示 |
+| セットアップ | `./run_security_test.sh setup` | `bash scripts/security_test_manager.sh setup` | `.\scripts\security_test_manager.ps1 setup` | 権限データとテストユーザー作成 |
+| テスト実行 | `./run_security_test.sh test` | `bash scripts/security_test_manager.sh test` | `.\scripts\security_test_manager.ps1 test` | セキュリティAPIテスト |
+| 統合テスト | `./run_security_test.sh test-full` | `bash scripts/security_test_manager.sh test-full` | `.\scripts\security_test_manager.ps1 test-full` | 全てのAPIテスト |
+| ログ確認 | `./run_security_test.sh logs` | `bash scripts/security_test_manager.sh logs` | `.\scripts\security_test_manager.ps1 logs` | アプリケーションログ表示 |
+| DB確認 | `./run_security_test.sh db-check` | `bash scripts/security_test_manager.sh db-check` | `.\scripts\security_test_manager.ps1 db-check` | データベース内容確認 |
+| リセット | `./run_security_test.sh reset` | `bash scripts/security_test_manager.sh reset` | `.\scripts\security_test_manager.ps1 reset` | 全データ削除と再セットアップ |
 
 ## 🔧 従来のMakefileからの移行
 
