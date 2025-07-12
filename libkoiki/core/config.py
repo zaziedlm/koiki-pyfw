@@ -4,8 +4,6 @@ from typing import List, Optional, Union, Dict, Any
 
 class Settings(BaseSettings):
     # 既存の設定...
-    API_V1_STR: str = "/api/v1"
-    SECRET_KEY: str = "development_secret_key"
     # JWT Access Token有効期限（開発環境：60分、本番環境：15分推奨）
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     # Refresh Token有効期限（日数）

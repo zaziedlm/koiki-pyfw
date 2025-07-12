@@ -75,18 +75,6 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
              user = request.state.current_user
              if hasattr(user, 'id'): user_id = user.id
              if hasattr(user, 'email'): user_email = user.email
-        # または、トークンデコードのみ行う（DBアクセスなし）
-        # elif "Authorization" in request.headers and request.headers["Authorization"].startswith("Bearer "):
-        #     token = request.headers["Authorization"].split(" ")[1]
-        #     try:
-        #         from jose import jwt
-        #         from libkoiki.core.config import settings
-        #         from libkoiki.schemas.token import TokenPayload
-        #         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM], options={"verify_exp": False}) # 有効期限切れでもIDは取得試行
-        #         token_data = TokenPayload(**payload)
-        #         user_id = int(token_data.sub) if token_data.sub else None
-        #     except Exception:
-        #         pass # トークン無効など
 
         # --- structlog コンテキストからリクエスト情報を取得 ---
         log_context = structlog.contextvars.get_contextvars()

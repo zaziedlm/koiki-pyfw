@@ -33,7 +33,6 @@ def test_settings():
     return Settings(
         APP_ENV="testing",
         DATABASE_URL="postgresql+asyncpg://koiki_user:koiki_password@localhost:5432/koiki_todo_db",
-        SECRET_KEY="test-secret-key",
         DEBUG=True,
         REDIS_ENABLED=False,
     )
