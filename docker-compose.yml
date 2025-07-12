@@ -44,6 +44,7 @@ services:
       - ./libkoiki:/app/libkoiki # フレームワークコード
       - ./alembic:/app/alembic # Alembic 設定
       - ./alembic.ini:/app/alembic.ini
+      - ./ops:/app/ops # 運用・テストスクリプト
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload # 開発時はリロード有効
     restart: always
 
