@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table
+from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from libkoiki.db.base import Base
@@ -29,3 +29,15 @@ class RoleModel(Base):
         back_populates="roles",
         lazy="joined",
     )
+
+    def __repr__(self):
+        return f"<Role(id={self.id}, name='{self.name}')>"
+
+    @property
+    def permission_names(self) -> List[str]:
+        """このロールが持つ権限名のリストを返す"""
+        return [perm.name for perm in self.permissions if perm.name]
+
+    def has_permission(self, permission_name: str) -> bool:
+        """指定された権限を持っているかチェック"""
+        return permission_name in self.permission_names

@@ -18,6 +18,9 @@ class UserModel(Base):
     __tablename__ = "users"  # テーブル名を "user" から "users" に変更
 
     # BaseからのIDカラムを使用（手動定義不要）
+    username = Column(
+        String(50), unique=True, index=True, nullable=False
+    )  # ユーザー名追加
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     full_name = Column(String, index=True)
