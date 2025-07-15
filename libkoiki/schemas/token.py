@@ -7,6 +7,13 @@ class Token(BaseModel):
     access_token: str = Field(..., description="JWT access token")
     token_type: str = Field("bearer", description="Token type (always 'bearer')")
 
+class TokenWithRefresh(BaseModel):
+    """アクセストークンとリフレッシュトークンのペア"""
+    access_token: str = Field(..., description="JWT access token")
+    refresh_token: str = Field(..., description="JWT refresh token")
+    token_type: str = Field("bearer", description="Token type (always 'bearer')")
+    expires_in: int = Field(..., description="Access token expiration time in seconds")
+
 class TokenPayload(BaseModel):
     """JWTトークンのペイロード (内容)"""
     sub: Optional[str] = Field(None, description="Subject of the token (usually user ID)")

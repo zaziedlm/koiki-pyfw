@@ -28,4 +28,4 @@ class TodoResponse(TodoBase):
     updated_at: datetime = Field(..., description="Timestamp when the ToDo was last updated")
 
     class Config:
-        orm_mode = True # SQLAlchemyモデルインスタンスから変換できるようにする
+        from_attributes = True # SQLAlchemyモデルインスタンスから変換できるようにする

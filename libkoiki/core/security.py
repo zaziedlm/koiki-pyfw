@@ -17,6 +17,8 @@ from libkoiki.models.user import UserModel
 from libkoiki.models.role import RoleModel # RoleModelをインポート
 from libkoiki.models.permission import PermissionModel # PermissionModelをインポート
 import structlog
+import secrets
+import hashlib
 
 logger = structlog.get_logger(__name__)
 
@@ -177,6 +179,105 @@ def check_password_complexity(password: str) -> bool:
         return False
     logger.debug("Password complexity check passed")
     return True
+
+# --- リフレッシュトークン管理 ---
+
+def generate_refresh_token() -> str:
+    """
+    暗号学的に安全なリフレッシュトークンを生成します。
+    
+    Returns:
+        64文字のランダムな16進文字列
+    """
+    return secrets.token_hex(32)  # 32バイト = 64文字の16進文字列
+
+def hash_refresh_token(token: str) -> str:
+    """
+    リフレッシュトークンをハッシュ化します。
+    
+    Args:
+        token: 平文のリフレッシュトークン
+        
+    Returns:
+        SHA-256でハッシュ化されたトークン（16進文字列）
+    """
+    return hashlib.sha256(token.encode()).hexdigest()
+
+def create_token_pair(user_id: int, device_info: Optional[str] = None) -> tuple[str, str, int]:
+    """
+    アクセストークンとリフレッシュトークンのペアを作成します。
+    
+    Args:
+        user_id: ユーザーID
+        device_info: デバイス情報（オプション）
+        
+    Returns:
+        タプル: (access_token, refresh_token, expires_in_seconds)
+    """
+    # アクセストークン生成
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        subject=user_id, expires_delta=access_token_expires
+    )
+    
+    # リフレッシュトークン生成
+    refresh_token = generate_refresh_token()
+    
+    logger.debug(
+        "Token pair created", 
+        user_id=user_id, 
+        access_expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+        has_device_info=bool(device_info)
+    )
+    
+    return access_token, refresh_token, settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
+def verify_refresh_token_format(token: str) -> bool:
+    """
+    リフレッシュトークンの形式を検証します。
+    
+    Args:
+        token: 検証するトークン
+        
+    Returns:
+        形式が正しければTrue、そうでなければFalse
+    """
+    if not token or not isinstance(token, str):
+        return False
+    
+    # 64文字の16進文字列かチェック
+    if len(token) != 64:
+        return False
+        
+    try:
+        int(token, 16)  # 16進文字列として解析可能かチェック
+        return True
+    except ValueError:
+        return False
+
+def extract_device_info(request: Optional[Any] = None) -> Optional[str]:
+    """
+    リクエストからデバイス情報を抽出します。
+    
+    Args:
+        request: FastAPIのRequestオブジェクト（オプション）
+        
+    Returns:
+        JSON文字列形式のデバイス情報、またはNone
+    """
+    if not request:
+        return None
+        
+    try:
+        import json
+        device_info = {
+            "user_agent": request.headers.get("user-agent", ""),
+            "ip_address": getattr(request.client, "host", "") if request.client else "",
+        }
+        return json.dumps(device_info)
+    except Exception as e:
+        logger.warning("Failed to extract device info", error=str(e))
+        return None
 
 # --- UserRepository に get_user_with_roles_permissions を追加する必要がある ---
 # (user_repository.py に実装済み)

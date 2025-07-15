@@ -47,6 +47,36 @@ docker-compose logs -f app
 *   ルートエンドポイント: [http://localhost:8000/](http://localhost:8000/)
 ## テストの実行
 
+### セキュリティAPIテスト
+
+KOIKI-FWの権限管理システムとセキュリティAPIをテストする場合：
+
+#### 🚀 推奨実行方法（プロジェクトルートから）
+```bash
+# 環境起動 + テスト実行（ワンコマンド）
+./run_security_test.sh test
+
+# 初回実行（セットアップ付き）
+./run_security_test.sh setup
+
+# ヘルプ表示
+./run_security_test.sh help
+```
+
+#### 📋 従来の方法（opsディレクトリから）
+```bash
+# 環境起動
+docker-compose up -d
+
+# セキュリティテスト実行
+cd ops
+bash scripts/security_test_manager.sh test
+```
+
+📚 **詳細情報:**
+- クイックガイド: `QUICK_TEST_GUIDE.md`
+- 詳細なテスト手順: `ops/README.md`
+
 ### ローカルでのテスト実行
 
 ```bash

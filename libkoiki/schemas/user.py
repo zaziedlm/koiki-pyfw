@@ -12,7 +12,7 @@ class PermissionResponseSimple(BaseModel):
     description: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class RoleResponseSimple(BaseModel):
     id: int
@@ -21,12 +21,13 @@ class RoleResponseSimple(BaseModel):
     # permissions: List[PermissionResponseSimple] = [] # ロールに紐づく権限も表示する場合
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # --- Base Schemas ---
 class UserBase(BaseModel):
-    email: EmailStr = Field(..., description="User's email address (unique identifier)")
+    username: str = Field(..., min_length=3, max_length=50, description="User's display name (email is used for login)")
+    email: EmailStr = Field(..., description="User's email address (login ID)")
     full_name: Optional[str] = Field(None, max_length=255, description="User's full name")
     is_active: bool = Field(True, description="Whether the user account is active") # デフォルト値を True に変更
 
@@ -48,7 +49,8 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     # 更新時は必要なフィールドだけ送る想定なので、Baseを継承しない
     # 全てのフィールドをオプショナルにする
-    email: Optional[EmailStr] = Field(None, description="New email address for the user")
+    username: Optional[str] = Field(None, min_length=3, max_length=50, description="New display name for the user")
+    email: Optional[EmailStr] = Field(None, description="New email address (login ID) for the user")
     full_name: Optional[str] = Field(None, max_length=255, description="New full name for the user")
     is_active: Optional[bool] = Field(None, description="Set user account active status")
     # パスワード更新も可能にする (任意)
@@ -64,7 +66,7 @@ class UserResponse(UserBase):
     roles: List[RoleResponseSimple] = Field([], description="List of roles assigned to the user") # ロール情報を含める
 
     class Config:
-        orm_mode = True # SQLAlchemyモデルから変換可能にする
+        from_attributes = True # SQLAlchemyモデルから変換可能にする
 
 # 詳細情報を含むレスポンススキーマ (必要に応じて)
 # class UserDetailResponse(UserResponse):

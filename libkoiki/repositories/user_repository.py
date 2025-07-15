@@ -30,6 +30,14 @@ class UserRepository(BaseRepository[UserModel, UserCreate, UserUpdate]):
         #     logger.debug("User not found by email", email=email)
         return user
 
+    async def get_by_username(self, username: str) -> Optional[UserModel]:
+        """ユーザー名に基づいてユーザーを取得します"""
+        logger.debug("Getting user by username", username=username)
+        stmt = select(UserModel).where(UserModel.username == username)
+        result = await self.db.execute(stmt)
+        user = result.scalar_one_or_none()
+        return user
+
     async def get_user_with_roles_permissions(self, user_id: int) -> Optional[UserModel]:
         """
         ユーザー情報をロールと権限と共に Eager Loading して取得します。
