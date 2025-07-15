@@ -80,7 +80,7 @@ jobs:
         run: |
           # Poetry 2.x: Use dependency groups for testing
           poetry run pytest --cov=app --cov=libkoiki --cov-report=term-missing --cov-report=html \
-            tests/unit/app
+            tests/unit/app/
           # Poetry 2.x: Additional environment check
           poetry show --tree --only=main
 
