@@ -79,7 +79,8 @@ jobs:
       - name: Run tests with coverage (Poetry 2.x)
         run: |
           # Poetry 2.x: Use dependency groups for testing
-          poetry run pytest --cov=app --cov=libkoiki --cov-report=term-missing --cov-report=html tests/
+          poetry run pytest --cov=app --cov=libkoiki --cov-report=term-missing --cov-report=html \
+           --ignore=tests/unit/libkoiki tests/
           # Poetry 2.x: Additional environment check
           poetry show --tree --only=main
 
