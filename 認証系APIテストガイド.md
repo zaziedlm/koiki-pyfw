@@ -1,7 +1,7 @@
 # 認証系APIテストガイド
 
 **更新日**: 2025-07-09  
-**対象フレームワーク**: KOIKI-FW v0.5.0  
+**対象フレームワーク**: KOIKI-FW v0.6.0  
 **テストフレームワーク**: pytest + FastAPI TestClient + pytest-asyncio  
 
 ## 概要

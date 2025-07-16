@@ -161,7 +161,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title=settings.APP_NAME,
     debug=settings.DEBUG,
-    version="0.5.0", # フレームワークバージョン
+    version="0.6.0", # フレームワークバージョン
     openapi_url="/openapi.json" if settings.APP_ENV != "production" else None, # 本番では無効化も
     docs_url="/docs" if settings.APP_ENV != "production" else None,
     redoc_url="/redoc" if settings.APP_ENV != "production" else None,
@@ -216,7 +216,7 @@ async def health_check(request: Request):
     return {
         "status": "healthy",
         "service": "koiki-framework",
-        "version": "0.5.0",
+        "version": "0.6.0",
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
@@ -227,7 +227,7 @@ async def root(request: Request):
     logger.debug("Root endpoint called.")
     return {
         "service": "KOIKI Framework API",
-        "version": "0.5.0",
+        "version": "0.6.0",
         "docs": "/docs",
         "health": "/health"
     }

@@ -793,7 +793,7 @@ files = [
 
 [[package]]
 name = "libkoiki"
-version = "0.5.0"
+version = "0.6.0"
 description = "Enterprise-grade FastAPI application framework."
 optional = false
 python-versions = ">=3.11.7,<4.0"

@@ -114,7 +114,7 @@ bash scripts/security_test_manager.sh db-check
 
 - 詳細なテスト手順: `ops/README.md`
 - API仕様: http://localhost:8000/docs （環境起動後）
-- システム設計: `docs/design_kkfw_0.5.0.md`
+- システム設計: `docs/design_kkfw_0.6.0.md`
 
 ---
 **🎉 Happy Testing with KOIKI-FW!**
