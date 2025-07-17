@@ -1,6 +1,6 @@
 # 認証系APIテストガイド
 
-**更新日**: 2025-07-09  
+**更新日**: 2025-07-17  
 **対象フレームワーク**: KOIKI-FW v0.6.0  
 **テストフレームワーク**: pytest + FastAPI TestClient + pytest-asyncio  
 
@@ -454,101 +454,6 @@ poetry run pytest tests/unit/test_simple_auth.py tests/unit/app/services/test_my
 この手順により、@transactionalデコレータやその他のフレームワーク機能に依存せず、純粋なビジネスロジックをテストできる、保守性の高いテストコードを作成できます。
 
 ---
+**🎉 Happy Testing with KOIKI-FW v0.6.0!**
 
-🔍 現在テストされている認証系API
-
-✅ 完全にテストされているAPI（基本認証のみ）
-
-POST /api/v1/auth/register    # ユーザー登録
-POST /api/v1/auth/login       # ログイン
-GET  /api/v1/auth/me          # 現在のユーザー情報
-POST /api/v1/auth/logout      # ログアウト
-
-❌ 未テストの認証系API（多数存在）
-
-パスワード管理機能
-
-POST /api/v1/auth/password-change           # 
-パスワード変更
-POST /api/v1/auth/password-reset/request    # 
-パスワードリセット要求
-POST /api/v1/auth/password-reset/confirm    # 
-パスワードリセット確認
-
-トークン管理機能
-
-POST /api/v1/auth/refresh                   # 
-トークンリフレッシュ
-POST /api/v1/auth/revoke-all-tokens        # 
-全トークン無効化
-
-セキュリティ監視機能
-
-GET  /api/v1/auth/metrics                   # 
-セキュリティメトリクス
-GET  /api/v1/auth/metrics/authentication    # 認証統計情報
-GET  /api/v1/auth/metrics/summary           # 
-セキュリティサマリー
-POST /api/v1/auth/metrics/reset             # 
-メトリクスリセット
-GET  /api/v1/auth/health                    # 
-セキュリティヘルスチェック
-
-🚨 テストカバレッジの課題
-
-現在のテストは **基本認証機能（4つのAPI）**のみをカバーし
-ており、10個以上の重要なAPIが未テストです。
-
-優先度別の追加テスト必要性
-
-🔥 高優先度：セキュリティ重要機能
-
-## これらのAPIは本番環境で必須
-POST /api/v1/auth/refresh                   # 
-トークンリフレッシュ
-POST /api/v1/auth/password-change           # 
-パスワード変更
-POST /api/v1/auth/revoke-all-tokens        # 
-セキュリティ対応
-
-⚠️ 中優先度：運用機能
-
-## パスワードリセット機能
-POST /api/v1/auth/password-reset/request
-POST /api/v1/auth/password-reset/confirm
-
-📊 低優先度：監視機能
-
-## セキュリティ監視系（管理者機能）
-GET /api/v1/auth/metrics/*
-
-💡 推奨対応
-
-1. 即座に追加すべきテスト
-
-## tests/integration/app/api/test_auth_token_api.py を作成
-poetry run pytest
-tests/integration/app/api/test_auth_token_api.py -v
-
-## tests/integration/app/api/test_auth_password_api.py 
-を作成
-poetry run pytest
-tests/integration/app/api/test_auth_password_api.py -v
-
-2. 修正されたテストガイドに追加
-
-## 未実装のテスト（追加推奨）
-
-### 🔥 高優先度
-- POST /api/v1/auth/refresh (トークンリフレッシュ)
-- POST /api/v1/auth/password-change (パスワード変更)
-- POST /api/v1/auth/revoke-all-tokens (全トークン無効化)
-
-### ⚠️ 中優先度
-- POST /api/v1/auth/password-reset/request
-(パスワードリセット要求)
-- POST /api/v1/auth/password-reset/confirm
-(パスワードリセット確認)
-
-### 📊 低優先度
-- GET /api/v1/auth/metrics/* (セキュリティ監視系)
+**重要**: 既に実装済みの高機能認証APIのテスト作成により、プロダクションレディなテストカバレッジを実現できます。

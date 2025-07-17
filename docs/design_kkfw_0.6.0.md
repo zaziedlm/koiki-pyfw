@@ -439,14 +439,6 @@ class Settings(BaseSettings):
 settings = Settings()
 ```
 
-@lru_cache() # 設定オブジェクトをキャッシュして再利用
-def get_settings() -> Settings:
-    return Settings()
-
-# グローバルインスタンスの作成
-settings = get_settings()
-```
-
 **環境設定の優先順位:**
 1. OS環境変数
 2. `.env` ファイル（`ENV_FILE`で指定されたもの、またはデフォルトの `.env`）
