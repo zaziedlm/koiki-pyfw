@@ -171,7 +171,24 @@ app = FastAPI(
 # --- ミドルウェア設定 ---
 # 注意: ミドルウェアの順序は重要。外側から内側へ処理される。
 # 1. CORS (最初に適用することが多い)
-if settings.BACKEND_CORS_ORIGINS:
+# 開発環境では寛容なCORS設定（プロキシリダイレクト問題を回避）
+if settings.APP_ENV == "development":
+    # 開発環境用の寛容なCORS設定
+    development_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000", 
+        "http://localhost:8000",
+        "http://127.0.0.1:8000"
+    ]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=development_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    logger.info("CORS middleware enabled for development", origins=development_origins)
+elif settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
