@@ -21,7 +21,7 @@ export function AuthGuard({
   const [isChecking, setIsChecking] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, user, isLoading, refreshUser } = useAuthStore();
+  const { isAuthenticated, user, isLoading, refreshUser, checkTokenValidity } = useAuthStore();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -31,6 +31,9 @@ export function AuthGuard({
       }
 
       try {
+        // トークンの有効性をチェック
+        checkTokenValidity();
+        
         // Try to refresh user data if we think we're authenticated but don't have user data
         if (isAuthenticated && !user) {
           await refreshUser();
@@ -43,7 +46,18 @@ export function AuthGuard({
     };
 
     checkAuth();
-  }, [isAuthenticated, user, isLoading, refreshUser]);
+  }, [isAuthenticated, user, isLoading, refreshUser, checkTokenValidity]);
+
+  // トークンの定期チェック（5分ごと）
+  useEffect(() => {
+    if (requireAuth && isAuthenticated) {
+      const interval = setInterval(() => {
+        checkTokenValidity();
+      }, 5 * 60 * 1000); // 5分ごと
+
+      return () => clearInterval(interval);
+    }
+  }, [requireAuth, isAuthenticated, checkTokenValidity]);
 
   // Handle authentication redirect in useEffect to avoid rendering during render
   useEffect(() => {

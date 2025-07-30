@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AuthState, UserResponse, LoginCredentials, RegisterData } from '@/types';
 import { authApi, tokenStorage } from '@/lib/api-client';
+import { isTokenExpired } from '@/lib/token-utils';
 
 interface AuthStore extends AuthState {
   // Actions
@@ -9,6 +10,7 @@ interface AuthStore extends AuthState {
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  checkTokenValidity: () => void;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
 }
@@ -39,6 +41,9 @@ export const useAuthStore = create<AuthStore>()(
           // Store tokens first
           tokenStorage.set('koiki_access_token', access_token);
           tokenStorage.set('koiki_refresh_token', refresh_token);
+
+          // トークンの有効性をチェック
+          get().checkTokenValidity();
 
           // Set authenticated state first
           set({
@@ -158,6 +163,35 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
+      checkTokenValidity: () => {
+        const token = tokenStorage.get('koiki_access_token');
+        const state = get();
+        
+        // トークンが存在しない場合、またはトークンが期限切れの場合
+        if (!token || isTokenExpired(token)) {
+          if (state.isAuthenticated) {
+            // 認証状態をクリア
+            tokenStorage.clear();
+            set({
+              isAuthenticated: false,
+              user: null,
+              token: null,
+              refreshToken: null,
+              error: null,
+            });
+          }
+        } else {
+          // トークンが有効で、まだ認証状態がセットされていない場合
+          if (!state.isAuthenticated) {
+            set({
+              isAuthenticated: true,
+              token,
+              refreshToken: tokenStorage.get('koiki_refresh_token'),
+            });
+          }
+        }
+      },
+
       clearError: () => set({ error: null }),
       
       setLoading: (loading: boolean) => set({ isLoading: loading }),
@@ -165,9 +199,14 @@ export const useAuthStore = create<AuthStore>()(
     {
       name: 'auth-store',
       partialize: (state) => ({
-        isAuthenticated: state.isAuthenticated,
-        user: state.user,
+        user: state.user, // ユーザー情報のみ永続化（認証状態はトークンから判断）
       }),
+      onRehydrateStorage: () => (state) => {
+        // ストア復元時にトークンの有効性をチェック
+        if (state) {
+          state.checkTokenValidity();
+        }
+      },
     }
   )
 );

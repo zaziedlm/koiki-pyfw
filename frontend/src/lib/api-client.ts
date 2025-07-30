@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { config } from './config';
+import { isTokenExpired } from './token-utils';
 
 // Token storage utilities
 export const tokenStorage = {
@@ -32,12 +33,49 @@ const createApiClient = (): AxiosInstance => {
     },
   });
 
-  // Request interceptor to add auth token
+  // Request interceptor to add auth token and check expiration
   client.interceptors.request.use(
-    (config) => {
+    async (config) => {
       const token = tokenStorage.get('koiki_access_token');
+      
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        // トークンの有効期限をチェック（60秒の猶予時間）
+        if (isTokenExpired(token, 60)) {
+          // トークンが期限切れの場合、リフレッシュを試みる
+          const refreshToken = tokenStorage.get('koiki_refresh_token');
+          if (refreshToken) {
+            try {
+              const response = await axios.post(
+                `${config.api.baseUrl}/auth/refresh`,
+                { refresh_token: refreshToken }
+              );
+
+              const { access_token, refresh_token: newRefreshToken } = response.data;
+              tokenStorage.set('koiki_access_token', access_token);
+              tokenStorage.set('koiki_refresh_token', newRefreshToken);
+              
+              // 新しいトークンを使用
+              config.headers.Authorization = `Bearer ${access_token}`;
+            } catch (refreshError) {
+              // リフレッシュに失敗した場合、トークンをクリア
+              tokenStorage.clear();
+              if (typeof window !== 'undefined') {
+                window.location.href = '/auth/login';
+              }
+              return Promise.reject(new Error('Token refresh failed'));
+            }
+          } else {
+            // リフレッシュトークンがない場合、ログインページにリダイレクト
+            tokenStorage.clear();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
+            return Promise.reject(new Error('No refresh token available'));
+          }
+        } else {
+          // トークンが有効な場合、そのまま使用
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
       return config;
     },
