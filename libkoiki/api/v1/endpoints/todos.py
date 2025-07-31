@@ -22,7 +22,7 @@ router = APIRouter()
 
 # --- ToDo 作成 ---
 @router.post(
-    "/",
+    "",
     response_model=TodoResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new ToDo item for the current user",
@@ -51,7 +51,7 @@ async def create_todo(
 
 # --- ログインユーザーのToDo一覧取得 ---
 @router.get(
-    "/",
+    "",
     response_model=List[TodoResponse],
     summary="Get ToDo items for the current user",
     description="Retrieves a list of ToDo items belonging to the logged-in user.",
