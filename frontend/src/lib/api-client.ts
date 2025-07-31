@@ -200,12 +200,12 @@ export const authApi = {
 // Todo API methods
 export const todoApi = {
   getAll: (params?: { skip?: number; limit?: number }) =>
-    apiClient.get('/todos/', { params }),
+    apiClient.get('/todos', { params }),
 
   getById: (id: number) => apiClient.get(`/todos/${id}`),
 
   create: (data: { title: string; description?: string }) =>
-    apiClient.post('/todos/', data),
+    apiClient.post('/todos', data),
 
   update: (id: number, data: { title?: string; description?: string; is_completed?: boolean }) =>
     apiClient.put(`/todos/${id}`, data),
@@ -225,7 +225,7 @@ export const userApi = {
   }) => apiClient.put('/users/me', data),
 
   getAll: (params?: { skip?: number; limit?: number }) =>
-    apiClient.get('/users/', { params }),
+    apiClient.get('/users', { params }),
 
   getById: (id: number) => apiClient.get(`/users/${id}`),
 
@@ -235,7 +235,7 @@ export const userApi = {
     password: string;
     full_name?: string;
     is_active?: boolean;
-  }) => apiClient.post('/users/', data),
+  }) => apiClient.post('/users', data),
 
   update: (id: number, data: {
     username?: string;
