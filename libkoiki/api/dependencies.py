@@ -155,8 +155,8 @@ def get_login_security_service() -> LoginSecurityService:
 LoginSecurityServiceDep = Annotated[LoginSecurityService, Depends(get_login_security_service)]
 
 # --- 認証・認可 ---
-# get_current_user_from_token はトークン検証とDBアクセスを行う
-CurrentUserDep = Annotated[UserModel, Depends(get_current_user_from_token)]
+# get_current_user_from_token はトークン検証とユーザーIDを返す（DBアクセスは別途実行）
+CurrentUserDep = Annotated[int, Depends(get_current_user_from_token)]
 
 # アクティブユーザーチェック
 async def get_current_active_user(

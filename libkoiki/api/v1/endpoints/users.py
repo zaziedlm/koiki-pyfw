@@ -23,7 +23,7 @@ router = APIRouter()
 
 # --- ユーザー作成 ---
 @router.post(
-    "/",
+    "",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new user",
@@ -102,7 +102,7 @@ async def update_user_me(
 
 # --- ユーザー一覧取得 (管理者/特定権限持ち) ---
 @router.get(
-    "/",
+    "",
     response_model=List[UserResponse],
     summary="Get a list of users",
     description="Retrieves a list of users. Requires 'read:users' permission.",
