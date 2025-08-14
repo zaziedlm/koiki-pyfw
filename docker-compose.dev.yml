@@ -1,0 +1,38 @@
+# Development override for Docker Compose
+# Use: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://app:8000
+      - NEXT_PUBLIC_ENABLE_DEV_TOOLS=true
+      - NEXT_PUBLIC_DEBUG=true
+    command: npm run dev -- --turbopack --hostname 0.0.0.0 --port 3000
+    volumes:
+      # Enable hot reload for frontend development
+      - ./frontend/src:/app/src:cached
+      - ./frontend/public:/app/public:cached
+      - /app/node_modules # 匿名ボリュームでnode_modulesを保護
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  app:
+    # Keep backend in development mode for hot reload
+    environment:
+      - APP_ENV=development
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload # 開発時はリロード有効
+    volumes:
+      # Enable hot reload for backend development
+      - ./app:/app/app:cached # アプリケーションコード
+      - ./libkoiki:/app/libkoiki:cached # フレームワークコード
+      - ./alembic:/app/alembic:cached # Alembic 設定
+      - ./alembic.ini:/app/alembic.ini:cached
+      - ./ops:/app/ops:cached # 運用・テストスクリプト
