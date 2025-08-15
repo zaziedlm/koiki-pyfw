@@ -1,8 +1,8 @@
 # Optimized Dockerfile for Next.js frontend application
 FROM node:20-alpine
 
-# Install libc6-compat for compatibility with Alpine
-RUN apk add --no-cache libc6-compat
+# Install libc6-compat for compatibility with Alpine and wget for health checks
+RUN apk add --no-cache libc6-compat wget curl
 
 # Set working directory
 WORKDIR /app
@@ -35,9 +35,9 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Health check
+# Health check using Node.js built-in http module
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+  CMD node -e "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))" || exit 1
 
 # Start command (will be overridden by docker-compose for development)
 CMD ["npm", "start"]
