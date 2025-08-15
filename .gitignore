@@ -3,6 +3,7 @@
 .env.*
 !.env.ci
 !.env.example
+!.env.test
 
 # Database
 *.db
