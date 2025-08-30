@@ -13,7 +13,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useLogin } from '@/hooks';
 import { useCookieLogin } from '@/hooks/use-cookie-auth-queries';
 import { useUIStore } from '@/stores';
-import { config as appConfig } from '@/lib/config';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 const loginSchema = z.object({

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { randomBytes } from 'crypto';
 
 // CSRF トークン設定
 export const CSRF_CONFIG = {
@@ -9,21 +8,24 @@ export const CSRF_CONFIG = {
   MAX_AGE: 24 * 60 * 60, // 24時間
 } as const;
 
-// CSRF トークンを生成
+// CSRF トークンを生成（Edge Runtime 対応）
 export function generateCSRFToken(): string {
-  return randomBytes(CSRF_CONFIG.TOKEN_LENGTH).toString('hex');
+  // Edge Runtime では Web Crypto API を使用
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint8Array(CSRF_CONFIG.TOKEN_LENGTH);
+    crypto.getRandomValues(array);
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  }
+  
+  // フォールバック: Math.random を使用（セキュリティは劣るが動作する）
+  const chars = '0123456789abcdef';
+  let result = '';
+  for (let i = 0; i < CSRF_CONFIG.TOKEN_LENGTH * 2; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
 }
 
-// CSRF トークンをCookieに設定（httpOnly=false、JavaScript から読み取り可能）
-export function setCSRFTokenCookie(response: NextResponse, token: string) {
-  response.cookies.set(CSRF_CONFIG.COOKIE_NAME, token, {
-    httpOnly: false, // JavaScriptから読み取り可能にする
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: CSRF_CONFIG.MAX_AGE,
-    path: '/',
-  });
-}
 
 // CSRF トークンを検証
 export function validateCSRFToken(request: NextRequest): boolean {
@@ -51,14 +53,15 @@ export function createCSRFErrorResponse(): NextResponse {
   );
 }
 
-// CSRF トークンを取得するためのエンドポイント用ヘルパー
-export function createCSRFTokenResponse(): NextResponse {
-  const token = generateCSRFToken();
-  const response = NextResponse.json({
-    message: 'CSRF token generated',
-    csrf_token: token,
+// CSRF トークンをCookieに設定（API Routes用のヘルパー）
+// 注意: この関数は Edge Runtime では動作しません。Node.js runtime でのみ使用してください。
+export function setCSRFTokenCookie(response: NextResponse, token: string) {
+  response.cookies.set(CSRF_CONFIG.COOKIE_NAME, token, {
+    httpOnly: false, // JavaScriptから読み取り可能にする
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: CSRF_CONFIG.MAX_AGE,
+    path: '/',
   });
-
-  setCSRFTokenCookie(response, token);
-  return response;
 }
+

@@ -22,9 +22,16 @@ export async function GET(request: NextRequest) {
     // Get access token from cookies
     const accessToken = request.cookies.get('koiki_access_token')?.value;
     
+    // Debug: Log all available cookies
+    console.log('=== TODO API DEBUG ===');
+    console.log('All cookies:', request.cookies.getAll());
+    console.log('koiki_access_token cookie:', request.cookies.get('koiki_access_token'));
+    console.log('Access token value:', accessToken ? `${accessToken.substring(0, 20)}...` : 'NULL');
+    
     if (!accessToken) {
       // Keep security-related logs for audit purposes
       console.warn('Todo GET: Authentication failed - No access token');
+      console.warn('Available cookie names:', request.cookies.getAll().map(c => c.name));
       return NextResponse.json(
         { error: 'Authentication required', detail: 'Access token not found' },
         { status: 401 }

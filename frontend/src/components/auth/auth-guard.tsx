@@ -125,7 +125,7 @@ export function AuthGuard({
 
   // Check role-based access
   if (requireAuth && isAuthenticated && requiredRoles.length > 0) {
-    const userRoles = user?.roles?.map((role: any) => role.name) || [];
+    const userRoles = user?.roles?.map((role: { name: string }) => role.name) || [];
     const hasRequiredRole = requiredRoles.some((role: string) => 
       userRoles.includes(role) || user?.is_superuser
     );

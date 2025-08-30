@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Use Node.js runtime for enterprise stability (Next.js 15 best practice)
-export const runtime = 'nodejs';
+// Use experimental-edge runtime for Next.js 15 compatibility
+export const runtime = 'experimental-edge';
 
 // Define protected routes that require authentication
 const PROTECTED_ROUTES = ['/dashboard', '/profile', '/admin', '/settings'] as const;
@@ -12,7 +12,7 @@ const LOGIN_PATH = '/auth/login';
 // Environment-based logging (Next.js 15 best practice)
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-function log(message: string, data?: any) {
+function log(message: string, data?: unknown) {
   if (isDevelopment) {
     console.log(`[MIDDLEWARE] ${message}`, data || '');
   }
@@ -78,4 +78,4 @@ export const config = {
     '/admin/:path*',
     '/settings/:path*',
   ],
-} as const;
+};

@@ -12,7 +12,9 @@ class CookieApiClient {
   // CSRFトークンを取得・設定
   public async initializeCSRFToken(): Promise<void> {
     try {
-      const response = await fetch('/api/auth/csrf');
+      // サーバーサイドでも動作するように絶対URLを使用
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/auth/csrf`);
       if (response.ok) {
         const data = await response.json();
         this.csrfToken = data.csrf_token;

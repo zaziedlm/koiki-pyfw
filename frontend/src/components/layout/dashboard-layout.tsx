@@ -143,7 +143,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       if (!user) return false;
       
       if (item.roles && item.roles.length > 0) {
-        const userRoles = user?.roles?.map((role: any) => role.name) || [];
+        const userRoles = user?.roles?.map((role: { name: string }) => role.name) || [];
         return item.roles.some((role: string) => userRoles.includes(role)) || user?.is_superuser;
       }
       
