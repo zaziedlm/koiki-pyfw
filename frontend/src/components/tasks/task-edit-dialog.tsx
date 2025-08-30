@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUpdateTodo } from '@/hooks';
+import { useCookieUpdateTodo } from '@/hooks/use-cookie-todo-queries';
 import { useUIStore } from '@/stores';
 import { TodoResponse } from '@/types';
 import { Loader2 } from 'lucide-react';
@@ -44,7 +45,11 @@ interface TaskEditDialogProps {
 
 export function TaskEditDialog({ task, open, onOpenChange }: TaskEditDialogProps) {
   const addNotification = useUIStore((state) => state.addNotification);
-  const updateTaskMutation = useUpdateTodo();
+  // 認証方式に応じてhooksを選択
+  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
+  const localUpdateMutation = useUpdateTodo();
+  const cookieUpdateMutation = useCookieUpdateTodo();
+  const updateTaskMutation = useLocalStorageAuth ? localUpdateMutation : cookieUpdateMutation;
 
   const {
     register,

@@ -6,12 +6,25 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores';
+import { useCookieAuth } from '@/hooks/use-cookie-auth-queries';
 import { config } from '@/lib/config';
 import { CheckCircle, Users, Shield, Clock } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuthStore();
+  
+  // 認証方式に応じてhooksを選択
+  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
+  
+  // LocalStorage認証の場合
+  const { isAuthenticated: localAuthState, isLoading: localLoading } = useAuthStore();
+  
+  // Cookie認証の場合
+  const { isAuthenticated: cookieAuthState, isLoading: cookieLoading } = useCookieAuth();
+  
+  // 認証方式に応じて選択
+  const isAuthenticated = useLocalStorageAuth ? localAuthState : cookieAuthState;
+  const isLoading = useLocalStorageAuth ? localLoading : cookieLoading;
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {

@@ -25,6 +25,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useTodos, useUpdateTodo } from '@/hooks';
+import { useCookieTodos, useCookieUpdateTodo } from '@/hooks/use-cookie-todo-queries';
 import { TodoResponse, TodoFilter } from '@/types';
 import { useUIStore } from '@/stores';
 import { formatDistanceToNow } from 'date-fns';
@@ -43,8 +44,23 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
   const [editingTask, setEditingTask] = useState<TodoResponse | null>(null);
   const [deletingTask, setDeletingTask] = useState<TodoResponse | null>(null);
   
-  const { data: todos, isLoading, error } = useTodos();
-  const updateTaskMutation = useUpdateTodo();
+  // 認証方式に応じてhooksを選択
+  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
+  
+  // LocalStorage認証の場合
+  const { data: localTodos, isLoading: localLoading, error: localError } = useTodos();
+  const localUpdateMutation = useUpdateTodo();
+  
+  // Cookie認証の場合
+  const { data: cookieTodos, isLoading: cookieLoading, error: cookieError } = useCookieTodos();
+  const cookieUpdateMutation = useCookieUpdateTodo();
+  
+  // 認証方式に応じて選択
+  const todos = useLocalStorageAuth ? localTodos : cookieTodos;
+  const isLoading = useLocalStorageAuth ? localLoading : cookieLoading;
+  const error = useLocalStorageAuth ? localError : cookieError;
+  const updateTaskMutation = useLocalStorageAuth ? localUpdateMutation : cookieUpdateMutation;
+  
   const addNotification = useUIStore((state) => state.addNotification);
 
   // Filter todos based on current filter

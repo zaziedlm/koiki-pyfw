@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateTodo } from '@/hooks';
+import { useCookieCreateTodo } from '@/hooks/use-cookie-todo-queries';
 import { useUIStore } from '@/stores';
 import { Loader2 } from 'lucide-react';
 
@@ -39,7 +40,12 @@ interface TaskCreateDialogProps {
 
 export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) {
   const addNotification = useUIStore((state) => state.addNotification);
-  const createTaskMutation = useCreateTodo();
+  
+  // 認証方式に応じてhooksを選択
+  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
+  const localCreateMutation = useCreateTodo();
+  const cookieCreateMutation = useCookieCreateTodo();
+  const createTaskMutation = useLocalStorageAuth ? localCreateMutation : cookieCreateMutation;
 
   const {
     register,

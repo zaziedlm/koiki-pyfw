@@ -11,9 +11,21 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const { refreshUser, setLoading } = useAuthStore();
+  
+  // 認証方式に応じて初期化を制御
+  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
 
   useEffect(() => {
     const initializeAuth = async () => {
+      // Cookie認証の場合は初期化をスキップ
+      if (!useLocalStorageAuth) {
+        console.log('🔐 Cookie authentication enabled - skipping AuthProvider initialization');
+        setIsInitialized(true);
+        return;
+      }
+      
+      // LocalStorage認証の場合のみ初期化実行
+      console.log('🔐 LocalStorage authentication enabled - initializing AuthProvider');
       try {
         setLoading(true);
         
@@ -39,10 +51,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     initializeAuth();
-  }, [refreshUser, setLoading]);
+  }, [refreshUser, setLoading, useLocalStorageAuth]);
 
-  // Don't render children until auth is initialized
-  if (!isInitialized) {
+  // Don't render children until auth is initialized (LocalStorage認証の場合のみ)
+  if (useLocalStorageAuth && !isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRegister } from '@/hooks';
+import { useCookieRegister } from '@/hooks/use-cookie-auth-queries';
 import { useUIStore } from '@/stores';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 
@@ -48,7 +49,11 @@ export function RegisterForm() {
     resolver: zodResolver(registerSchema),
   });
 
-  const registerMutation = useRegister();
+  // 認証方式に応じてhooksを選択
+  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
+  const localRegisterMutation = useRegister();
+  const cookieRegisterMutation = useCookieRegister();
+  const registerMutation = useLocalStorageAuth ? localRegisterMutation : cookieRegisterMutation;
 
   const onSubmit = async (data: RegisterFormData) => {
     try {

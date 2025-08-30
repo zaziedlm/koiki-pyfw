@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useDeleteTodo } from '@/hooks';
+import { useCookieDeleteTodo } from '@/hooks/use-cookie-todo-queries';
 import { useUIStore } from '@/stores';
 import { TodoResponse } from '@/types';
 import { Loader2, AlertTriangle } from 'lucide-react';
@@ -22,7 +23,12 @@ interface TaskDeleteDialogProps {
 
 export function TaskDeleteDialog({ task, open, onOpenChange }: TaskDeleteDialogProps) {
   const addNotification = useUIStore((state) => state.addNotification);
-  const deleteTaskMutation = useDeleteTodo();
+  
+  // 認証方式に応じてhooksを選択
+  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
+  const localDeleteMutation = useDeleteTodo();
+  const cookieDeleteMutation = useCookieDeleteTodo();
+  const deleteTaskMutation = useLocalStorageAuth ? localDeleteMutation : cookieDeleteMutation;
 
   const handleDelete = async () => {
     try {

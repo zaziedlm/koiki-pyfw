@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores';
+import { useCookieAuth } from '@/hooks/use-cookie-auth-queries';
 import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {
@@ -21,43 +22,75 @@ export function AuthGuard({
   const [isChecking, setIsChecking] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, user, isLoading, refreshUser, checkTokenValidity } = useAuthStore();
+  
+  // 認証方式の設定 - 環境変数またはconfig設定で切り替え
+  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
+  
+  // LocalStorage認証の場合
+  const { isAuthenticated: localAuthState, user: localUser, isLoading: localLoading, refreshUser, checkTokenValidity } = useAuthStore();
+  
+  // Cookie認証の場合
+  const { user: cookieUser, isAuthenticated: cookieAuthState, isLoading: cookieLoading, error: cookieError } = useCookieAuth();
+  
+  // 認証方式に応じて状態を選択
+  const isAuthenticated = useLocalStorageAuth ? localAuthState : cookieAuthState;
+  const user = useLocalStorageAuth ? localUser : cookieUser;
+  const isLoading = useLocalStorageAuth ? localLoading : cookieLoading;
 
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('🔐 AuthGuard checkAuth - Start:', { 
+        useLocalStorageAuth, 
+        isAuthenticated, 
+        isLoading, 
+        user: !!user,
+        cookieError 
+      });
+      
       // If auth is loading, wait for it to complete
       if (isLoading) {
+        console.log('🔐 AuthGuard - Still loading auth state');
         return;
       }
 
       try {
-        // トークンの有効性をチェック
-        checkTokenValidity();
-        
-        // Try to refresh user data if we think we're authenticated but don't have user data
-        if (isAuthenticated && !user) {
-          await refreshUser();
+        if (useLocalStorageAuth) {
+          // LocalStorage認証の場合のチェック
+          checkTokenValidity();
+          
+          // Try to refresh user data if we think we're authenticated but don't have user data
+          if (isAuthenticated && !user) {
+            await refreshUser();
+          }
+        } else {
+          // Cookie認証の場合は、useCookieAuth hookが自動的に認証状態を管理
+          console.log('🔐 Cookie Auth State:', { 
+            isAuthenticated, 
+            hasUser: !!user, 
+            error: cookieError ? String(cookieError) : null
+          });
         }
       } catch (error) {
         console.error('Auth refresh failed:', error);
       } finally {
+        console.log('🔐 AuthGuard checkAuth - Complete:', { isAuthenticated, hasUser: !!user });
         setIsChecking(false);
       }
     };
 
     checkAuth();
-  }, [isAuthenticated, user, isLoading, refreshUser, checkTokenValidity]);
+  }, [isAuthenticated, user, isLoading, useLocalStorageAuth, cookieError, refreshUser, checkTokenValidity]);
 
-  // トークンの定期チェック（5分ごと）
+  // トークンの定期チェック（LocalStorage認証のみ）
   useEffect(() => {
-    if (requireAuth && isAuthenticated) {
+    if (useLocalStorageAuth && requireAuth && isAuthenticated) {
       const interval = setInterval(() => {
         checkTokenValidity();
       }, 5 * 60 * 1000); // 5分ごと
 
       return () => clearInterval(interval);
     }
-  }, [requireAuth, isAuthenticated, checkTokenValidity]);
+  }, [useLocalStorageAuth, requireAuth, isAuthenticated, checkTokenValidity]);
 
   // Handle authentication redirect in useEffect to avoid rendering during render
   useEffect(() => {
@@ -92,8 +125,8 @@ export function AuthGuard({
 
   // Check role-based access
   if (requireAuth && isAuthenticated && requiredRoles.length > 0) {
-    const userRoles = user?.roles?.map(role => role.name) || [];
-    const hasRequiredRole = requiredRoles.some(role => 
+    const userRoles = user?.roles?.map((role: any) => role.name) || [];
+    const hasRequiredRole = requiredRoles.some((role: string) => 
       userRoles.includes(role) || user?.is_superuser
     );
 
@@ -147,7 +180,19 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 // Wrapper for public pages that should redirect authenticated users
 export function PublicRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuthStore();
+  
+  // 認証方式の設定
+  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
+  
+  // LocalStorage認証の場合
+  const { isAuthenticated: localAuthState, isLoading: localLoading } = useAuthStore();
+  
+  // Cookie認証の場合
+  const { isAuthenticated: cookieAuthState, isLoading: cookieLoading } = useCookieAuth();
+  
+  // 認証方式に応じて状態を選択
+  const isAuthenticated = useLocalStorageAuth ? localAuthState : cookieAuthState;
+  const isLoading = useLocalStorageAuth ? localLoading : cookieLoading;
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {

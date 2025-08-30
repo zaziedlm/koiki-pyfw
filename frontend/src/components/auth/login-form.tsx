@@ -11,7 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLogin } from '@/hooks';
+import { useCookieLogin } from '@/hooks/use-cookie-auth-queries';
 import { useUIStore } from '@/stores';
+import { config as appConfig } from '@/lib/config';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -34,23 +36,61 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  const loginMutation = useLogin();
+  // 認証方式の設定（環境変数で制御）
+  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
+  
+  console.log('🔐 LoginForm - Auth method:', { useLocalStorageAuth });
+  
+  // Hooksは必ず呼び出す（条件付き呼び出しは禁止）
+  const localStorageLoginMutation = useLogin();
+  const cookieLoginMutation = useCookieLogin();
+  
+  // 使用するmutationを選択
+  const loginMutation = useLocalStorageAuth ? localStorageLoginMutation : cookieLoginMutation;
 
   const onSubmit = async (data: LoginFormData) => {
+    console.log('=== Login Form Submit ===');
+    console.log('Login data:', data);
+    console.log('Using localStorage auth:', useLocalStorageAuth);
+    
     try {
-      await loginMutation.mutateAsync(data);
+      console.log('Calling loginMutation.mutateAsync...');
+      const result = await loginMutation.mutateAsync(data);
+      console.log('Login mutation result:', result);
+      console.log('Login mutation completed successfully');
+      
       addNotification({
         type: 'success',
         title: 'ログイン成功',
         message: 'おかえりなさい！',
       });
-      router.push('/dashboard');
+      
+      // Cookie認証の場合はmutation のonSuccessでリダイレクト処理が実行される
+      if (!useLocalStorageAuth) {
+        console.log('Cookie auth: Waiting for mutation onSuccess to handle redirect...');
+        // useCookieLogin の onSuccess でリダイレクト処理が実行される
+      } else {
+        console.log('LocalStorage auth: using router.push...');
+        router.push('/dashboard');
+      }
+      
     } catch (error: unknown) {
-      console.error('Login error:', error);
+      console.error('Login error in form:', error);
+      let errorMessage = 'メールアドレスまたはパスワードが正しくありません';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      } else if (useLocalStorageAuth) {
+        // localStorage認証のエラーハンドリング
+        errorMessage = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || errorMessage;
+      }
+      
       addNotification({
         type: 'error',
         title: 'ログイン失敗',
-        message: (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'メールアドレスまたはパスワードが正しくありません',
+        message: errorMessage,
       });
     }
   };

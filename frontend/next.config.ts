@@ -13,8 +13,8 @@ const nextConfig: NextConfig = {
     // Enable type checking during builds for production quality
     ignoreBuildErrors: false,
   },
-  // Enable standalone output for Docker
-  output: 'standalone',
+  // Enable standalone output for Docker (disabled for development)
+  // output: 'standalone',
   async rewrites() {
     return [
       {
