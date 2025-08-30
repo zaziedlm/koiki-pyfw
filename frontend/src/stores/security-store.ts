@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SecurityState, SecurityMetrics, AuthenticationMetrics, SecuritySummary, SecurityHealth } from '@/types';
+import { SecurityState } from '@/types';
 import { securityApi } from '@/lib/api-client';
 
 interface SecurityStore extends SecurityState {
@@ -37,8 +37,8 @@ export const useSecurityStore = create<SecurityStore>()((set, get) => ({
         error: null,
         lastUpdated: new Date().toISOString(),
       });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to fetch security metrics';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to fetch security metrics';
       set({
         isLoading: false,
         error: errorMessage,
@@ -60,8 +60,8 @@ export const useSecurityStore = create<SecurityStore>()((set, get) => ({
         error: null,
         lastUpdated: new Date().toISOString(),
       });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to fetch authentication metrics';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to fetch authentication metrics';
       set({
         isLoading: false,
         error: errorMessage,
@@ -83,8 +83,8 @@ export const useSecurityStore = create<SecurityStore>()((set, get) => ({
         error: null,
         lastUpdated: new Date().toISOString(),
       });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to fetch security summary';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to fetch security summary';
       set({
         isLoading: false,
         error: errorMessage,
@@ -102,7 +102,7 @@ export const useSecurityStore = create<SecurityStore>()((set, get) => ({
         health,
         lastUpdated: new Date().toISOString(),
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Health check failures shouldn't set the main error state
       console.warn('Security health check failed:', error);
       set({
@@ -134,8 +134,8 @@ export const useSecurityStore = create<SecurityStore>()((set, get) => ({
         error: null,
         lastUpdated: new Date().toISOString(),
       });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to reset security metrics';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to reset security metrics';
       set({
         isLoading: false,
         error: errorMessage,
@@ -161,7 +161,7 @@ export const useSecurityStore = create<SecurityStore>()((set, get) => ({
         error: null,
         lastUpdated: new Date().toISOString(),
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage = 'Failed to refresh security data';
       set({
         isLoading: false,

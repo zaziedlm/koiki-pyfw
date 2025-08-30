@@ -92,7 +92,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { theme, setTheme } = useUIStore();
+  const { setTheme } = useUIStore();
   const logoutMutation = useLogout();
 
   const handleLogout = async () => {

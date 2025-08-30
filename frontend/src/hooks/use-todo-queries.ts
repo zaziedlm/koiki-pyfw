@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { todoApi } from '@/lib/api-client';
-import { TodoCreate, TodoUpdate, TodoListParams } from '@/types';
+import { TodoCreate, TodoUpdate, TodoListParams, TodoResponse } from '@/types';
 
 // Query keys
 export const todoKeys = {
@@ -80,7 +80,7 @@ export function useToggleTodo() {
   return useMutation({
     mutationFn: async (id: number) => {
       // Get current todo data
-      const currentData = queryClient.getQueryData(todoKeys.detail(id)) as any;
+      const currentData = queryClient.getQueryData(todoKeys.detail(id)) as TodoResponse | undefined;
       if (!currentData) {
         // If not in cache, fetch it first
         const response = await todoApi.getById(id);

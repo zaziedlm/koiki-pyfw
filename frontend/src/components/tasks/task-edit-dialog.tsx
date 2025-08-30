@@ -91,11 +91,15 @@ export function TaskEditDialog({ task, open, onOpenChange }: TaskEditDialogProps
       });
 
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error && 'response' in error 
+        ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Please try again'
+        : 'Please try again';
+      
       addNotification({
         type: 'error',
         title: 'Failed to update task',
-        message: error.response?.data?.detail || 'Please try again',
+        message,
       });
     }
   };

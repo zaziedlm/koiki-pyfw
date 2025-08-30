@@ -69,11 +69,11 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
 
       reset();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       addNotification({
         type: 'error',
         title: 'Failed to create task',
-        message: error.response?.data?.detail || 'Please try again',
+        message: (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Please try again',
       });
     }
   };

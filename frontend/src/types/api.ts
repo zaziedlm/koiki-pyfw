@@ -1,6 +1,6 @@
 // General API types and interfaces
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data: T;
   message?: string;
   success?: boolean;

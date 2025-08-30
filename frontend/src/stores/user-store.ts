@@ -13,7 +13,7 @@ interface UserStore extends UserState {
   clearError: () => void;
 }
 
-export const useUserStore = create<UserStore>()((set, get) => ({
+export const useUserStore = create<UserStore>()(set => ({
   // Initial state
   users: [],
   currentUser: null,
@@ -35,8 +35,8 @@ export const useUserStore = create<UserStore>()((set, get) => ({
         isLoading: false,
         error: null,
       });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to fetch users';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to fetch users';
       set({
         isLoading: false,
         error: errorMessage,
@@ -58,8 +58,8 @@ export const useUserStore = create<UserStore>()((set, get) => ({
       });
       
       return user;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to fetch user';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to fetch user';
       set({
         isLoading: false,
         error: errorMessage,
@@ -83,8 +83,8 @@ export const useUserStore = create<UserStore>()((set, get) => ({
       }));
       
       return newUser;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to create user';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to create user';
       set({
         isLoading: false,
         error: errorMessage,
@@ -109,8 +109,8 @@ export const useUserStore = create<UserStore>()((set, get) => ({
       }));
       
       return updatedUser;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to update user';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to update user';
       set({
         isLoading: false,
         error: errorMessage,
@@ -131,8 +131,8 @@ export const useUserStore = create<UserStore>()((set, get) => ({
         isLoading: false,
         error: null,
       }));
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to delete user';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to delete user';
       set({
         isLoading: false,
         error: errorMessage,
@@ -155,8 +155,8 @@ export const useUserStore = create<UserStore>()((set, get) => ({
       });
       
       return updatedUser;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to update profile';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to update profile';
       set({
         isLoading: false,
         error: errorMessage,

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -24,7 +24,7 @@ import {
   Circle,
   Clock
 } from 'lucide-react';
-import { useTodos, useUpdateTodo, useDeleteTodo } from '@/hooks';
+import { useTodos, useUpdateTodo } from '@/hooks';
 import { TodoResponse, TodoFilter } from '@/types';
 import { useUIStore } from '@/stores';
 import { formatDistanceToNow } from 'date-fns';
@@ -45,11 +45,10 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
   
   const { data: todos, isLoading, error } = useTodos();
   const updateTaskMutation = useUpdateTodo();
-  const deleteTaskMutation = useDeleteTodo();
   const addNotification = useUIStore((state) => state.addNotification);
 
   // Filter todos based on current filter
-  const filteredTodos = todos?.filter((todo) => {
+  const filteredTodos = todos?.filter((todo: TodoResponse) => {
     const matchesSearch = !searchTerm || 
       todo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       todo.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -72,7 +71,7 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
         title: todo.is_completed ? 'Task marked as incomplete' : 'Task completed',
         message: `"${todo.title}" has been updated`,
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         title: 'Failed to update task',
@@ -93,7 +92,7 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
 
   const getTaskStats = () => {
     const total = filteredTodos.length;
-    const completed = filteredTodos.filter(t => t.is_completed).length;
+    const completed = filteredTodos.filter((t: TodoResponse) => t.is_completed).length;
     const pending = total - completed;
     return { total, completed, pending };
   };

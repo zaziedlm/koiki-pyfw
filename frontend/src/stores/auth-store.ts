@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { AuthState, UserResponse, LoginCredentials, RegisterData } from '@/types';
+import { AuthState, LoginCredentials, RegisterData } from '@/types';
 import { authApi, tokenStorage } from '@/lib/api-client';
 import { isTokenExpired } from '@/lib/token-utils';
 
@@ -70,8 +70,8 @@ export const useAuthStore = create<AuthStore>()(
           
           set((state) => ({ ...state, user: mockUser }));
           
-        } catch (error: any) {
-          const errorMessage = error.response?.data?.detail || 'Login failed';
+        } catch (error: unknown) {
+          const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Login failed';
           set({
             isAuthenticated: false,
             user: null,
@@ -95,8 +95,8 @@ export const useAuthStore = create<AuthStore>()(
             email: data.email,
             password: data.password,
           });
-        } catch (error: any) {
-          const errorMessage = error.response?.data?.detail || 'Registration failed';
+        } catch (error: unknown) {
+          const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Registration failed';
           set({
             isLoading: false,
             error: errorMessage,
@@ -150,7 +150,7 @@ export const useAuthStore = create<AuthStore>()(
             refreshToken: tokenStorage.get('koiki_refresh_token'),
             error: null,
           });
-        } catch (error) {
+        } catch {
           // Token might be expired, clear auth state
           tokenStorage.clear();
           set({

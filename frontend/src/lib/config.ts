@@ -1,7 +1,12 @@
 export const config = {
   api: {
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
+    // Backend API configuration
     url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+    prefix: process.env.NEXT_PUBLIC_API_PREFIX || '/api/v1',
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
+    
+    // Frontend proxy configuration  
+    proxyPrefix: '/api/backend',
   },
   app: {
     name: process.env.NEXT_PUBLIC_APP_NAME || 'KOIKI Task Manager',

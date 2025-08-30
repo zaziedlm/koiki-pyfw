@@ -52,7 +52,7 @@ export function RegisterForm() {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      const { confirmPassword, ...registerData } = data;
+      const { ...registerData } = data;
       await registerMutation.mutateAsync(registerData);
       
       addNotification({
@@ -61,11 +61,11 @@ export function RegisterForm() {
         message: 'Welcome to KOIKI Task Manager!',
       });
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       addNotification({
         type: 'error',
         title: 'Registration failed',
-        message: error.response?.data?.detail || 'Failed to create account',
+        message: (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to create account',
       });
     }
   };

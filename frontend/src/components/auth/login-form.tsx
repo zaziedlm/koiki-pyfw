@@ -45,12 +45,12 @@ export function LoginForm() {
         message: 'おかえりなさい！',
       });
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       addNotification({
         type: 'error',
         title: 'ログイン失敗',
-        message: error.response?.data?.detail || 'メールアドレスまたはパスワードが正しくありません',
+        message: (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'メールアドレスまたはパスワードが正しくありません',
       });
     }
   };

@@ -36,8 +36,8 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
         isLoading: false,
         error: null,
       });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to fetch todos';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to fetch todos';
       set({
         isLoading: false,
         error: errorMessage,
@@ -61,8 +61,8 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
       }));
       
       return newTodo;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to create todo';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to create todo';
       set({
         isLoading: false,
         error: errorMessage,
@@ -87,8 +87,8 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
       }));
       
       return updatedTodo;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to update todo';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to update todo';
       set({
         isLoading: false,
         error: errorMessage,
@@ -109,8 +109,8 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
         isLoading: false,
         error: null,
       }));
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to delete todo';
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to delete todo';
       set({
         isLoading: false,
         error: errorMessage,

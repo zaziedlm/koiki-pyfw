@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { isAxiosError } from 'axios';
 
 // React Query configuration
 function makeQueryClient() {
@@ -14,8 +15,11 @@ function makeQueryClient() {
         gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
         retry: (failureCount, error: unknown) => {
           // Don't retry on 4xx errors except 429 (rate limit)
-          if (error?.response?.status >= 400 && error?.response?.status < 500 && error?.response?.status !== 429) {
-            return false;
+          if (isAxiosError(error)) {
+            const status = error.response?.status;
+            if (status && status >= 400 && status < 500 && status !== 429) {
+              return false;
+            }
           }
           return failureCount < 3;
         },
@@ -26,8 +30,11 @@ function makeQueryClient() {
       mutations: {
         retry: (failureCount, error: unknown) => {
           // Don't retry mutations on client errors
-          if (error?.response?.status >= 400 && error?.response?.status < 500) {
-            return false;
+          if (isAxiosError(error)) {
+            const status = error.response?.status;
+            if (status && status >= 400 && status < 500) {
+              return false;
+            }
           }
           return failureCount < 2;
         },
@@ -59,7 +66,7 @@ export function ReactQueryProvider({ children }: ReactQueryProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <ReactQueryDevtools initialIsOpen={false} />
+      {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
 }

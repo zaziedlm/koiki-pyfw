@@ -1,24 +1,25 @@
 import type { NextConfig } from "next";
 
+// Import configuration for consistent API path management
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_PREFIX = process.env.NEXT_PUBLIC_API_PREFIX || '/api/v1';
+
 const nextConfig: NextConfig = {
   eslint: {
-    // Disable ESLint during builds for now
-    ignoreDuringBuilds: true,
+    // Enable ESLint during builds for production quality
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    // Disable type checking during builds for now
-    ignoreBuildErrors: true,
+    // Enable type checking during builds for production quality
+    ignoreBuildErrors: false,
   },
   // Enable standalone output for Docker
   output: 'standalone',
   async rewrites() {
-    // Use environment variable for backend URL in Docker
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    
     return [
       {
         source: '/api/backend/:path*',
-        destination: `${backendUrl}/:path*`,
+        destination: `${API_URL}${API_PREFIX}/:path*`,
       },
       // Health check endpoint for Docker
       {

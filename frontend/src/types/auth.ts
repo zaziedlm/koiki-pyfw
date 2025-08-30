@@ -15,8 +15,8 @@ export interface TokenWithRefresh {
 
 export interface AuthResponse {
   message: string;
-  user?: Record<string, any>;
-  data?: Record<string, any>;
+  user?: Record<string, unknown>;
+  data?: Record<string, unknown>;
 }
 
 export interface RefreshTokenRequest {

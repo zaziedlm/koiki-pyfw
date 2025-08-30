@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { config } from './config';
+import { config as appConfig } from './config';
 import { isTokenExpired } from './token-utils';
 
 // Token storage utilities
@@ -18,15 +18,15 @@ export const tokenStorage = {
   },
   clear: (): void => {
     if (typeof window === 'undefined') return;
-    localStorage.removeItem(config.auth.tokenKey);
-    localStorage.removeItem(config.auth.refreshTokenKey);
+    localStorage.removeItem(appConfig.auth.tokenKey);
+    localStorage.removeItem(appConfig.auth.refreshTokenKey);
   },
 };
 
 // Create axios instance
 const createApiClient = (): AxiosInstance => {
   const client = axios.create({
-    baseURL: config.api.baseUrl,
+    baseURL: appConfig.api.baseUrl,
     timeout: 10000,
     headers: {
       'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ const createApiClient = (): AxiosInstance => {
           if (refreshToken) {
             try {
               const response = await axios.post(
-                `${config.api.baseUrl}/auth/refresh`,
+                `${appConfig.api.baseUrl}/auth/refresh`,
                 { refresh_token: refreshToken }
               );
 
@@ -56,7 +56,7 @@ const createApiClient = (): AxiosInstance => {
               
               // 新しいトークンを使用
               config.headers.Authorization = `Bearer ${access_token}`;
-            } catch (refreshError) {
+            } catch {
               // リフレッシュに失敗した場合、トークンをクリア
               tokenStorage.clear();
               if (typeof window !== 'undefined') {
@@ -97,7 +97,7 @@ const createApiClient = (): AxiosInstance => {
           const refreshToken = tokenStorage.get('koiki_refresh_token');
           if (refreshToken) {
             const response = await axios.post(
-              `${config.api.baseUrl}/auth/refresh`,
+              `${appConfig.api.baseUrl}/auth/refresh`,
               { refresh_token: refreshToken }
             );
 
@@ -130,7 +130,7 @@ const createApiClient = (): AxiosInstance => {
 export const apiClient = createApiClient();
 
 // API response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data: T;
   message?: string;
 }
@@ -143,19 +143,19 @@ export interface ApiError {
 
 // Generic API methods
 export const api = {
-  get: <T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
+  get: <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
     apiClient.get<T>(url, config),
 
-  post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
+  post: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
     apiClient.post<T>(url, data, config),
 
-  put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
+  put: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
     apiClient.put<T>(url, data, config),
 
-  patch: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
+  patch: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
     apiClient.patch<T>(url, data, config),
 
-  delete: <T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
+  delete: <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
     apiClient.delete<T>(url, config),
 };
 
@@ -259,7 +259,7 @@ export const securityApi = {
 
 // Health check API (direct access, not through API v1)
 const directClient = axios.create({
-  baseURL: config.api.url, // http://localhost:8000 (without /api/v1)
+  baseURL: appConfig.api.url, // http://localhost:8000 (without /api/v1)
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
