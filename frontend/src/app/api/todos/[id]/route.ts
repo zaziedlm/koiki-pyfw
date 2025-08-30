@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/lib/config';
+import { validateCSRFToken, createCSRFErrorResponse } from '@/lib/csrf-utils';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     console.log('📋 Todo GET (single) route handler started, ID:', id);
     
     // Get access token from cookies
@@ -58,11 +59,17 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     console.log('📋 Todo PUT route handler started, ID:', id);
+    
+    // CSRF トークン検証
+    if (!validateCSRFToken(request)) {
+      console.log('❌ Todo PUT: CSRF token validation failed');
+      return createCSRFErrorResponse();
+    }
     
     // Get access token from cookies
     const accessToken = request.cookies.get('koiki_access_token')?.value;
@@ -118,11 +125,17 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     console.log('📋 Todo DELETE route handler started, ID:', id);
+    
+    // CSRF トークン検証
+    if (!validateCSRFToken(request)) {
+      console.log('❌ Todo DELETE: CSRF token validation failed');
+      return createCSRFErrorResponse();
+    }
     
     // Get access token from cookies
     const accessToken = request.cookies.get('koiki_access_token')?.value;

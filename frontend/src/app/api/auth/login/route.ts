@@ -8,10 +8,11 @@ export async function POST(request: NextRequest) {
     console.log('Request headers:', Object.fromEntries(request.headers.entries()));
     console.log('Request cookies:', request.cookies.getAll());
     
-    // CSRF トークン検証（一時的に無効化してテスト）
-    // if (!validateCSRFToken(request)) {
-    //   return createCSRFErrorResponse();
-    // }
+    // CSRF トークン検証
+    if (!validateCSRFToken(request)) {
+      console.log('CSRF token validation failed');
+      return createCSRFErrorResponse();
+    }
 
     const body = await request.json();
     

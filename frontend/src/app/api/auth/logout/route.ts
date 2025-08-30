@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiUrl, clearAuthCookies, COOKIE_CONFIG } from '@/lib/cookie-utils';
+import { validateCSRFToken, createCSRFErrorResponse } from '@/lib/csrf-utils';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('=== Logout Route Handler ===');
+    console.log('Request headers:', Object.fromEntries(request.headers.entries()));
+    console.log('Request cookies:', request.cookies.getAll());
+    
+    // CSRF トークン検証
+    if (!validateCSRFToken(request)) {
+      console.log('CSRF token validation failed');
+      return createCSRFErrorResponse();
+    }
+
     const accessToken = request.cookies.get(COOKIE_CONFIG.ACCESS_TOKEN.name)?.value;
     
     // バックエンドAPIへプロキシ（トークンがある場合）

@@ -2,7 +2,7 @@ import { config as appConfig } from './config';
 
 // Cookie認証用のAPIクライアント
 class CookieApiClient {
-  private csrfToken: string | null = null;
+  public csrfToken: string | null = null;
 
   constructor() {
     // 初期化時にCSRFトークンを取得
@@ -10,7 +10,7 @@ class CookieApiClient {
   }
 
   // CSRFトークンを取得・設定
-  private async initializeCSRFToken(): Promise<void> {
+  public async initializeCSRFToken(): Promise<void> {
     try {
       const response = await fetch('/api/auth/csrf');
       if (response.ok) {
@@ -38,16 +38,35 @@ class CookieApiClient {
       headers['Content-Type'] = 'application/json';
     }
 
-    // CSRFトークンをヘッダーに追加
-    if (this.csrfToken) {
-      headers['x-csrf-token'] = this.csrfToken;
+    // CSRFトークンをヘッダーに追加（Cookieからも取得を試行）
+    let csrfToken = this.csrfToken;
+    
+    // CSRFトークンがない場合、Cookieから取得を試行
+    if (!csrfToken && typeof document !== 'undefined') {
+      const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('koiki_csrf_token='))
+        ?.split('=')[1];
+      
+      if (cookieValue) {
+        csrfToken = cookieValue;
+        this.csrfToken = cookieValue; // キャッシュに保存
+        console.log('CSRF token retrieved from cookie:', csrfToken ? 'PRESENT' : 'MISSING');
+      }
+    }
+
+    if (csrfToken) {
+      headers['x-csrf-token'] = csrfToken;
+      console.log('CSRF token added to headers');
+    } else {
+      console.warn('CSRF token not available for request');
     }
 
     return headers;
   }
 
   // 共通のfetchメソッド
-  private async fetchWithCredentials(
+  public async fetchWithCredentials(
     url: string,
     options: RequestInit = {}
   ): Promise<Response> {
@@ -183,41 +202,49 @@ export const cookieApi = {
 export const cookieTodoApi = {
   getAll: (params?: { skip?: number; limit?: number }) => {
     const queryString = params ? `?${new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString()}` : '';
-    return fetch(`/api/todos${queryString}`, {
+    return cookieApiClient.fetchWithCredentials(`/api/todos${queryString}`, {
       method: 'GET',
-      credentials: 'include',
     });
   },
 
-  getById: (id: number) => fetch(`/api/todos/${id}`, {
+  getById: (id: number) => cookieApiClient.fetchWithCredentials(`/api/todos/${id}`, {
     method: 'GET', 
-    credentials: 'include',
   }),
 
-  create: (data: { title: string; description?: string }) =>
-    fetch('/api/todos', {
+  create: async (data: { title: string; description?: string }) => {
+    // CSRFトークンを確実に取得
+    if (!cookieApiClient.csrfToken) {
+      await cookieApiClient.initializeCSRFToken();
+    }
+
+    return cookieApiClient.fetchWithCredentials('/api/todos', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
       body: JSON.stringify(data),
-    }),
+    });
+  },
 
-  update: (id: number, data: { title?: string; description?: string; is_completed?: boolean }) =>
-    fetch(`/api/todos/${id}`, {
+  update: async (id: number, data: { title?: string; description?: string; is_completed?: boolean }) => {
+    // CSRFトークンを確実に取得
+    if (!cookieApiClient.csrfToken) {
+      await cookieApiClient.initializeCSRFToken();
+    }
+
+    return cookieApiClient.fetchWithCredentials(`/api/todos/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
       body: JSON.stringify(data),
-    }),
+    });
+  },
 
-  delete: (id: number) => fetch(`/api/todos/${id}`, {
-    method: 'DELETE',
-    credentials: 'include',
-  }),
+  delete: async (id: number) => {
+    // CSRFトークンを確実に取得
+    if (!cookieApiClient.csrfToken) {
+      await cookieApiClient.initializeCSRFToken();
+    }
+
+    return cookieApiClient.fetchWithCredentials(`/api/todos/${id}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 // User API methods (Cookie版)

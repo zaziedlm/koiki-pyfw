@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/lib/config';
+import { validateCSRFToken, createCSRFErrorResponse } from '@/lib/csrf-utils';
 
 // Environment-based logging utility
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-function devLog(message: string, data?: any) {
+function devLog(message: string, data?: unknown) {
   if (isDevelopment) {
     console.log(`[TODOS-API] ${message}`, data || '');
   }
@@ -77,6 +78,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     devLog('POST request started');
+    
+    // CSRF トークン検証
+    if (!validateCSRFToken(request)) {
+      devLog('CSRF token validation failed');
+      return createCSRFErrorResponse();
+    }
     
     // Get access token from cookies
     const accessToken = request.cookies.get('koiki_access_token')?.value;

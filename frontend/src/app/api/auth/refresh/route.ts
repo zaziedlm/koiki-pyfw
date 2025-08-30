@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendApiUrl, setAccessTokenCookie, setRefreshTokenCookie, clearAuthCookies, COOKIE_CONFIG } from '@/lib/cookie-utils';
+import { validateCSRFToken, createCSRFErrorResponse, setCSRFTokenCookie, generateCSRFToken } from '@/lib/csrf-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const refreshToken = request.cookies.get('koiki_refresh_token')?.value;
+    console.log('=== Refresh Route Handler ===');
+    console.log('Request headers:', Object.fromEntries(request.headers.entries()));
+    console.log('Request cookies:', request.cookies.getAll());
+    
+    // CSRF トークン検証
+    if (!validateCSRFToken(request)) {
+      console.log('CSRF token validation failed');
+      return createCSRFErrorResponse();
+    }
+
+    const refreshToken = request.cookies.get(COOKIE_CONFIG.REFRESH_TOKEN.name)?.value;
     
     if (!refreshToken) {
       return NextResponse.json(
@@ -12,10 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // バックエンドAPIへプロキシ
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const apiPrefix = process.env.NEXT_PUBLIC_API_PREFIX || '/api/v1';
-    
-    const response = await fetch(`${backendUrl}${apiPrefix}/auth/refresh`, {
+    const response = await fetch(`${getBackendApiUrl()}/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -28,13 +37,13 @@ export async function POST(request: NextRequest) {
       
       // リフレッシュ失敗時はCookieをクリア
       const nextResponse = NextResponse.json(errorData, { status: response.status });
-      nextResponse.cookies.set('koiki_access_token', '', { maxAge: 0, path: '/' });
-      nextResponse.cookies.set('koiki_refresh_token', '', { maxAge: 0, path: '/' });
+      clearAuthCookies(nextResponse);
       
       return nextResponse;
     }
 
     const data = await response.json();
+    console.log('Backend response data:', data);
     
     // レスポンスを作成
     const nextResponse = NextResponse.json({
@@ -44,25 +53,21 @@ export async function POST(request: NextRequest) {
 
     // 新しいトークンでCookieを更新
     if (data.access_token) {
-      nextResponse.cookies.set('koiki_access_token', data.access_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 30 * 60, // 30分
-        path: '/',
-      });
+      console.log('Setting new access token cookie');
+      setAccessTokenCookie(nextResponse, data.access_token);
     }
 
     if (data.refresh_token) {
-      nextResponse.cookies.set('koiki_refresh_token', data.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60, // 7日
-        path: '/',
-      });
+      console.log('Setting new refresh token cookie');
+      setRefreshTokenCookie(nextResponse, data.refresh_token);
     }
 
+    // 新しいCSRFトークンを生成・設定
+    const newCSRFToken = generateCSRFToken();
+    console.log('Setting new CSRF token');
+    setCSRFTokenCookie(nextResponse, newCSRFToken);
+
+    console.log('Refresh route handler completed successfully');
     return nextResponse;
   } catch (error) {
     console.error('Refresh proxy error:', error);
