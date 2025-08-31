@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosHeaders } from 'axios';
 import { config as appConfig } from './config';
 import { isTokenExpired } from './token-utils';
 
@@ -22,6 +22,41 @@ export const tokenStorage = {
     localStorage.removeItem(appConfig.auth.refreshTokenKey);
   },
 };
+
+// =========================================================
+// BFF client (same-origin /api/*). Sends cookies and CSRF.
+// =========================================================
+const CSRF_COOKIE_NAME = 'koiki_csrf_token';
+const CSRF_HEADER_NAME = 'x-csrf-token';
+
+function readCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\/+^])/g, '\\$1') + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+const bffClient = axios.create({
+  baseURL: '/',
+  timeout: 10000,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Attach CSRF token for state-changing requests
+bffClient.interceptors.request.use((cfg) => {
+  const method = (cfg.method || 'get').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    const token = readCookie(CSRF_COOKIE_NAME);
+    if (token) {
+      const headers = AxiosHeaders.from(cfg.headers ?? {});
+      headers.set(CSRF_HEADER_NAME, token);
+      cfg.headers = headers;
+    }
+  }
+  return cfg;
+});
 
 // Create axios instance
 const createApiClient = (): AxiosInstance => {
@@ -200,17 +235,17 @@ export const authApi = {
 // Todo API methods
 export const todoApi = {
   getAll: (params?: { skip?: number; limit?: number }) =>
-    apiClient.get('/todos', { params }),
+    bffClient.get('/api/todos', { params }),
 
-  getById: (id: number) => apiClient.get(`/todos/${id}`),
+  getById: (id: number) => bffClient.get(`/api/todos/${id}`),
 
   create: (data: { title: string; description?: string }) =>
-    apiClient.post('/todos', data),
+    bffClient.post('/api/todos', data),
 
   update: (id: number, data: { title?: string; description?: string; is_completed?: boolean }) =>
-    apiClient.put(`/todos/${id}`, data),
+    bffClient.put(`/api/todos/${id}`, data),
 
-  delete: (id: number) => apiClient.delete(`/todos/${id}`),
+  delete: (id: number) => bffClient.delete(`/api/todos/${id}`),
 };
 
 // User API methods
