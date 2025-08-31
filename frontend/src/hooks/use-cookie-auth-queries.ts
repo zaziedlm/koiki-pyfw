@@ -14,19 +14,28 @@ export function useCookieMe() {
     queryKey: cookieAuthKeys.me(),
     queryFn: async () => {
       const response = await cookieApiClient.auth.getMe();
+
+      // 未ログイン(401)は例外ではなく「未認証」として扱う
+      if (response.status === 401) {
+        return null;
+      }
+
       if (!response.ok) {
-        throw new Error('Failed to fetch user');
+        // 401 以外の異常はエラーにする
+        let message = `Failed to fetch user (${response.status})`;
+        try {
+          const data = await response.json();
+          message = data?.detail || data?.message || message;
+        } catch (_) {
+          // ignore
+        }
+        throw new Error(message);
       }
       return response.json();
     },
     staleTime: 5 * 60 * 1000, // 5分
-    retry: (failureCount, error: unknown) => {
-      // 401エラーの場合はリトライしない
-      if (error instanceof Error && error.message.includes('401')) {
-        return false;
-      }
-      return failureCount < 2;
-    },
+    // 未認証時の 401 は例外にしないため、基本的に再試行は不要
+    retry: false,
   });
 }
 
