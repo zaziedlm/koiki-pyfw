@@ -8,6 +8,8 @@ services:
       dockerfile: Dockerfile
     environment:
       - NODE_ENV=development
+      - NEXT_PUBLIC_API_BASE_URL=http://app:8000/api/v1
+      - NEXT_PUBLIC_API_PREFIX=/api/v1
       - NEXT_PUBLIC_API_URL=http://app:8000
       - NEXT_PUBLIC_ENABLE_DEV_TOOLS=true
       - NEXT_PUBLIC_DEBUG=true
@@ -18,7 +20,7 @@ services:
       - ./frontend/public:/app/public:cached
       - /app/node_modules # 匿名ボリュームでnode_modulesを保護
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
