@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Use experimental-edge runtime for Next.js 15 compatibility
-export const runtime = 'experimental-edge';
+export const runtime = 'nodejs';
 
 // Define protected routes that require authentication
 const PROTECTED_ROUTES = ['/dashboard', '/profile', '/admin', '/settings'] as const;
