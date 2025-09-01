@@ -18,12 +18,18 @@ class CookieApiClient {
       if (response.ok) {
         const data = await response.json();
         this.csrfToken = data.csrf_token;
-        console.log('CSRF token initialized:', this.csrfToken ? 'SUCCESS' : 'FAILED');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[CSRF] initialized');
+        }
       } else {
-        console.error('Failed to get CSRF token - HTTP', response.status);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[CSRF] init failed http', response.status);
+        }
       }
-    } catch (error) {
-      console.error('Failed to initialize CSRF token:', error);
+    } catch {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[CSRF] init error');
+      }
     }
   }
 
@@ -42,26 +48,30 @@ class CookieApiClient {
 
     // CSRFトークンをヘッダーに追加（Cookieからも取得を試行）
     let csrfToken = this.csrfToken;
-    
+
     // CSRFトークンがない場合、Cookieから取得を試行
     if (!csrfToken && typeof document !== 'undefined') {
       const cookieValue = document.cookie
         .split('; ')
         .find(row => row.startsWith('koiki_csrf_token='))
         ?.split('=')[1];
-      
+
       if (cookieValue) {
         csrfToken = cookieValue;
         this.csrfToken = cookieValue; // キャッシュに保存
-        console.log('CSRF token retrieved from cookie:', csrfToken ? 'PRESENT' : 'MISSING');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[CSRF] from cookie');
+        }
       }
     }
 
     if (csrfToken) {
       headers['x-csrf-token'] = csrfToken;
-      console.log('CSRF token added to headers');
-    } else {
-      console.warn('CSRF token not available for request');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[CSRF] header attached');
+      }
+    } else if (process.env.NODE_ENV === 'development') {
+      console.warn('[CSRF] header missing');
     }
 
     return headers;
@@ -106,11 +116,15 @@ class CookieApiClient {
     login: async (credentials: { email: string; password: string }) => {
       // CSRFトークンを確実に取得
       if (!this.csrfToken) {
-        console.log('CSRF token not found, initializing...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AUTH] CSRF missing, init');
+        }
         await this.initializeCSRFToken();
       }
 
-      console.log('Attempting login with CSRF token:', this.csrfToken ? 'PRESENT' : 'MISSING');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AUTH] login with CSRF');
+      }
 
       return this.fetchWithCredentials('/api/auth/login', {
         method: 'POST',
@@ -210,7 +224,7 @@ export const cookieTodoApi = {
   },
 
   getById: (id: number) => cookieApiClient.fetchWithCredentials(`/api/todos/${id}`, {
-    method: 'GET', 
+    method: 'GET',
   }),
 
   create: async (data: { title: string; description?: string }) => {

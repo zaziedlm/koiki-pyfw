@@ -2,19 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/lib/config';
 import { validateCSRFToken, createCSRFErrorResponse } from '@/lib/csrf-utils';
 
+const isDevelopment = process.env.NODE_ENV === 'development';
+const devLog = (msg: string) => { if (isDevelopment) console.log(`[TODOS] ${msg}`); };
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    console.log('📋 Todo GET (single) route handler started, ID:', id);
-    
+    devLog('GET one start');
+
     // Get access token from cookies
     const accessToken = request.cookies.get('koiki_access_token')?.value;
-    
+
     if (!accessToken) {
-      console.log('❌ Todo GET (single): No access token found in cookies');
+      if (isDevelopment) console.warn('[TODOS] GET one unauthorized (no token)');
       return NextResponse.json(
         { error: 'Authentication required', detail: 'Access token not found' },
         { status: 401 }
@@ -23,7 +26,7 @@ export async function GET(
 
     // Forward request to backend with token
     const backendUrl = `${config.api.baseUrl}/todos/${id}`;
-    console.log('🔗 Todo GET (single): Backend URL:', backendUrl);
+    devLog('Backend request');
 
     const response = await fetch(backendUrl, {
       method: 'GET',
@@ -33,11 +36,11 @@ export async function GET(
       },
     });
 
-    console.log('📡 Todo GET (single): Backend response status:', response.status);
+    devLog(`Backend status ${response.status}`);
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.log('❌ Todo GET (single): Backend error:', errorData);
+      if (isDevelopment) console.error('[TODOS] GET one backend error', { status: response.status });
       return NextResponse.json(
         { error: 'Backend request failed', detail: errorData },
         { status: response.status }
@@ -45,11 +48,11 @@ export async function GET(
     }
 
     const data = await response.json();
-    console.log('✅ Todo GET (single): Success, todo:', data.id);
+    devLog('GET one success');
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('❌ Todo GET (single) route error:', error);
+    console.error('[TODOS] GET one handler error');
     return NextResponse.json(
       { error: 'Internal server error', detail: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -63,19 +66,19 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    console.log('📋 Todo PUT route handler started, ID:', id);
-    
+    devLog('PUT start');
+
     // CSRF トークン検証
     if (!validateCSRFToken(request)) {
-      console.log('❌ Todo PUT: CSRF token validation failed');
+      devLog('CSRF validation failed');
       return createCSRFErrorResponse();
     }
-    
+
     // Get access token from cookies
     const accessToken = request.cookies.get('koiki_access_token')?.value;
-    
+
     if (!accessToken) {
-      console.log('❌ Todo PUT: No access token found in cookies');
+      if (isDevelopment) console.warn('[TODOS] PUT unauthorized (no token)');
       return NextResponse.json(
         { error: 'Authentication required', detail: 'Access token not found' },
         { status: 401 }
@@ -84,11 +87,10 @@ export async function PUT(
 
     // Get request body
     const body = await request.json();
-    console.log('📝 Todo PUT: Request body:', body);
 
     // Forward request to backend with token
     const backendUrl = `${config.api.baseUrl}/todos/${id}`;
-    console.log('🔗 Todo PUT: Backend URL:', backendUrl);
+    devLog('Backend request');
 
     const response = await fetch(backendUrl, {
       method: 'PUT',
@@ -99,11 +101,11 @@ export async function PUT(
       body: JSON.stringify(body),
     });
 
-    console.log('📡 Todo PUT: Backend response status:', response.status);
+    devLog(`Backend status ${response.status}`);
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.log('❌ Todo PUT: Backend error:', errorData);
+      if (isDevelopment) console.error('[TODOS] PUT backend error', { status: response.status });
       return NextResponse.json(
         { error: 'Backend request failed', detail: errorData },
         { status: response.status }
@@ -111,11 +113,11 @@ export async function PUT(
     }
 
     const data = await response.json();
-    console.log('✅ Todo PUT: Success, updated todo:', data.id);
+    devLog('PUT success');
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('❌ Todo PUT route error:', error);
+    console.error('[TODOS] PUT handler error');
     return NextResponse.json(
       { error: 'Internal server error', detail: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -129,19 +131,19 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    console.log('📋 Todo DELETE route handler started, ID:', id);
-    
+    devLog('DELETE start');
+
     // CSRF トークン検証
     if (!validateCSRFToken(request)) {
-      console.log('❌ Todo DELETE: CSRF token validation failed');
+      devLog('CSRF validation failed');
       return createCSRFErrorResponse();
     }
-    
+
     // Get access token from cookies
     const accessToken = request.cookies.get('koiki_access_token')?.value;
-    
+
     if (!accessToken) {
-      console.log('❌ Todo DELETE: No access token found in cookies');
+      if (isDevelopment) console.warn('[TODOS] DELETE unauthorized (no token)');
       return NextResponse.json(
         { error: 'Authentication required', detail: 'Access token not found' },
         { status: 401 }
@@ -150,7 +152,7 @@ export async function DELETE(
 
     // Forward request to backend with token
     const backendUrl = `${config.api.baseUrl}/todos/${id}`;
-    console.log('🔗 Todo DELETE: Backend URL:', backendUrl);
+    devLog('Backend request');
 
     const response = await fetch(backendUrl, {
       method: 'DELETE',
@@ -160,25 +162,25 @@ export async function DELETE(
       },
     });
 
-    console.log('📡 Todo DELETE: Backend response status:', response.status);
+    devLog(`Backend status ${response.status}`);
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.log('❌ Todo DELETE: Backend error:', errorData);
+      if (isDevelopment) console.error('[TODOS] DELETE backend error', { status: response.status });
       return NextResponse.json(
         { error: 'Backend request failed', detail: errorData },
         { status: response.status }
       );
     }
 
-    console.log('✅ Todo DELETE: Success, deleted todo:', id);
+    devLog('DELETE success');
 
     // Return success response (DELETE typically returns empty body or confirmation)
     return NextResponse.json({ message: 'Todo deleted successfully' });
-  } catch (error) {
-    console.error('❌ Todo DELETE route error:', error);
+  } catch (err) {
+    console.error('[TODOS] DELETE handler error');
     return NextResponse.json(
-      { error: 'Internal server error', detail: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Internal server error', detail: err instanceof Error ? err.message : 'Unknown error' },
       { status: 500 }
     );
   }

@@ -4,18 +4,20 @@ import { validateCSRFToken, createCSRFErrorResponse } from '@/lib/csrf-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('=== Logout Route Handler ===');
-    console.log('Request headers:', Object.fromEntries(request.headers.entries()));
-    console.log('Request cookies:', request.cookies.getAll());
-    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AUTH][logout] start');
+    }
+
     // CSRF トークン検証
     if (!validateCSRFToken(request)) {
-      console.log('CSRF token validation failed');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[AUTH][logout] CSRF validation failed');
+      }
       return createCSRFErrorResponse();
     }
 
     const accessToken = request.cookies.get(COOKIE_CONFIG.ACCESS_TOKEN.name)?.value;
-    
+
     // バックエンドAPIへプロキシ（トークンがある場合）
     if (accessToken) {
       try {
@@ -26,8 +28,8 @@ export async function POST(request: NextRequest) {
             'Content-Type': 'application/json',
           },
         });
-      } catch (error) {
-        console.error('Backend logout error:', error);
+      } catch {
+        // swallow backend error; proceed to clear cookies
         // バックエンドエラーでもCookieは削除する
       }
     }
@@ -39,9 +41,8 @@ export async function POST(request: NextRequest) {
     clearAuthCookies(response);
 
     return response;
-  } catch (error) {
-    console.error('Logout proxy error:', error);
-    
+  } catch {
+
     // エラーでもCookieは削除
     const response = NextResponse.json(
       { message: 'Logout completed', detail: 'Some errors occurred but cookies cleared' },

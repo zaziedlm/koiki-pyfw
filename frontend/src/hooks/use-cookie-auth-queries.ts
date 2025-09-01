@@ -2,6 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cookieApiClient } from '@/lib/cookie-api-client';
 import { LoginCredentials, RegisterData } from '@/types';
 
+// dev-only minimal logger (no sensitive data)
+const devLog = (...args: unknown[]) => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[cookie-auth]', ...args);
+  }
+};
+
 // Query keys for cookie auth
 export const cookieAuthKeys = {
   all: ['cookie-auth'] as const,
@@ -45,54 +52,48 @@ export function useCookieLogin() {
 
   return useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
-      console.log('=== Cookie Login Mutation ===');
-      console.log('Credentials:', credentials);
+      devLog('login: start');
 
       const response = await cookieApiClient.auth.login({
         email: credentials.email,
         password: credentials.password,
       });
 
-      console.log('Login response status:', response.status);
-      console.log('Login response ok:', response.ok);
+      devLog('login: response', { status: response.status, ok: response.ok });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = errorData.detail || errorData.message || `Login failed (${response.status})`;
-        console.error('Login response error:', response.status, errorData);
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = (errorData && (errorData.detail || errorData.message)) || `Login failed (${response.status})`;
         throw new Error(errorMessage);
       }
 
-      const result = await response.json();
-      console.log('Login response data:', result);
-      return result;
+      return response.json();
     },
     onSuccess: async (data) => {
-      console.log('=== Cookie Login Success ===');
-      console.log('Success data:', data);
+      devLog('login: success');
 
       try {
         // ログイン成功時にユーザー情報をキャッシュ
         if (data.user) {
-          console.log('Caching user data:', data.user);
+          devLog('login: cache user');
           queryClient.setQueryData(cookieAuthKeys.me(), data.user);
         }
 
         // すべての認証関連クエリを無効化（await で完了を待つ）
-        console.log('Invalidating auth queries...');
+        devLog('login: invalidate queries');
         await queryClient.invalidateQueries({ queryKey: cookieAuthKeys.all });
-        console.log('Auth queries invalidation completed');
+        devLog('login: invalidation done');
 
         // Cookie設定完了の確認とリダイレクト処理
-        console.log('Checking redirect data:', { redirected: data.redirected, location: data.location, new_cookie_set: data.new_cookie_set });
+        devLog('login: check redirect');
 
         if (data.new_cookie_set) {
-          console.log('Cookie setting confirmed, waiting for browser synchronization...');
+          devLog('login: wait cookie propagation');
 
           // Cookieの伝播を待つためのポーリング機能
           const waitForCookie = async (maxAttempts = 10, delay = 200): Promise<boolean> => {
             for (let attempt = 0; attempt < maxAttempts; attempt++) {
-              console.log(`Cookie check attempt ${attempt + 1}/${maxAttempts}...`);
+              devLog('login: cookie check attempt', `${attempt + 1}/${maxAttempts}`);
 
               // document.cookieでクライアント側cookieを確認（httpOnlyなので直接は見えないが、認証状態で判断）
               try {
@@ -101,11 +102,11 @@ export function useCookieLogin() {
                 const userData = queryClient.getQueryData(cookieAuthKeys.me());
 
                 if (userData) {
-                  console.log('Cookie authentication verified, user data available');
+                  devLog('login: cookie verified');
                   return true;
                 }
-              } catch (error) {
-                console.log(`Cookie verification attempt ${attempt + 1} failed:`, error);
+              } catch {
+                devLog('login: cookie verify failed attempt', attempt + 1);
               }
 
               // 次の試行まで待機
@@ -114,32 +115,31 @@ export function useCookieLogin() {
               }
             }
 
-            console.log('Cookie verification timeout, proceeding with redirect anyway');
+            devLog('login: cookie verification timeout');
             return false;
           };
 
           // Cookie伝播を待ってからリダイレクト
           waitForCookie().finally(() => {
             const targetLocation = data.location || '/dashboard';
-            console.log('Executing redirect to:', targetLocation);
+            devLog('login: redirect to', targetLocation);
             window.location.href = targetLocation;
           });
 
         } else {
           // フォールバック: Cookie設定フラグがない場合は従来の遅延リダイレクト
-          console.log('No cookie flag found, using fallback redirect...');
+          devLog('login: fallback redirect');
           setTimeout(() => {
             window.location.href = data.location || '/dashboard';
           }, 800);
         }
-      } catch (error) {
-        console.error('Error in onSuccess handler:', error);
-        throw error; // エラーを再スローして呼び出し元に伝播
+      } catch {
+        devLog('login: onSuccess error');
+        throw new Error('Login post-success handling failed');
       }
     },
-    onError: (error) => {
-      console.log('=== Cookie Login Error ===');
-      console.error('Login mutation error:', error);
+    onError: () => {
+      devLog('login: error');
     },
   });
 }
