@@ -26,7 +26,7 @@ export function useCookieMe() {
         try {
           const data = await response.json();
           message = data?.detail || data?.message || message;
-        } catch (_) {
+        } catch {
           // ignore
         }
         throw new Error(message);
@@ -47,7 +47,7 @@ export function useCookieLogin() {
     mutationFn: async (credentials: LoginCredentials) => {
       console.log('=== Cookie Login Mutation ===');
       console.log('Credentials:', credentials);
-      
+
       const response = await cookieApiClient.auth.login({
         email: credentials.email,
         password: credentials.password,
@@ -70,14 +70,14 @@ export function useCookieLogin() {
     onSuccess: async (data) => {
       console.log('=== Cookie Login Success ===');
       console.log('Success data:', data);
-      
+
       try {
         // ログイン成功時にユーザー情報をキャッシュ
         if (data.user) {
           console.log('Caching user data:', data.user);
           queryClient.setQueryData(cookieAuthKeys.me(), data.user);
         }
-        
+
         // すべての認証関連クエリを無効化（await で完了を待つ）
         console.log('Invalidating auth queries...');
         await queryClient.invalidateQueries({ queryKey: cookieAuthKeys.all });
@@ -85,21 +85,21 @@ export function useCookieLogin() {
 
         // Cookie設定完了の確認とリダイレクト処理
         console.log('Checking redirect data:', { redirected: data.redirected, location: data.location, new_cookie_set: data.new_cookie_set });
-        
+
         if (data.new_cookie_set) {
           console.log('Cookie setting confirmed, waiting for browser synchronization...');
-          
+
           // Cookieの伝播を待つためのポーリング機能
           const waitForCookie = async (maxAttempts = 10, delay = 200): Promise<boolean> => {
             for (let attempt = 0; attempt < maxAttempts; attempt++) {
               console.log(`Cookie check attempt ${attempt + 1}/${maxAttempts}...`);
-              
+
               // document.cookieでクライアント側cookieを確認（httpOnlyなので直接は見えないが、認証状態で判断）
               try {
                 // ユーザー情報が取得できるかテスト
                 await queryClient.refetchQueries({ queryKey: cookieAuthKeys.me() });
                 const userData = queryClient.getQueryData(cookieAuthKeys.me());
-                
+
                 if (userData) {
                   console.log('Cookie authentication verified, user data available');
                   return true;
@@ -107,24 +107,24 @@ export function useCookieLogin() {
               } catch (error) {
                 console.log(`Cookie verification attempt ${attempt + 1} failed:`, error);
               }
-              
+
               // 次の試行まで待機
               if (attempt < maxAttempts - 1) {
                 await new Promise(resolve => setTimeout(resolve, delay));
               }
             }
-            
+
             console.log('Cookie verification timeout, proceeding with redirect anyway');
             return false;
           };
-          
+
           // Cookie伝播を待ってからリダイレクト
           waitForCookie().finally(() => {
             const targetLocation = data.location || '/dashboard';
             console.log('Executing redirect to:', targetLocation);
             window.location.href = targetLocation;
           });
-          
+
         } else {
           // フォールバック: Cookie設定フラグがない場合は従来の遅延リダイレクト
           console.log('No cookie flag found, using fallback redirect...');
@@ -151,7 +151,7 @@ export function useCookieLogout() {
   return useMutation({
     mutationFn: async () => {
       const response = await cookieApiClient.auth.logout();
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Logout failed');
@@ -162,7 +162,7 @@ export function useCookieLogout() {
     onSuccess: () => {
       // ログアウト成功時にキャッシュをクリア
       queryClient.clear();
-      
+
       // または、特定のクエリのみクリア
       queryClient.removeQueries({ queryKey: cookieAuthKeys.all });
     },
@@ -193,7 +193,7 @@ export function useCookieRegister() {
       if (data.user) {
         queryClient.setQueryData(cookieAuthKeys.me(), data.user);
       }
-      
+
       // すべての認証関連クエリを無効化
       queryClient.invalidateQueries({ queryKey: cookieAuthKeys.all });
     },
@@ -229,7 +229,7 @@ export function useCookieRefreshToken() {
 // 認証状態を取得するヘルパーフック
 export function useCookieAuth() {
   const { data: user, isLoading, error } = useCookieMe();
-  
+
   return {
     user,
     isAuthenticated: !!user,

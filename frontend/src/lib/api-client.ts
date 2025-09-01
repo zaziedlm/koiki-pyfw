@@ -72,7 +72,7 @@ const createApiClient = (): AxiosInstance => {
   client.interceptors.request.use(
     async (config) => {
       const token = tokenStorage.get('koiki_access_token');
-      
+
       if (token) {
         // トークンの有効期限をチェック（60秒の猶予時間）
         if (isTokenExpired(token, 60)) {
@@ -88,7 +88,7 @@ const createApiClient = (): AxiosInstance => {
               const { access_token, refresh_token: newRefreshToken } = response.data;
               tokenStorage.set('koiki_access_token', access_token);
               tokenStorage.set('koiki_refresh_token', newRefreshToken);
-              
+
               // 新しいトークンを使用
               config.headers.Authorization = `Bearer ${access_token}`;
             } catch {
@@ -198,7 +198,7 @@ export const api = {
 export const authApi = {
   login: (credentials: { username: string; password: string }) => {
     const formData = `username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}`;
-    
+
     return apiClient.post('/auth/login', formData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -217,7 +217,7 @@ export const authApi = {
 
   getMe: () => apiClient.get('/auth/me'),
 
-  refreshToken: (refreshToken: string) => 
+  refreshToken: (refreshToken: string) =>
     apiClient.post('/auth/refresh', { refresh_token: refreshToken }),
 
   changePassword: (data: { current_password: string; new_password: string }) =>
@@ -248,21 +248,21 @@ export const todoApi = {
   delete: (id: number) => bffClient.delete(`/api/todos/${id}`),
 };
 
-// User API methods
+// User API methods (BFF経由)
 export const userApi = {
-  getMe: () => apiClient.get('/users/me'),
+  getMe: () => bffClient.get('/api/users/me'),
 
   updateMe: (data: {
     username?: string;
     email?: string;
     full_name?: string;
     is_active?: boolean;
-  }) => apiClient.put('/users/me', data),
+  }) => bffClient.put('/api/users/me', data),
 
   getAll: (params?: { skip?: number; limit?: number }) =>
-    apiClient.get('/users', { params }),
+    bffClient.get('/api/users', { params }),
 
-  getById: (id: number) => apiClient.get(`/users/${id}`),
+  getById: (id: number) => bffClient.get(`/api/users/${id}`),
 
   create: (data: {
     username: string;
@@ -270,7 +270,7 @@ export const userApi = {
     password: string;
     full_name?: string;
     is_active?: boolean;
-  }) => apiClient.post('/users', data),
+  }) => bffClient.post('/api/users', data),
 
   update: (id: number, data: {
     username?: string;
@@ -278,9 +278,9 @@ export const userApi = {
     full_name?: string;
     is_active?: boolean;
     password?: string;
-  }) => apiClient.put(`/users/${id}`, data),
+  }) => bffClient.put(`/api/users/${id}`, data),
 
-  delete: (id: number) => apiClient.delete(`/users/${id}`),
+  delete: (id: number) => bffClient.delete(`/api/users/${id}`),
 };
 
 // Security API methods
