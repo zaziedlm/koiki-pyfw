@@ -1,6 +1,2 @@
-// Main stores export file
-export { useAuthStore } from './auth-store';
-export { useTodoStore } from './todo-store';
-export { useUserStore } from './user-store';
+/** Main stores export file (cookie-based only) */
 export { useUIStore } from './ui-store';
-export { useSecurityStore } from './security-store';

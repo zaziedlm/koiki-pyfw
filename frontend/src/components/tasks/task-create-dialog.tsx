@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateTodo } from '@/hooks';
 import { useCookieCreateTodo } from '@/hooks/use-cookie-todo-queries';
 import { useUIStore } from '@/stores';
 import { Loader2 } from 'lucide-react';
@@ -40,12 +39,8 @@ interface TaskCreateDialogProps {
 
 export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) {
   const addNotification = useUIStore((state) => state.addNotification);
-  
-  // 認証方式に応じてhooksを選択
-  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
-  const localCreateMutation = useCreateTodo();
-  const cookieCreateMutation = useCookieCreateTodo();
-  const createTaskMutation = useLocalStorageAuth ? localCreateMutation : cookieCreateMutation;
+
+  const createTaskMutation = useCookieCreateTodo();
 
   const {
     register,
@@ -76,10 +71,11 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
       reset();
       onOpenChange(false);
     } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Please try again';
       addNotification({
         type: 'error',
         title: 'Failed to create task',
-        message: (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Please try again',
+        message,
       });
     }
   };

@@ -15,8 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { useAuthStore, useUIStore } from '@/stores';
-import { useLogout } from '@/hooks';
+import { useUIStore } from '@/stores';
 import { useCookieLogout, useCookieAuth } from '@/hooks/use-cookie-auth-queries';
 import { config } from '@/lib/config';
 import {
@@ -93,47 +92,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { setTheme } = useUIStore();
-  
-  // 認証方式に応じてhooksを選択
-  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
-  
-  // LocalStorage認証の場合
-  const { user: localUser } = useAuthStore();
-  const localLogoutMutation = useLogout();
-  
-  // Cookie認証の場合
-  const { user: cookieUser } = useCookieAuth();
-  const cookieLogoutMutation = useCookieLogout();
-  
-  // 認証方式に応じて選択
-  const user = useLocalStorageAuth ? localUser : cookieUser;
-  const logoutMutation = useLocalStorageAuth ? localLogoutMutation : cookieLogoutMutation;
+
+  const { user } = useCookieAuth();
+  const logoutMutation = useCookieLogout();
 
   const handleLogout = async () => {
-    console.log('🚪 Starting logout process...', { 
-      useLocalStorageAuth,
-      user: !!user,
-      logoutType: useLocalStorageAuth ? 'localStorage' : 'cookie'
-    });
-    
+    console.log('🚪 Starting logout process...', { user: !!user });
+
     try {
       console.log('🚪 Executing logout mutation...');
       await logoutMutation.mutateAsync();
-      console.log('🚪 Logout successful, redirecting to home page');
-      router.push('/');
+      console.log('🚪 Logout successful, redirecting to login page');
+      router.push('/auth/login');
     } catch (error) {
       console.error('🚪 Logout API call failed:', error);
-      
-      // Cookie認証の場合、APIエラーでも強制的にログアウト
-      if (!useLocalStorageAuth) {
-        console.log('🚪 Cookie auth: forcing logout despite API error');
-        // cookieLogoutMutation のonSuccess/onError が呼ばれるので、キャッシュはクリアされる
-        router.push('/auth/login');
-      } else {
-        // LocalStorage認証の場合も強制ログアウト
-        console.log('🚪 LocalStorage auth: forcing logout despite API error');
-        router.push('/');
-      }
+      console.log('🚪 Cookie auth: forcing logout despite API error');
+      router.push('/auth/login');
     }
   };
 
@@ -141,12 +115,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return items.filter((item) => {
       if (!item.requiresAuth) return true;
       if (!user) return false;
-      
+
       if (item.roles && item.roles.length > 0) {
         const userRoles = user?.roles?.map((role: { name: string }) => role.name) || [];
         return item.roles.some((role: string) => userRoles.includes(role)) || user?.is_superuser;
       }
-      
+
       return true;
     });
   };

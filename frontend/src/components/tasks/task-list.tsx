@@ -12,19 +12,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
-  Search, 
-  Plus, 
-  MoreVertical, 
-  Edit, 
-  Trash2, 
+import {
+  Search,
+  Plus,
+  MoreVertical,
+  Edit,
+  Trash2,
   Calendar,
   Filter,
   CheckCircle2,
   Circle,
   Clock
 } from 'lucide-react';
-import { useTodos, useUpdateTodo } from '@/hooks';
 import { useCookieTodos, useCookieUpdateTodo } from '@/hooks/use-cookie-todo-queries';
 import { TodoResponse, TodoFilter } from '@/types';
 import { useUIStore } from '@/stores';
@@ -43,35 +42,21 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TodoResponse | null>(null);
   const [deletingTask, setDeletingTask] = useState<TodoResponse | null>(null);
-  
-  // 認証方式に応じてhooksを選択
-  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
-  
-  // LocalStorage認証の場合
-  const { data: localTodos, isLoading: localLoading, error: localError } = useTodos();
-  const localUpdateMutation = useUpdateTodo();
-  
-  // Cookie認証の場合
-  const { data: cookieTodos, isLoading: cookieLoading, error: cookieError } = useCookieTodos();
-  const cookieUpdateMutation = useCookieUpdateTodo();
-  
-  // 認証方式に応じて選択
-  const todos = useLocalStorageAuth ? localTodos : cookieTodos;
-  const isLoading = useLocalStorageAuth ? localLoading : cookieLoading;
-  const error = useLocalStorageAuth ? localError : cookieError;
-  const updateTaskMutation = useLocalStorageAuth ? localUpdateMutation : cookieUpdateMutation;
-  
+
+  const { data: todos, isLoading, error } = useCookieTodos();
+  const updateTaskMutation = useCookieUpdateTodo();
+
   const addNotification = useUIStore((state) => state.addNotification);
 
   // Filter todos based on current filter
   const filteredTodos = todos?.filter((todo: TodoResponse) => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       todo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       todo.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = filter.completed === undefined || 
+
+    const matchesStatus = filter.completed === undefined ||
       todo.is_completed === filter.completed;
-    
+
     return matchesSearch && matchesStatus;
   }) || [];
 
@@ -81,7 +66,7 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
         id: todo.id,
         data: { is_completed: !todo.is_completed }
       });
-      
+
       addNotification({
         type: 'success',
         title: todo.is_completed ? 'Task marked as incomplete' : 'Task completed',
@@ -262,22 +247,20 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <h3 
-                          className={`font-medium ${
-                            todo.is_completed 
-                              ? 'text-muted-foreground line-through' 
+                        <h3
+                          className={`font-medium ${todo.is_completed
+                              ? 'text-muted-foreground line-through'
                               : 'text-foreground'
-                          }`}
+                            }`}
                         >
                           {todo.title}
                         </h3>
                         {todo.description && (
-                          <p 
-                            className={`text-sm mt-1 ${
-                              todo.is_completed 
-                                ? 'text-muted-foreground line-through' 
+                          <p
+                            className={`text-sm mt-1 ${todo.is_completed
+                                ? 'text-muted-foreground line-through'
                                 : 'text-muted-foreground'
-                            }`}
+                              }`}
                           >
                             {todo.description}
                           </p>
@@ -311,7 +294,7 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => setDeletingTask(todo)}
                               className="text-destructive"
                             >
@@ -335,7 +318,7 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
       />
-      
+
       {editingTask && (
         <TaskEditDialog
           task={editingTask}
@@ -343,7 +326,7 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
           onOpenChange={(open) => !open && setEditingTask(null)}
         />
       )}
-      
+
       {deletingTask && (
         <TaskDeleteDialog
           task={deletingTask}

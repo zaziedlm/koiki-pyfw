@@ -17,7 +17,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useUpdateTodo } from '@/hooks';
 import { useCookieUpdateTodo } from '@/hooks/use-cookie-todo-queries';
 import { useUIStore } from '@/stores';
 import { TodoResponse } from '@/types';
@@ -45,11 +44,7 @@ interface TaskEditDialogProps {
 
 export function TaskEditDialog({ task, open, onOpenChange }: TaskEditDialogProps) {
   const addNotification = useUIStore((state) => state.addNotification);
-  // 認証方式に応じてhooksを選択
-  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
-  const localUpdateMutation = useUpdateTodo();
-  const cookieUpdateMutation = useCookieUpdateTodo();
-  const updateTaskMutation = useLocalStorageAuth ? localUpdateMutation : cookieUpdateMutation;
+  const updateTaskMutation = useCookieUpdateTodo();
 
   const {
     register,
@@ -97,10 +92,7 @@ export function TaskEditDialog({ task, open, onOpenChange }: TaskEditDialogProps
 
       onOpenChange(false);
     } catch (error: unknown) {
-      const message = error instanceof Error && 'response' in error 
-        ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Please try again'
-        : 'Please try again';
-      
+      const message = error instanceof Error ? error.message : 'Please try again';
       addNotification({
         type: 'error',
         title: 'Failed to update task',

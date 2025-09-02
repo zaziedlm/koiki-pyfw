@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useRegister } from '@/hooks';
 import { useCookieRegister } from '@/hooks/use-cookie-auth-queries';
 import { useUIStore } from '@/stores';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
@@ -40,7 +39,7 @@ export function RegisterForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
   const addNotification = useUIStore((state) => state.addNotification);
-  
+
   const {
     register,
     handleSubmit,
@@ -49,17 +48,14 @@ export function RegisterForm() {
     resolver: zodResolver(registerSchema),
   });
 
-  // 認証方式に応じてhooksを選択
-  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
-  const localRegisterMutation = useRegister();
   const cookieRegisterMutation = useCookieRegister();
-  const registerMutation = useLocalStorageAuth ? localRegisterMutation : cookieRegisterMutation;
+  const registerMutation = cookieRegisterMutation;
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
       const { ...registerData } = data;
       await registerMutation.mutateAsync(registerData);
-      
+
       addNotification({
         type: 'success',
         title: 'Registration successful',
@@ -67,10 +63,12 @@ export function RegisterForm() {
       });
       router.push('/dashboard');
     } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to create account';
       addNotification({
         type: 'error',
         title: 'Registration failed',
-        message: (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to create account',
+        message,
       });
     }
   };
@@ -83,7 +81,7 @@ export function RegisterForm() {
           Sign up to start managing your tasks
         </CardDescription>
       </CardHeader>
-      
+
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -99,7 +97,7 @@ export function RegisterForm() {
               <p className="text-sm text-red-500">{errors.username.message}</p>
             )}
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -113,7 +111,7 @@ export function RegisterForm() {
               <p className="text-sm text-red-500">{errors.email.message}</p>
             )}
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="full_name">Full Name (optional)</Label>
             <Input
@@ -123,7 +121,7 @@ export function RegisterForm() {
               {...register('full_name')}
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <div className="relative">
@@ -146,7 +144,7 @@ export function RegisterForm() {
               <p className="text-sm text-red-500">{errors.password.message}</p>
             )}
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
             <div className="relative">
@@ -170,7 +168,7 @@ export function RegisterForm() {
             )}
           </div>
         </CardContent>
-        
+
         <CardFooter className="flex flex-col space-y-4">
           <Button
             type="submit"
@@ -186,7 +184,7 @@ export function RegisterForm() {
               'Create Account'
             )}
           </Button>
-          
+
           <div className="text-center text-sm text-gray-600">
             Already have an account?{' '}
             <Link

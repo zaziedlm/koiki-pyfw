@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useDeleteTodo } from '@/hooks';
 import { useCookieDeleteTodo } from '@/hooks/use-cookie-todo-queries';
 import { useUIStore } from '@/stores';
 import { TodoResponse } from '@/types';
@@ -23,12 +22,8 @@ interface TaskDeleteDialogProps {
 
 export function TaskDeleteDialog({ task, open, onOpenChange }: TaskDeleteDialogProps) {
   const addNotification = useUIStore((state) => state.addNotification);
-  
-  // 認証方式に応じてhooksを選択
-  const useLocalStorageAuth = process.env.NEXT_PUBLIC_USE_LOCALSTORAGE_AUTH === 'true';
-  const localDeleteMutation = useDeleteTodo();
-  const cookieDeleteMutation = useCookieDeleteTodo();
-  const deleteTaskMutation = useLocalStorageAuth ? localDeleteMutation : cookieDeleteMutation;
+
+  const deleteTaskMutation = useCookieDeleteTodo();
 
   const handleDelete = async () => {
     try {
@@ -42,10 +37,7 @@ export function TaskDeleteDialog({ task, open, onOpenChange }: TaskDeleteDialogP
 
       onOpenChange(false);
     } catch (error: unknown) {
-      const message = error instanceof Error && 'response' in error 
-        ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Please try again'
-        : 'Please try again';
-      
+      const message = error instanceof Error ? error.message : 'Please try again';
       addNotification({
         type: 'error',
         title: 'Failed to delete task',

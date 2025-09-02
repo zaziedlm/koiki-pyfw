@@ -1,5 +1,3 @@
-// Main hooks export file
-export * from './use-auth-queries';
-export * from './use-todo-queries';
-export * from './use-user-queries';
-export * from './use-security-queries';
+/** Main hooks export file (cookie-based only) */
+export * from './use-cookie-auth-queries';
+export * from './use-cookie-todo-queries';
