@@ -39,14 +39,33 @@ services:
       - .env
     ports:
       - "8000:8000"
-    volumes:
-      - ./app:/app/app # アプリケーションコード
-      - ./libkoiki:/app/libkoiki # フレームワークコード
-      - ./alembic:/app/alembic # Alembic 設定
-      - ./alembic.ini:/app/alembic.ini
-      - ./ops:/app/ops # 運用・テストスクリプト
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload # 開発時はリロード有効
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 # 本番設定（リロードなし）
     restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: koiki_nextjs_frontend
+    depends_on:
+      - app
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./frontend/.env.docker
+    environment:
+      # Override for browser-accessible API calls
+      - NEXT_PUBLIC_API_BASE_URL=http://app:8000/api/v1
+      - NEXT_PUBLIC_API_PREFIX=/api/v1
+      - NEXT_PUBLIC_API_URL=http://app:8000
+      - NODE_ENV=production
+    restart: always
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 volumes:
   postgres_data:

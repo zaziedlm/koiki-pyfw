@@ -102,6 +102,22 @@ This project has been fully optimized for Poetry 2.x with PEP 621 compliance, pr
 ## Development Commands (Poetry 2.x Optimized)
 
 ### Environment Setup
+
+#### Docker Setup (Recommended)
+```bash
+# Quick start with Docker (includes frontend + backend + database)
+./start-docker.sh dev              # Development mode with hot reload
+./start-docker.sh up               # Production mode
+./start-docker.sh logs             # View logs
+./start-docker.sh health           # Check service health
+
+# Access services
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:8000
+# API Docs: http://localhost:8000/docs
+```
+
+#### Local Development Setup (Alternative)
 ```bash
 # Poetry 2.x: Initial performance configuration
 poetry config installer.parallel true
@@ -122,9 +138,6 @@ poetry install --only=dev          # Install only development dependencies
 
 # For export functionality (if needed)
 poetry self add poetry-plugin-export
-
-# Run with Docker Compose (recommended for development)
-docker-compose up --build
 
 # Run locally (requires PostgreSQL setup)
 poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
