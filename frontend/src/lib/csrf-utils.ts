@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomBytes } from 'node:crypto';
 
 // CSRF トークン設定
 export const CSRF_CONFIG = {
@@ -8,24 +9,20 @@ export const CSRF_CONFIG = {
   MAX_AGE: 24 * 60 * 60, // 24時間
 } as const;
 
-// CSRF トークンを生成（Edge Runtime 対応）
+/**
+ * CSRF トークンを生成（Node.js ランタイム／Math.randomは不使用）
+ */
 export function generateCSRFToken(): string {
-  // Edge Runtime では Web Crypto API を使用
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    const array = new Uint8Array(CSRF_CONFIG.TOKEN_LENGTH);
-    crypto.getRandomValues(array);
-    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  // Web Crypto API（Node 18+）を優先。未対応の場合は node:crypto.randomBytes を使用
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(CSRF_CONFIG.TOKEN_LENGTH);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
   }
-  
-  // フォールバック: Math.random を使用（セキュリティは劣るが動作する）
-  const chars = '0123456789abcdef';
-  let result = '';
-  for (let i = 0; i < CSRF_CONFIG.TOKEN_LENGTH * 2; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return result;
-}
 
+  // Node.js フォールバック（ESM import 済み）
+  return randomBytes(CSRF_CONFIG.TOKEN_LENGTH).toString('hex');
+}
 
 // CSRF トークンを検証
 export function validateCSRFToken(request: NextRequest): boolean {
@@ -54,7 +51,7 @@ export function createCSRFErrorResponse(): NextResponse {
 }
 
 // CSRF トークンをCookieに設定（API Routes用のヘルパー）
-// 注意: この関数は Edge Runtime では動作しません。Node.js runtime でのみ使用してください。
+// 注意: この関数は Node.js runtime でのみ使用してください。
 export function setCSRFTokenCookie(response: NextResponse, token: string) {
   response.cookies.set(CSRF_CONFIG.COOKIE_NAME, token, {
     httpOnly: false, // JavaScriptから読み取り可能にする
@@ -64,4 +61,3 @@ export function setCSRFTokenCookie(response: NextResponse, token: string) {
     path: '/',
   });
 }
-
