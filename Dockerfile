@@ -1,5 +1,17 @@
 # Dockerfile
-FROM python:3.11.7-slim
+FROM python:3.11-slim
+
+# Add custom certificate and ensure CA bundle is installed/updated
+COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl && \
+    update-ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Explicitly specify certificate path for Python environment
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
+    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 
 # Poetry 2.x: Optimized environment variables for performance and caching
 ENV POETRY_VERSION=2.1.0 \
@@ -16,11 +28,7 @@ ENV POETRY_VERSION=2.1.0 \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on
 
-# 必要なパッケージをインストール
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# 必要なパッケージ（curl）は上のレイヤーで同時にインストール済み
 
 # poetryのインストール
 RUN curl -sSL https://install.python-poetry.org | python3 - --version $POETRY_VERSION \
@@ -38,6 +46,7 @@ COPY ./libkoiki ./libkoiki
 COPY ./alembic ./alembic
 COPY ./alembic.ini ./
 COPY ./main.py ./
+COPY ./ops ./ops
 
 # Poetry 2.x: Copy dependency files for better Docker layer caching
 COPY pyproject.toml poetry.lock README.md ./

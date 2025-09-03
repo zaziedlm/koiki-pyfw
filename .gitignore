@@ -55,3 +55,6 @@ _backup*/
 # SpecStory explanation file
 .specstory/.what-is-this.md
 # .specstory/**
+
+# SSL certificate (ignore all *.pem files anywhere)
+**/*.pem

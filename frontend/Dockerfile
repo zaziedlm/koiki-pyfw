@@ -1,39 +1,71 @@
-# Optimized Dockerfile for Next.js frontend application
-FROM node:20-alpine
+# Optimized multi-stage Dockerfile for Next.js frontend application (balanced)
 
-# Install libc6-compat for compatibility with Alpine and wget for health checks
-RUN apk add --no-cache libc6-compat wget curl
+# ---------------------
+# Builder stage
+# ---------------------
+FROM node:22-slim AS builder
 
-# Set working directory
+# Add custom CA certificate and trust for build-time network access
+COPY nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends ca-certificates wget curl && \
+  update-ca-certificates && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Ensure Node and system tools use the updated CA bundle
+ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
+  SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+  NEXT_TELEMETRY_DISABLED=1
+
 WORKDIR /app
 
-# Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Copy package files and install dependencies
+# Install dependencies with cache-friendly layers
 COPY package*.json ./
 RUN npm ci
 
-# Copy source code
+# Copy source and build
+RUN mkdir -p /app/public
 COPY . .
-
-# Build for production (always build, then run dev or start based on environment)
 RUN npm run build
 
-# Create .next directory with proper permissions
-RUN mkdir -p /app/.next && chown -R nextjs:nodejs /app
+# ---------------------
+# Runtime stage
+# ---------------------
+FROM node:22-slim AS runner
 
-# Switch to non-root user
+# Add CA cert and minimal tools (wget is required by docker-compose healthcheck)
+COPY nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends ca-certificates wget curl && \
+  update-ca-certificates && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Environment
+ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
+  SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+  NEXT_TELEMETRY_DISABLED=1 \
+  PORT=3000 \
+  HOSTNAME=0.0.0.0
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+  adduser --system --uid 1001 --ingroup nodejs nextjs
+
+# Install only production dependencies
+COPY --chown=nextjs:nodejs package*.json ./
+RUN npm ci --omit=dev
+
+# Copy build artifacts and needed assets from builder
+COPY --chown=nextjs:nodejs --from=builder /app/.next /app/.next
+COPY --chown=nextjs:nodejs --from=builder /app/public /app/public
+
+# Switch to non-root
 USER nextjs
 
 # Expose port
 EXPOSE 3000
-
-# Set environment variables
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-ENV NEXT_TELEMETRY_DISABLED=1
 
 # Health check using Node.js built-in http module
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \

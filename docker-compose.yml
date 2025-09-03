@@ -2,7 +2,7 @@
 services:
   db:
     image: postgres:15
-    container_name: koiki_postgres_db
+    container_name: osskk_postgres_db
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
@@ -31,7 +31,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: koiki_fastapi_app
+    container_name: osskk_fastapi_app
     depends_on:
       db:
         condition: service_healthy
@@ -46,7 +46,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: koiki_nextjs_frontend
+    container_name: osskk_nextjs_frontend
     depends_on:
       - app
     ports:
