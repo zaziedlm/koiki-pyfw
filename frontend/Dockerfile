@@ -6,7 +6,7 @@
 FROM node:22-slim AS builder
 
 # Add custom CA certificate and trust for build-time network access
-COPY nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
+COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
 RUN apt-get update && \
   apt-get install -y --no-install-recommends ca-certificates wget curl && \
   update-ca-certificates && \
@@ -34,7 +34,7 @@ RUN npm run build
 FROM node:22-slim AS runner
 
 # Add CA cert and minimal tools (wget is required by docker-compose healthcheck)
-COPY nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
+COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
 RUN apt-get update && \
   apt-get install -y --no-install-recommends ca-certificates wget curl && \
   update-ca-certificates && \
