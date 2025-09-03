@@ -4,6 +4,10 @@
 
 KOIKI-FW v0.6.0における認証系APIの包括的なガイドドキュメントです。本フレームワークは、企業級アプリケーションに求められる堅牢で柔軟な認証システムを提供します。JWT（JSON Web Token）をベースとし、リフレッシュトークン、パスワードリセット、ログイン試行制限など、現代的なセキュリティ要件を満たす機能を実装しています。
 
+注記（2025-09-03 更新）:
+- 現行フロントエンド（Next.js 15）は、Next の Route Handlers を BFF として用い、httpOnly Cookie ベースの JWT と CSRF（二重送信）で FastAPI と連携しています。
+- フロント統合の詳細は「docs/frontend-application-development-guide.md」を参照してください。本書はバックエンドAPI仕様を中心に据えつつ、BFF/Cookie/CSRF 前提での補足を追記しています。
+
 ## 目次
 
 1. [アーキテクチャ概要](#アーキテクチャ概要)
@@ -196,12 +200,17 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```json
 {
   "id": 123,
+  "username": "user-name",
   "email": "user@example.com",
   "full_name": "User Name",
   "is_active": true,
   "is_superuser": false,
   "created_at": "2025-07-07T12:00:00Z",
-  "updated_at": "2025-07-07T12:00:00Z"
+  "updated_at": "2025-07-07T12:00:00Z",
+  "roles": [
+    { "id": 1, "name": "admin", "description": "Administrator" },
+    { "id": 2, "name": "member", "description": null }
+  ]
 }
 ```
 
@@ -362,6 +371,7 @@ KOIKI-FWの認証システムは、複数のセキュリティレイヤーで保
 - **レート制限**: slowapi による固定窓アルゴリズム
 - **CORS設定**: 設定可能なオリジン制限
 - **セキュリティヘッダー**: 設定により追加可能
+- **CSRF 対策（BFF層）**: フロントの BFF（Next Route Handlers）でダブルサブミット方式（Cookie `koiki_csrf_token` とヘッダー `x-csrf-token`）。非GETを検証して FastAPI へプロキシ
 
 #### **2. 認証レベル**
 - **JWT署名**: HMAC SHA-256アルゴリズム
@@ -729,6 +739,41 @@ class DynamicTokenService(AuthService):
 ## 使用例
 
 ### フロントエンド実装例
+
+#### Next.js 15 + Route Handlers + Cookie 認証（推奨/現行）
+
+現行フロントは、BFF 経由で FastAPI と連携し、JWT は httpOnly Cookie に保存されます。トークン値を JS から参照・保存しないため、XSS 耐性が高く、CSRF はダブルサブミットで防御します。
+
+- 取得手順（要点）
+  1) `GET /api/auth/csrf` で CSRF トークンを取得（Cookie `koiki_csrf_token` と body）
+  2) `x-csrf-token` ヘッダーを付与して `POST /api/auth/login` へ資格情報を送信
+  3) BFF が FastAPI `/auth/login` をプロキシし、返却トークンを httpOnly Cookie として設定
+  4) `GET /api/auth/me` でユーザー情報を取得し、クライアントキャッシュ（React Query）へ保存
+
+- 代表コンポーネント/フック（本リポジトリ）
+  - `frontend/src/hooks/use-cookie-auth-queries.ts`
+  - `frontend/src/app/api/auth/*`（login/logout/me/refresh/csrf）
+  - `frontend/src/lib/cookie-api-client.ts`, `frontend/src/lib/csrf-utils.ts`
+
+簡易呼び出し例（概念）:
+
+```ts
+// CSRF 取得後に Cookie が設定される
+await fetch('/api/auth/csrf');
+
+// ログイン（BFF 経由、Cookie 設定はサーバ側で実施）
+await fetch('/api/auth/login', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
+  body: JSON.stringify({ email, password }),
+});
+
+// ユーザー情報
+const me = await fetch('/api/auth/me', { credentials: 'include' }).then(r => r.json());
+```
+
+注: 旧来の「アクセストークン/リフレッシュトークンをフロントの localStorage に保持して axios で付与」方式は、本プロジェクトでは採用していません。以下のサンプルはバックエンドAPIを直接叩く一般例として残しています。
 
 #### **React + TypeScript**
 
@@ -1258,6 +1303,10 @@ axios.interceptors.response.use(
 **問題**: "CORS policy: No 'Access-Control-Allow-Origin' header"
 
 **解決方法**:
+
+まず、フロントは可能な限り BFF（Next の Route Handlers）経由でバックエンドと通信します。これにより、フロントからは同一オリジンの `/api/**`（もしくは rewrites の `/api/backend/**`）を叩くため、CORS の影響を大幅に低減できます。
+
+バックエンドを直接呼び出す場合や、BFF 経由でも別ドメインへプロキシする場合は、以下の設定を確認してください。
 ```python
 # settings.pyでCORS設定を確認
 BACKEND_CORS_ORIGINS = [
@@ -1275,6 +1324,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 ```
+
+フロント側では、Cookie 認証時は `fetch`/`axios` に `credentials: 'include'`（もしくは `withCredentials: true`）を設定してください。
 
 #### **5. データベース接続エラー**
 
