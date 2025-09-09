@@ -5,7 +5,7 @@ SSO連携ユーザーモデル
 外部SSOサービス（OpenID Connect等）とローカルユーザーの
 連携情報を管理するSQLAlchemyモデルを定義
 """
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
@@ -61,22 +61,22 @@ class UserSSO(Base):
     
     # タイムスタンプ
     last_sso_login = Column(
-        DateTime,
+        DateTime(timezone=True),
         nullable=True,
         comment="最終SSO経由ログイン日時"
     )
     
     created_at = Column(
-        DateTime,
-        default=datetime.utcnow,
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         nullable=False,
         comment="SSO連携作成日時"
     )
     
     updated_at = Column(
-        DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
         comment="SSO連携更新日時"
     )
@@ -120,8 +120,9 @@ class UserSSO(Base):
         """
         最終SSO ログイン日時を現在時刻に更新
         """
-        self.last_sso_login = datetime.utcnow()
-        self.updated_at = datetime.utcnow()
+        now = datetime.now(timezone.utc)
+        self.last_sso_login = now
+        self.updated_at = now
 
     def update_sso_info(self, email: str = None, display_name: str = None) -> None:
         """
@@ -135,4 +136,4 @@ class UserSSO(Base):
             self.sso_email = email
         if display_name is not None:
             self.sso_display_name = display_name
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)

@@ -252,9 +252,22 @@ async def sso_health_check(
     jwks_accessible = False
     if sso_settings.SSO_JWKS_URI:
         try:
-            # 実際の実装では軽量な接続テストを実行
-            # 例: HEAD リクエストでJWKS エンドポイントの可用性確認
-            jwks_accessible = True  # 暫定
+            try:
+                import httpx  # 遅延インポート
+            except Exception:
+                httpx = None  # type: ignore
+
+            if httpx is not None:
+                verify_ssl = not sso_settings.SSO_SKIP_SSL_VERIFY
+                timeout = httpx.Timeout(3.0, connect=2.0)
+                # HEAD が許可されていない場合に備えて GET にフォールバック
+                async with httpx.AsyncClient(verify=verify_ssl, timeout=timeout) as client:
+                    resp = await client.request("HEAD", sso_settings.SSO_JWKS_URI)
+                    if resp.status_code >= 400:
+                        resp = await client.get(sso_settings.SSO_JWKS_URI)
+                    jwks_accessible = resp.status_code < 400
+            else:
+                logger.warning("httpx not available; skipping JWKS reachability test")
         except Exception as e:
             logger.warning("JWKS endpoint health check failed", error=str(e))
             jwks_accessible = False

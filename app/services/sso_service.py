@@ -6,7 +6,7 @@ OpenID Connect による外部認証サービスとの連携処理を実装
 IDトークンの検証、ユーザー認証、内部トークン発行までの一連の処理を提供
 """
 from typing import Optional, Tuple
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import structlog
 from jose import jwt, JWTError
@@ -17,6 +17,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # JWKS クライアント用ライブラリのインポート
 try:
     import httpx
+    HTTPX_AVAILABLE = True
+except ImportError:
+    HTTPX_AVAILABLE = False
+
+try:
     from jwcrypto import jwk
     JWCRYPTO_AVAILABLE = True
 except ImportError:
@@ -58,15 +63,18 @@ class SSOService:
         self.user_sso_repository = UserSSORepository()
         
         # JWKS設定の初期化
-        if JWCRYPTO_AVAILABLE and self.sso_settings.SSO_JWKS_URI:
+        if self.sso_settings.SSO_JWKS_URI:
             self.jwks_uri = self.sso_settings.SSO_JWKS_URI
-            self.jwks_cache = {}  # 簡易キャッシュ
+            # 簡易キャッシュ: {"fetched_at": datetime, "jwks": dict}
+            self.jwks_cache: dict = {}
             logger.info("JWKS configured", jwks_uri=self.sso_settings.SSO_JWKS_URI)
         else:
             self.jwks_uri = None
             self.jwks_cache = {}
-            if not JWCRYPTO_AVAILABLE:
-                logger.warning("jwcrypto not available, JWT signature verification will be limited")
+        if not JWCRYPTO_AVAILABLE:
+            logger.warning("jwcrypto not available, JWT signature verification will use fallback path")
+        if self.sso_settings.SSO_SIGNATURE_VALIDATION and not HTTPX_AVAILABLE:
+            logger.warning("httpx not available; cannot fetch JWKS when signature validation is enabled")
 
     async def verify_id_token(self, id_token: str) -> SSOUserInfo:
         """
@@ -99,21 +107,33 @@ class SSOService:
                     detail="SSO configuration is incomplete"
                 )
 
-            # JWT署名検証 - 現在は無効化（本格実装時に有効化）
-            # 開発段階では署名検証を無効化して動作確認を優先
-            logger.warning("JWT signature verification disabled for development")
-            payload = jwt.decode(
-                id_token,
-                options={"verify_signature": False},
-                audience=self.sso_settings.SSO_CLIENT_ID if self.sso_settings.SSO_AUDIENCE_VALIDATION else None,
-                issuer=self.sso_settings.SSO_ISSUER_URL if self.sso_settings.SSO_ISSUER_VALIDATION else None,
-            )
-            
-            # TODO: 本格実装時は以下を有効化
-            # if self.sso_settings.SSO_SIGNATURE_VALIDATION and self.jwks_uri:
-            #     # JWKSから公開鍵を取得して署名検証
-            #     payload = await self._verify_jwt_with_jwks(id_token)
-            # else:
+            # 署名検証
+            if self.sso_settings.SSO_SIGNATURE_VALIDATION and self.jwks_uri:
+                payload = await self._verify_jwt_with_jwks(id_token)
+            else:
+                # 開発段階では署名検証を無効化して動作確認を優先
+                logger.warning("JWT signature verification disabled (development mode or not configured)")
+                payload = jwt.decode(
+                    id_token,
+                    key=None,  # verify_signature=False 時は key=None を明示
+                    options={
+                        "verify_signature": False,
+                        "verify_exp": self.sso_settings.SSO_EXPIRY_VALIDATION,
+                        "verify_aud": self.sso_settings.SSO_AUDIENCE_VALIDATION,
+                        "verify_iss": self.sso_settings.SSO_ISSUER_VALIDATION,
+                    },
+                    audience=(
+                        self.sso_settings.SSO_CLIENT_ID
+                        if self.sso_settings.SSO_AUDIENCE_VALIDATION
+                        else None
+                    ),
+                    issuer=(
+                        self.sso_settings.SSO_ISSUER_URL
+                        if self.sso_settings.SSO_ISSUER_VALIDATION
+                        else None
+                    ),
+                    leeway=self.sso_settings.SSO_CLOCK_SKEW_SECONDS,
+                )
 
             # 必須クレーム検証
             if "sub" not in payload:
@@ -354,4 +374,127 @@ class SSOService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Token generation failed"
+            )
+
+    # --- 内部ユーティリティ: JWKS 検証関連 ---
+    async def _fetch_jwks(self) -> dict:
+        """JWKS を取得（簡易キャッシュ付き）"""
+        if not self.jwks_uri:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="JWKS URI is not configured",
+            )
+
+        # キャッシュが有効で、TTL 内ならキャッシュを返す
+        now = datetime.now(timezone.utc)
+        if self.jwks_cache:
+            fetched_at: datetime = self.jwks_cache.get("fetched_at")
+            jwks: dict = self.jwks_cache.get("jwks")
+            if fetched_at and jwks:
+                ttl = timedelta(seconds=self.sso_settings.SSO_TOKEN_CACHE_TTL)
+                if now - fetched_at < ttl:
+                    return jwks
+
+        if not HTTPX_AVAILABLE:  # ライブラリ未導入
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="httpx is not available for JWKS retrieval",
+            )
+
+        try:
+            verify_ssl = not self.sso_settings.SSO_SKIP_SSL_VERIFY
+            timeout = httpx.Timeout(5.0, connect=3.0)
+            async with httpx.AsyncClient(verify=verify_ssl, timeout=timeout) as client:
+                resp = await client.get(self.jwks_uri)
+                resp.raise_for_status()
+                jwks = resp.json()
+        except Exception as e:
+            logger.error("Failed to fetch JWKS", error=str(e), jwks_uri=self.jwks_uri)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Failed to retrieve JWKS for signature verification",
+            )
+
+        # キャッシュ保存
+        self.jwks_cache = {"jwks": jwks, "fetched_at": now}
+        return jwks
+
+    async def _verify_jwt_with_jwks(self, id_token: str) -> dict:
+        """JWKS を使って JWT 署名検証とクレーム検証を行う"""
+        try:
+            header = jwt.get_unverified_header(id_token)
+            kid = header.get("kid")
+            alg = header.get("alg")
+            if not kid or not alg:
+                raise ValidationException("Missing 'kid' or 'alg' in token header")
+
+            jwks = await self._fetch_jwks()
+            keys = jwks.get("keys", [])
+            key_dict = next((k for k in keys if k.get("kid") == kid), None)
+            if not key_dict:
+                logger.warning("No matching JWK found for kid", kid=kid)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Unable to find matching JWK for token",
+                )
+
+            # できれば jwcrypto で PEM にして decode
+            key_for_decode = None
+            if JWCRYPTO_AVAILABLE:
+                try:
+                    jwk_obj = jwk.JWK(**key_dict)
+                    pem_bytes = jwk_obj.export_to_pem(public_key=True, private_key=False)
+                    key_for_decode = pem_bytes
+                except Exception as e:
+                    logger.warning("jwcrypto PEM export failed; will try direct JWK decode", error=str(e))
+                    key_for_decode = key_dict
+            else:
+                # jwcrypto 未インストール: python-jose に JWK を直接渡す（対応環境のみ）
+                key_for_decode = key_dict
+
+            payload = jwt.decode(
+                id_token,
+                key=key_for_decode,
+                algorithms=[alg],
+                options={
+                    "verify_signature": True,
+                    "verify_exp": self.sso_settings.SSO_EXPIRY_VALIDATION,
+                    "verify_aud": self.sso_settings.SSO_AUDIENCE_VALIDATION,
+                    "verify_iss": self.sso_settings.SSO_ISSUER_VALIDATION,
+                },
+                audience=(
+                    self.sso_settings.SSO_CLIENT_ID
+                    if self.sso_settings.SSO_AUDIENCE_VALIDATION
+                    else None
+                ),
+                issuer=(
+                    self.sso_settings.SSO_ISSUER_URL
+                    if self.sso_settings.SSO_ISSUER_VALIDATION
+                    else None
+                ),
+                leeway=self.sso_settings.SSO_CLOCK_SKEW_SECONDS,
+            )
+            return payload
+
+        except HTTPException:
+            raise
+        except JWTError as e:
+            logger.error("JWT signature verification failed", error=str(e))
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token signature verification failed",
+            )
+        except Exception as e:
+            logger.error("Unexpected error during JWKS verification", error=str(e))
+            # 開発環境ではフォールバック（設定で制御）
+            if self.sso_settings.SSO_DEBUG_MODE and not self.sso_settings.SSO_SIGNATURE_VALIDATION:
+                logger.warning("Falling back to unsigned decode due to debug mode")
+                return jwt.decode(
+                    id_token,
+                    key=None,
+                    options={"verify_signature": False},
+                )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="JWKS verification error",
             )

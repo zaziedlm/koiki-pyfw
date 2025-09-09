@@ -6,7 +6,7 @@ UserSSOモデルのデータアクセス層を実装
 libkoikiのBaseRepositoryを継承し、SSO連携固有のクエリメソッドを提供
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 import structlog
@@ -141,7 +141,7 @@ class UserSSORepository(BaseRepository[UserSSO, BaseModel, BaseModel]):
             sso_provider=sso_provider,
             sso_email=sso_email,
             sso_display_name=sso_display_name,
-            last_sso_login=datetime.utcnow(),
+            last_sso_login=datetime.now(timezone.utc),
         )
 
         created_user_sso = await self.create(user_sso)
