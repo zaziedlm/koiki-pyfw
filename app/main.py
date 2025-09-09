@@ -221,8 +221,14 @@ setup_exception_handlers(app)
 # setup_monitoring(app) # 必要に応じて有効化
 
 # --- API ルーター設定 ---
+# libkoikiの標準API
 app.include_router(api_router_v1, prefix=settings.API_PREFIX)
-logger.info("API router v1 included.", prefix=settings.API_PREFIX)
+logger.info("libkoiki API router v1 included.", prefix=settings.API_PREFIX)
+
+# アプリケーション固有API
+from app.api.v1.router import router as app_api_router
+app.include_router(app_api_router, prefix=settings.API_PREFIX)
+logger.info("Application API router included.", prefix=settings.API_PREFIX)
 
 # --- ヘルスチェックエンドポイント ---
 @app.get("/health", tags=["Health Check"])

@@ -42,6 +42,7 @@ dependencies = [
     "python-jose>=3.4.0,<3.6.0",            # Security fix (PYSEC-2024-232,233)
     "passlib[bcrypt]>=1.7.4,<1.8.0",        # Minor version locked, compatible with bcrypt 4.x
     "bcrypt>=4.0.0,<5.0.0",                  # Compatible bcrypt version
+    "jwcrypto>=1.5.0,<1.6.0",              # JWT crypto library for JWKS support
     
     # HTTP & Communication
     "httpx>=0.28.1,<0.29.0",                # Updated HTTP client

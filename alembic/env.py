@@ -16,6 +16,9 @@ from libkoiki.db.base import Base # SQLAlchemy Base from your application
 from libkoiki.core.config import settings # アプリケーション設定を読み込む
 from libkoiki.models import * # src/models/__init__.py から全てインポート (ToDoModelも含まれる)
 
+# アプリケーション固有のモデルもインポート（SSO機能含む）
+from app.models import * # app/models/__init__.py からSSO関連モデルをインポート
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
