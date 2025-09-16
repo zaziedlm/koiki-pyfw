@@ -11,21 +11,23 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
+
 class SSOLoginRequest(BaseModel):
     """
     SSO ログインリクエスト
-    
-    外部SSOサービスから発行されたIDトークンを受け取り、
-    内部認証システムでの認証を行う
+
+    BFF 側で ID トークン検証を済ませ、本 API にはリソースサーバー向けの OAuth2 アクセストークンのみを渡す想定。
+    JSON ボディまたは `application/x-www-form-urlencoded` でアクセストークンを受け取る。
     """
-    id_token: str = Field(..., description="OpenID Connect IDトークン")
+    access_token: str = Field(..., description="OAuth 2.0 access token")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
             }
         }
+
 
 
 class SSOUserInfo(BaseModel):

@@ -6,10 +6,10 @@ OpenID Connect による外部認証サービスとの連携エンドポイン�
 IDトークンを受け取り、内部認証トークンを返す
 """
 
-from typing import Annotated
+from typing import Annotated, Optional
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Body, Depends, Form, HTTPException, Request, status
 
 from app.core.sso_config import SSOSettings, get_sso_settings
 from app.schemas.sso import SSOLinkResponse, SSOLoginRequest, SSOUserInfoResponse
@@ -50,35 +50,48 @@ def get_sso_service(
 SSOServiceDep = Annotated[SSOService, Depends(get_sso_service)]
 
 
+
+
+async def parse_sso_login_request(
+    sso_json: Optional[SSOLoginRequest] = Body(default=None),
+    access_token_form: Optional[str] = Form(default=None, description="OAuth2 アクセストークン"),
+) -> SSOLoginRequest:
+    if sso_json and sso_json.access_token:
+        return sso_json
+    if access_token_form:
+        return SSOLoginRequest(access_token=access_token_form)
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="access_token is required",
+    )
+
 @router.post("/sso/login", response_model=TokenWithRefresh)
 @limiter.limit("10/minute")
 @handle_auth_errors("sso_login")
 async def sso_login(
     request: Request,
-    sso_request: SSOLoginRequest,
+    sso_request: Annotated[SSOLoginRequest, Depends(parse_sso_login_request)],
     sso_service: SSOServiceDep,
     db: DBSessionDep,
 ) -> TokenWithRefresh:
     """
     SSO ログインエンドポイント
 
-    外部SSOサービスから発行されたIDトークンを検証し、
-    内部認証システムでのアクセストークンとリフレッシュトークンを返します。
+    BFF が ID トークンの検証を担い、本 API は IdP から払い出された OAuth2 アクセストークンのみを受け取り内部トークンへ交換する。
 
     処理フロー:
-    1. IDトークンの署名検証と内容検証
-    2. SSO ユーザー情報の抽出
-    3. ローカルユーザーとの連携（自動作成含む）
-    4. 内部認証トークンペアの発行
+    1. アクセストークンを検証する（JWKS 検証またはイントロスペクション）。
+    2. SSO ユーザーをローカルユーザーと連携・必要に応じて自動作成する。
+    3. KOIKI 内部で利用するアクセストークン／リフレッシュトークンを発行する。
 
     Args:
-        sso_request: SSO ログインリクエスト（IDトークン含む）
+        sso_request: 上流から受け取ったアクセストークンを含む SSO ログインリクエスト。
 
     Returns:
-        内部認証トークンペア（アクセストークン、リフレッシュトークン）
+        内部アクセストークンとリフレッシュトークンのペア。
 
     Raises:
-        HTTPException: 認証失敗、トークン不正、ユーザー作成失敗等
+        HTTPException: 認証失敗やトークン交換に失敗した場合。
     """
     ip_address = request.client.host if request.client else "unknown"
     device_info = extract_device_info(request)
@@ -86,17 +99,17 @@ async def sso_login(
     logger.info("SSO login attempt", ip_address=ip_address, device_info=device_info)
 
     try:
-        # 1. IDトークンを検証してユーザー情報を抽出
-        user_info = await sso_service.verify_id_token(sso_request.id_token)
+        # 1. Validate the access token and extract subject claims
+        user_info = await sso_service.verify_access_token(sso_request.access_token)
 
         logger.info(
-            "ID token verification successful",
+            "Access token verification successful",
             email=user_info.email,
             sub=user_info.sub,
             ip_address=ip_address,
         )
 
-        # 2. SSO ユーザー情報を基にローカルユーザーを認証・取得
+        # 2. Authenticate the SSO user against the local store
         user, sso_response = await sso_service.authenticate_sso_user(user_info, db)
 
         logger.info(
@@ -107,7 +120,7 @@ async def sso_login(
             ip_address=ip_address,
         )
 
-        # 3. 内部認証トークンペアを発行
+        # 3. Issue the internal token pair used by KOIKI services
         (
             access_token,
             refresh_token,

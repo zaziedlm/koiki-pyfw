@@ -1,10 +1,11 @@
 # app/services/sso_service.py
 """
-SSO認証サービス
+SSO 認証サービス群。
 
-OpenID Connect による外部認証サービスとの連携処理を実装
-IDトークンの検証、ユーザー認証、内部トークン発行までの一連の処理を提供
+OpenID Connect のアクセストークン検証と後段処理の連携をまとめて提供する。
 """
+
+
 from typing import Optional, Tuple
 from datetime import datetime, timezone, timedelta
 
@@ -42,13 +43,13 @@ logger = structlog.get_logger(__name__)
 
 class SSOService:
     """
-    SSO認証サービスクラス
-    
-    OpenID Connect による外部認証との連携を処理:
-    1. IDトークンの署名検証
-    2. クレーム抽出・検証
-    3. ローカルユーザーとの連携
-    4. 内部認証トークンの発行
+    SSO 認証サービスの実装クラス。
+
+    OpenID Connect 連携の主な流れ:
+    1. アクセストークン検証（JWKS 検証または RFC 7662 イントロスペクション）。
+    2. アカウントの検索・プロビジョニング。
+    3. ローカルアカウントとの紐付け。
+    4. KOIKI 内部トークンの発行。
     """
 
     def __init__(
@@ -61,7 +62,34 @@ class SSOService:
         self.auth_service = auth_service
         self.sso_settings = sso_settings or get_sso_settings()
         self.user_sso_repository = UserSSORepository()
-        
+
+        self.allowed_audiences = self.sso_settings.get_allowed_audiences()
+        if not self.allowed_audiences and self.sso_settings.SSO_CLIENT_ID:
+            self.allowed_audiences = [self.sso_settings.SSO_CLIENT_ID]
+        self.allow_sub_update = self.sso_settings.SSO_ALLOW_SUB_UPDATE
+        self.introspection_auth_mode = (
+            self.sso_settings.SSO_INTROSPECTION_AUTH_MODE or "basic"
+        ).lower()
+        self.introspection_token = self.sso_settings.SSO_INTROSPECTION_TOKEN
+
+        self.introspection_enabled = (
+            self.sso_settings.SSO_INTROSPECTION_ENABLED
+            and bool(self.sso_settings.SSO_INTROSPECTION_ENDPOINT)
+        )
+        if self.introspection_enabled:
+            logger.info(
+                "SSO access token introspection enabled",
+                endpoint=self.sso_settings.SSO_INTROSPECTION_ENDPOINT,
+            )
+        elif self.sso_settings.SSO_INTROSPECTION_ENABLED:
+            logger.warning(
+                "SSO introspection enabled but endpoint is not configured",
+            )
+        if self.introspection_enabled and not HTTPX_AVAILABLE:
+            logger.warning(
+                "httpx not available; access token introspection cannot be performed",
+            )
+
         # JWKS設定の初期化
         if self.sso_settings.SSO_JWKS_URI:
             self.jwks_uri = self.sso_settings.SSO_JWKS_URI
@@ -76,127 +104,171 @@ class SSOService:
         if self.sso_settings.SSO_SIGNATURE_VALIDATION and not HTTPX_AVAILABLE:
             logger.warning("httpx not available; cannot fetch JWKS when signature validation is enabled")
 
-    async def verify_id_token(self, id_token: str) -> SSOUserInfo:
+    async def verify_access_token(self, access_token: str) -> SSOUserInfo:
         """
-        IDトークンを検証し、ユーザー情報を抽出
-        
-        OpenID Connect標準に従い、以下を検証:
-        - JWT署名（JWKSから取得した公開鍵）
-        - 発行者 (iss)
-        - 対象者 (aud)  
-        - 有効期限 (exp)
-        - 必須クレーム
-        
-        Args:
-            id_token: OpenID Connect IDトークン
-            
-        Returns:
-            検証済みユーザー情報
-            
-        Raises:
-            HTTPException: トークン検証失敗時
+        OAuth2 アクセストークンを検証し、正規化したユーザー情報を構築する。
+
+        上流の BFF が ID トークンの検証を済ませている前提で、ここでは
+        JWKS を用いた署名検証または RFC 7662 ベースのイントロスペクションを行い、
+        KOIKI で扱う SSO ユーザーモデルへ落とし込む。
         """
-        logger.info("Starting ID token verification")
+
+        logger.info("Starting access token verification")
 
         try:
-            # 設定検証
+            if not access_token:
+                raise ValidationException("Access token is required")
+
             if not self.sso_settings.validate_required_settings():
                 logger.error("SSO settings validation failed")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="SSO configuration is incomplete"
+                    detail="SSO configuration is incomplete",
                 )
 
-            # 署名検証
-            if self.sso_settings.SSO_SIGNATURE_VALIDATION and self.jwks_uri:
-                payload = await self._verify_jwt_with_jwks(id_token)
+            expected_audiences = (
+                list(self.allowed_audiences)
+                if self.sso_settings.SSO_AUDIENCE_VALIDATION and self.allowed_audiences
+                else []
+            )
+
+            if self.introspection_enabled:
+                claims = await self._introspect_access_token(access_token)
             else:
-                # 開発段階では署名検証を無効化して動作確認を優先
-                logger.warning("JWT signature verification disabled (development mode or not configured)")
-                payload = jwt.decode(
-                    id_token,
-                    key=None,  # verify_signature=False 時は key=None を明示
-                    options={
+                if self.sso_settings.SSO_SIGNATURE_VALIDATION and self.jwks_uri:
+                    claims = await self._decode_jwt_with_jwks(
+                        access_token,
+                        expected_audiences if expected_audiences else None,
+                    )
+                else:
+                    logger.warning(
+                        "JWT signature verification disabled (development mode or not configured)"
+                    )
+                    options = {
                         "verify_signature": False,
                         "verify_exp": self.sso_settings.SSO_EXPIRY_VALIDATION,
-                        "verify_aud": self.sso_settings.SSO_AUDIENCE_VALIDATION,
+                        "verify_aud": bool(expected_audiences)
+                        and self.sso_settings.SSO_AUDIENCE_VALIDATION,
                         "verify_iss": self.sso_settings.SSO_ISSUER_VALIDATION,
-                    },
-                    audience=(
-                        self.sso_settings.SSO_CLIENT_ID
-                        if self.sso_settings.SSO_AUDIENCE_VALIDATION
-                        else None
-                    ),
-                    issuer=(
-                        self.sso_settings.SSO_ISSUER_URL
-                        if self.sso_settings.SSO_ISSUER_VALIDATION
-                        else None
-                    ),
-                    leeway=self.sso_settings.SSO_CLOCK_SKEW_SECONDS,
-                )
+                    }
+                    claims = jwt.decode(
+                        access_token,
+                        key=None,
+                        options=options,
+                        audience=(expected_audiences if options["verify_aud"] else None),
+                        issuer=(
+                            self.sso_settings.SSO_ISSUER_URL
+                            if self.sso_settings.SSO_ISSUER_VALIDATION
+                            else None
+                        ),
+                        leeway=self.sso_settings.SSO_CLOCK_SKEW_SECONDS,
+                    )
 
-            # 必須クレーム検証
-            if "sub" not in payload:
+            if not isinstance(claims, dict):
+                raise ValidationException("Invalid token payload")
+
+            claims = dict(claims)
+
+            if "active" in claims:
+                if not claims.get("active", False):
+                    raise ValidationException("Access token is not active")
+                claims.pop("active", None)
+
+            if isinstance(claims.get("scope"), str):
+                claims["scope"] = [scope for scope in claims["scope"].split() if scope]
+
+            if "sub" not in claims or not claims.get("sub"):
                 raise ValidationException("Missing required 'sub' claim")
-            if "email" not in payload:
+
+            self._validate_audience(claims)
+
+            need_userinfo = False
+            if self.sso_settings.SSO_USER_INFO_ENDPOINT:
+                if not claims.get("email"):
+                    need_userinfo = True
+                elif (
+                    self.sso_settings.SSO_REQUIRE_EMAIL_VERIFIED
+                    and "email_verified" not in claims
+                ):
+                    need_userinfo = True
+
+            if need_userinfo:
+                userinfo_claims = await self._fetch_user_info(access_token)
+                if userinfo_claims:
+                    claims = self._merge_claims(claims, userinfo_claims)
+
+            email = claims.get("email")
+            if not email:
                 raise ValidationException("Missing required 'email' claim")
 
-            # メール検証済み要求
+            email_verified_raw = claims.get("email_verified")
+            email_verified = None
+            if email_verified_raw is not None:
+                email_verified = self._coerce_bool(email_verified_raw)
+                claims["email_verified"] = email_verified
+            else:
+                claims.pop("email_verified", None)
+
             if self.sso_settings.SSO_REQUIRE_EMAIL_VERIFIED:
-                if not payload.get("email_verified", False):
+                if email_verified is None:
+                    raise ValidationException("Email verification status unavailable")
+                if not email_verified:
                     raise ValidationException("Email verification required")
 
-            # ドメイン制限チェック
-            email = payload["email"]
+            if email_verified is None:
+                email_verified = False
+                claims["email_verified"] = email_verified
+
             if not self.sso_settings.is_domain_allowed(email):
                 logger.warning("Email domain not allowed", email=email)
                 raise ValidationException("Email domain not allowed")
 
-            # SSOUserInfo構築
             user_info = SSOUserInfo(
-                sub=payload["sub"],
+                sub=claims["sub"],
                 email=email,
-                email_verified=payload.get("email_verified", False),
-                name=payload.get("name"),
-                given_name=payload.get("given_name"),
-                family_name=payload.get("family_name"),
-                preferred_username=payload.get("preferred_username"),
-                picture=payload.get("picture"),
-                locale=payload.get("locale")
+                email_verified=email_verified,
+                name=claims.get("name"),
+                given_name=claims.get("given_name"),
+                family_name=claims.get("family_name"),
+                preferred_username=claims.get("preferred_username"),
+                picture=claims.get("picture"),
+                locale=claims.get("locale"),
             )
 
             logger.info(
-                "ID token verification successful",
+                "Access token verification successful",
                 sub=user_info.sub,
                 email=user_info.email,
-                email_verified=user_info.email_verified
+                email_verified=user_info.email_verified,
             )
-            
+
             return user_info
 
         except JWTError as e:
             logger.error("JWT verification failed", error=str(e))
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid ID token"
+                detail="Invalid access token",
             )
         except JWKError as e:
             logger.error("JWKS key retrieval failed", error=str(e))
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token signature verification failed"
+                detail="Token signature verification failed",
             )
         except ValidationException as e:
             logger.error("Token validation failed", error=str(e))
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=str(e)
+                detail=str(e),
             )
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error("Unexpected error during token verification", error=str(e))
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Token verification failed"
+                detail="Token verification failed",
             )
 
     async def authenticate_sso_user(
@@ -242,6 +314,13 @@ class SSOService:
             if existing_sso:
                 # 既存のSSO連携が見つかった場合
                 logger.info("Existing SSO link found", user_id=existing_sso.user_id)
+                if (
+                    self.allow_sub_update
+                    and existing_sso.sso_subject_id != user_info.sub
+                ):
+                    logger.info("Updating SSO subject binding", old_subject=existing_sso.sso_subject_id, new_subject=user_info.sub)
+                    existing_sso.sso_subject_id = user_info.sub
+                    await self.user_sso_repository.update(existing_sso)
                 user = existing_sso.user
                 
                 # ログイン情報を更新
@@ -376,6 +455,184 @@ class SSOService:
                 detail="Token generation failed"
             )
 
+    async def _introspect_access_token(self, access_token: str) -> dict:
+        """
+        設定済みのイントロスペクション エンドポイントを呼び出し、アクセストークンの有効性を確認する。
+        """
+
+        if not HTTPX_AVAILABLE:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="httpx is required for token introspection",
+            )
+
+        endpoint = self.sso_settings.SSO_INTROSPECTION_ENDPOINT
+        if not endpoint:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Token introspection endpoint is not configured",
+            )
+
+        mode = self.introspection_auth_mode
+
+        try:
+            verify_ssl = not self.sso_settings.SSO_SKIP_SSL_VERIFY
+            timeout = httpx.Timeout(5.0, connect=3.0)
+            data = {"token": access_token, "token_type_hint": "access_token"}
+            headers = {"Content-Type": "application/x-www-form-urlencoded"}
+            auth = None
+
+            if mode == "basic":
+                if self.sso_settings.SSO_CLIENT_ID and self.sso_settings.SSO_CLIENT_SECRET:
+                    auth = (
+                        self.sso_settings.SSO_CLIENT_ID,
+                        self.sso_settings.SSO_CLIENT_SECRET,
+                    )
+                else:
+                    logger.warning("Client secret is required for basic introspection auth")
+            elif mode == "bearer":
+                if self.introspection_token:
+                    headers["Authorization"] = f"Bearer {self.introspection_token}"
+                else:
+                    logger.warning("Introspection bearer token is not configured; falling back to unauthenticated request")
+            elif mode != "none":
+                logger.warning("Unknown introspection auth mode", mode=mode)
+
+            if self.sso_settings.SSO_CLIENT_ID and mode in {"none", "bearer"}:
+                data.setdefault("client_id", self.sso_settings.SSO_CLIENT_ID)
+            if mode == "none" and self.sso_settings.SSO_CLIENT_SECRET:
+                data.setdefault("client_secret", self.sso_settings.SSO_CLIENT_SECRET)
+
+            async with httpx.AsyncClient(verify=verify_ssl, timeout=timeout) as client:
+                response = await client.post(
+                    endpoint,
+                    data=data,
+                    headers=headers,
+                    auth=auth,
+                )
+                response.raise_for_status()
+                payload = response.json()
+                if isinstance(payload, dict) and isinstance(payload.get("scope"), str):
+                    payload["scope"] = [scope for scope in payload["scope"].split() if scope]
+                return payload
+        except httpx.HTTPStatusError as e:
+            logger.error(
+                "Token introspection rejected by identity provider",
+                status_code=e.response.status_code,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Access token introspection failed",
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Token introspection error", error=str(e))
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Token introspection error",
+            )
+
+    async def _fetch_user_info(self, access_token: str) -> dict:
+        """
+        設定されたユーザー情報エンドポイントから追加クレームを取得する。
+        """
+
+        endpoint = self.sso_settings.SSO_USER_INFO_ENDPOINT
+        if not endpoint:
+            return {}
+
+        if not HTTPX_AVAILABLE:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="httpx is required to call the user info endpoint",
+            )
+
+        try:
+            verify_ssl = not self.sso_settings.SSO_SKIP_SSL_VERIFY
+            timeout = httpx.Timeout(5.0, connect=3.0)
+            headers = {"Authorization": f"Bearer {access_token}"}
+            async with httpx.AsyncClient(verify=verify_ssl, timeout=timeout) as client:
+                response = await client.get(
+                    endpoint,
+                    headers=headers,
+                )
+                response.raise_for_status()
+                return response.json()
+        except httpx.HTTPStatusError as e:
+            logger.error(
+                "User info endpoint rejected the access token",
+                status_code=e.response.status_code,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Access token rejected by user info endpoint",
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("User info retrieval error", error=str(e))
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to retrieve user info",
+            )
+
+    @staticmethod
+    def _coerce_bool(value: object) -> bool:
+        """
+        文字列や数値で返される真偽値を正規化するユーティリティ。
+        """
+
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.strip().lower() in {"true", "1", "yes"}
+        if isinstance(value, (int, float)):
+            return bool(value)
+        return bool(value)
+
+    def _merge_claims(self, base: dict, additional: dict) -> dict:
+        """
+        プロバイダーから得たクレームを結合し、既存値を尊重しつつメール系のみ上書きする。
+        """
+
+        merged = dict(base)
+        for key, value in additional.items():
+            if value is None:
+                continue
+            if key == "sub":
+                if merged.get("sub") and not self.allow_sub_update:
+                    continue
+                merged["sub"] = value
+            elif key == "email":
+                merged["email"] = value
+            elif key == "email_verified":
+                merged["email_verified"] = self._coerce_bool(value)
+            else:
+                merged.setdefault(key, value)
+        return merged
+
+    def _validate_audience(self, claims: dict) -> None:
+        """アクセストークン内の aud が許可リストに含まれるか検証する。"""
+        if not self.sso_settings.SSO_AUDIENCE_VALIDATION:
+            return
+        if not self.allowed_audiences:
+            return
+
+        token_aud = claims.get("aud") or claims.get("client_id")
+        if token_aud is None:
+            raise ValidationException("Audience not provided in token")
+
+        if isinstance(token_aud, str):
+            token_auds = [token_aud]
+        elif isinstance(token_aud, (list, tuple, set)):
+            token_auds = [str(aud) for aud in token_aud if aud]
+        else:
+            token_auds = [str(token_aud)] if token_aud else []
+
+        if not any(aud in self.allowed_audiences for aud in token_auds):
+            raise ValidationException("Audience not allowed")
+
     # --- 内部ユーティリティ: JWKS 検証関連 ---
     async def _fetch_jwks(self) -> dict:
         """JWKS を取得（簡易キャッシュ付き）"""
@@ -419,10 +676,10 @@ class SSOService:
         self.jwks_cache = {"jwks": jwks, "fetched_at": now}
         return jwks
 
-    async def _verify_jwt_with_jwks(self, id_token: str) -> dict:
-        """JWKS を使って JWT 署名検証とクレーム検証を行う"""
+    async def _decode_jwt_with_jwks(self, token: str, audiences: Optional[list[str]] = None) -> dict:
+        """JWKS を用いて JWT の署名とクレームを検証する。"""
         try:
-            header = jwt.get_unverified_header(id_token)
+            header = jwt.get_unverified_header(token)
             kid = header.get("kid")
             alg = header.get("alg")
             if not kid or not alg:
@@ -438,7 +695,6 @@ class SSOService:
                     detail="Unable to find matching JWK for token",
                 )
 
-            # できれば jwcrypto で PEM にして decode
             key_for_decode = None
             if JWCRYPTO_AVAILABLE:
                 try:
@@ -446,27 +702,27 @@ class SSOService:
                     pem_bytes = jwk_obj.export_to_pem(public_key=True, private_key=False)
                     key_for_decode = pem_bytes
                 except Exception as e:
-                    logger.warning("jwcrypto PEM export failed; will try direct JWK decode", error=str(e))
+                    logger.warning(
+                        "jwcrypto PEM export failed; will try direct JWK decode",
+                        error=str(e),
+                    )
                     key_for_decode = key_dict
             else:
-                # jwcrypto 未インストール: python-jose に JWK を直接渡す（対応環境のみ）
                 key_for_decode = key_dict
 
+            verify_aud = self.sso_settings.SSO_AUDIENCE_VALIDATION and bool(audiences)
+
             payload = jwt.decode(
-                id_token,
+                token,
                 key=key_for_decode,
                 algorithms=[alg],
                 options={
                     "verify_signature": True,
                     "verify_exp": self.sso_settings.SSO_EXPIRY_VALIDATION,
-                    "verify_aud": self.sso_settings.SSO_AUDIENCE_VALIDATION,
+                    "verify_aud": verify_aud,
                     "verify_iss": self.sso_settings.SSO_ISSUER_VALIDATION,
                 },
-                audience=(
-                    self.sso_settings.SSO_CLIENT_ID
-                    if self.sso_settings.SSO_AUDIENCE_VALIDATION
-                    else None
-                ),
+                audience=(audiences if verify_aud else None),
                 issuer=(
                     self.sso_settings.SSO_ISSUER_URL
                     if self.sso_settings.SSO_ISSUER_VALIDATION
@@ -486,11 +742,10 @@ class SSOService:
             )
         except Exception as e:
             logger.error("Unexpected error during JWKS verification", error=str(e))
-            # 開発環境ではフォールバック（設定で制御）
             if self.sso_settings.SSO_DEBUG_MODE and not self.sso_settings.SSO_SIGNATURE_VALIDATION:
                 logger.warning("Falling back to unsigned decode due to debug mode")
                 return jwt.decode(
-                    id_token,
+                    token,
                     key=None,
                     options={"verify_signature": False},
                 )
@@ -498,3 +753,4 @@ class SSOService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="JWKS verification error",
             )
+

@@ -43,13 +43,31 @@ class SSOSettings(BaseSettings):
     
     SSO_ALLOWED_DOMAINS: Optional[str] = None
     """許可ドメインリスト (カンマ区切り)。Noneの場合は全ドメイン許可"""
+    SSO_ALLOWED_AUDIENCES: Optional[str] = None
+    """許可する aud 値をカンマ区切りで列挙"""
+
     
     SSO_REQUIRE_EMAIL_VERIFIED: bool = True
     """メール検証済み要求フラグ"""
     
     SSO_USER_INFO_ENDPOINT: Optional[str] = None
     """ユーザー情報取得エンドポイント (オプション)"""
+    SSO_ALLOW_SUB_UPDATE: bool = False
+    """IdP 側で subject が変わった場合にローカル連携を更新するか"""
+
     
+    SSO_INTROSPECTION_ENABLED: bool = False
+    """RFC 7662 のイントロスペクションでアクセストークンを検証するかどうか"""
+
+    SSO_INTROSPECTION_ENDPOINT: Optional[str] = None
+    """OAuth2 イントロスペクション エンドポイントの URL"""
+
+    SSO_INTROSPECTION_AUTH_MODE: str = "basic"
+    """イントロスペクション時の認証方式 (basic / bearer / none)"""
+
+    SSO_INTROSPECTION_TOKEN: Optional[str] = None
+    """イントロスペクションで Bearer 認証に用いるトークン"""
+
     # === セキュリティ設定 ===
     SSO_AUDIENCE_VALIDATION: bool = True
     """JWTオーディエンス検証の有効化"""
@@ -77,53 +95,53 @@ class SSOSettings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
-        
+
+    def get_allowed_audiences(self) -> list[str]:
+        """許可された aud のリストを取得する。"""
+        if not self.SSO_ALLOWED_AUDIENCES:
+            return []
+        return [aud.strip() for aud in self.SSO_ALLOWED_AUDIENCES.split(',') if aud.strip()]
+
     def get_allowed_domains(self) -> list[str]:
-        """
-        許可ドメインリストを取得
-        
-        Returns:
-            許可ドメインのリスト。設定がない場合は空リスト
-        """
+        """許可ドメインのリストを取得する。"""
         if not self.SSO_ALLOWED_DOMAINS:
             return []
-        return [domain.strip() for domain in self.SSO_ALLOWED_DOMAINS.split(",")]
-    
+        return [domain.strip() for domain in self.SSO_ALLOWED_DOMAINS.split(',') if domain.strip()]
+
     def is_domain_allowed(self, email: str) -> bool:
-        """
-        メールアドレスのドメインが許可されているかチェック
-        
-        Args:
-            email: チェックするメールアドレス
-            
-        Returns:
-            許可されている場合 True、そうでなければ False
-        """
+        """メールアドレスが許可ドメインに含まれるか判定する。"""
         allowed_domains = self.get_allowed_domains()
-        if not allowed_domains:  # 設定がない場合は全許可
+        if not allowed_domains:
             return True
-            
-        domain = email.split("@")[-1] if "@" in email else ""
+
+        domain = email.split('@')[-1] if '@' in email else ''
         return domain.lower() in [d.lower() for d in allowed_domains]
-    
+
     def validate_required_settings(self) -> bool:
-        """
-        必須設定値が設定されているかチェック
-        
-        Returns:
-            全ての必須設定が設定されている場合 True
-        """
-        required_fields = [
-            "SSO_CLIENT_ID",
-            "SSO_CLIENT_SECRET", 
-            "SSO_ISSUER_URL",
-            "SSO_JWKS_URI"
+        """必須設定が満たされているかを検証する。"""
+        base_required = [
+            'SSO_CLIENT_ID',
+            'SSO_ISSUER_URL',
         ]
-        
-        for field in required_fields:
+
+        for field in base_required:
             if not getattr(self, field):
                 return False
-        return True
+
+        if self.SSO_INTROSPECTION_ENABLED:
+            if not self.SSO_INTROSPECTION_ENDPOINT:
+                return False
+
+            mode = (self.SSO_INTROSPECTION_AUTH_MODE or 'basic').lower()
+            if mode == 'basic':
+                return bool(self.SSO_CLIENT_SECRET)
+            if mode == 'bearer':
+                return bool(self.SSO_INTROSPECTION_TOKEN)
+            return True
+
+        return bool(self.SSO_JWKS_URI)
+
+
 
 
 # グローバルSSO設定インスタンス
