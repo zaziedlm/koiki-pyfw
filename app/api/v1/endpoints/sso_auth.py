@@ -136,10 +136,9 @@ async def sso_login(
             user_agent=device_info,
             success=True,
             user_id=user.id,
-            auth_method="sso",
         )
         security_metrics.record_authentication_attempt(
-            success=True, email=user.email, ip_address=ip_address, auth_method="sso"
+            success=True, email=user.email, ip_address=ip_address
         )
 
         logger.info(
@@ -164,14 +163,12 @@ async def sso_login(
             user_agent=device_info,
             success=False,
             failure_reason="sso_verification_failed",
-            auth_method="sso",
         )
         security_metrics.record_authentication_attempt(
             success=False,
             email=getattr(locals().get("user_info"), "email", "unknown"),
             ip_address=ip_address,
             failure_reason="sso_verification_failed",
-            auth_method="sso",
         )
 
         logger.warning(
@@ -190,14 +187,12 @@ async def sso_login(
             user_agent=device_info,
             success=False,
             failure_reason="internal_error",
-            auth_method="sso",
         )
         security_metrics.record_authentication_attempt(
             success=False,
             email="unknown",
             ip_address=ip_address,
             failure_reason="internal_error",
-            auth_method="sso",
         )
 
         logger.error(
