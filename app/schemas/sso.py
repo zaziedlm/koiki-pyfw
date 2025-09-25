@@ -8,22 +8,62 @@ OpenID Connect (OIDC) による外部認証サービスとの連携で使用す�
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, Field
 
 
 class SSOLoginRequest(BaseModel):
     """
     SSO ログインリクエスト
-    
-    外部SSOサービスから発行されたIDトークンを受け取り、
-    内部認証システムでの認証を行う
+
+    Authorization Code Flow (PKCE) で得たコードをサーバー側で交換し、
+    IDトークンを検証した上で内部認証を成立させる
     """
-    id_token: str = Field(..., description="OpenID Connect IDトークン")
+
+    authorization_code: str = Field(..., description="Authorization Code Flow で取得したコード")
+    code_verifier: str = Field(..., description="PKCE用のcode_verifier")
+    redirect_uri: AnyHttpUrl = Field(..., description="認可リクエストで使用したredirect_uri")
+    nonce: str = Field(..., description="認可リクエストで用いたnonce")
+    state: str = Field(..., description="認可リクエスト時に発行されたstateトークン")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                "authorization_code": "SplxlOBeZQQYbYS6WxSbIA",
+                "code_verifier": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+                "redirect_uri": "https://app.example.com/sso/callback",
+                "nonce": "n-0S6_WzA2Mj",
+                "state": "eyJub25jZSI6ICJuLTBTNl9XekEyTWoiLCAidHMiOiAxNzMyMzAxNjAwfQ.ygIh2L4y-4V..."
+            }
+        }
+
+
+class SSOAuthorizationInitResponse(BaseModel):
+    """認可リクエスト開始時に必要な情報"""
+
+    authorization_endpoint: AnyHttpUrl = Field(..., description="HENNGE SSOの認可エンドポイント")
+    authorization_base_url: AnyHttpUrl = Field(..., description="code_challengeを付与する前提の基本URL")
+    response_type: str = Field(..., description="レスポンスタイプ。通常は 'code'")
+    client_id: str = Field(..., description="OIDCクライアントID")
+    redirect_uri: AnyHttpUrl = Field(..., description="使用されるredirect_uri")
+    scope: str = Field(..., description="付与されるスコープ")
+    state: str = Field(..., description="署名済みstateトークン")
+    nonce: str = Field(..., description="認可リクエストで利用するnonce")
+    expires_at: datetime = Field(..., description="state/nonceの有効期限")
+    code_challenge_method: str = Field(..., description="推奨するPKCE code_challenge_method")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "authorization_endpoint": "https://idp.example.com/oauth2/authorize",
+                "authorization_base_url": "https://idp.example.com/oauth2/authorize?response_type=code&client_id=client-id&redirect_uri=https%3A%2F%2Fapp.example.com%2Fsso%2Fcallback&scope=openid+email+profile&state=eyJub25jZSI6Ii4uLiIsInRzIjoxNzMyMzA3MjAwfQ.abc&nonce=nonce-value",
+                "response_type": "code",
+                "client_id": "client-id",
+                "redirect_uri": "https://app.example.com/sso/callback",
+                "scope": "openid email profile",
+                "state": "eyJub25jZSI6Ii4uLiIsInRzIjoxNzMyMzA3MjAwfQ.abc",
+                "nonce": "nonce-value",
+                "expires_at": "2024-11-01T12:00:00Z",
+                "code_challenge_method": "S256",
             }
         }
 

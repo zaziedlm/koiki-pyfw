@@ -6,13 +6,17 @@ OpenID Connect による外部認証サービスとの連携エンドポイン�
 IDトークンを受け取り、内部認証トークンを返す
 """
 
-from typing import Annotated
+from typing import Annotated, Optional
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.core.sso_config import SSOSettings, get_sso_settings
-from app.schemas.sso import SSOLinkResponse, SSOLoginRequest, SSOUserInfoResponse
+from app.schemas.sso import (
+    SSOAuthorizationInitResponse,
+    SSOLoginRequest,
+    SSOUserInfoResponse,
+)
 from app.services.sso_service import SSOService
 from libkoiki.api.dependencies import (
     AuthServiceDep,
@@ -50,6 +54,38 @@ def get_sso_service(
 SSOServiceDep = Annotated[SSOService, Depends(get_sso_service)]
 
 
+@router.get("/sso/authorization", response_model=SSOAuthorizationInitResponse)
+@limiter.limit("30/minute")
+async def sso_authorization_init(
+    request: Request,
+    sso_service: SSOServiceDep,
+    redirect_uri: Optional[str] = Query(
+        None,
+        description="認可リクエストに使用するredirect_uri。未指定時は設定のデフォルトを利用",
+    ),
+) -> SSOAuthorizationInitResponse:
+    """
+    state・nonce を生成し、認可リクエストに必要な情報を返す
+
+    フロントエンドは返却値をもとに code_challenge を付与して HENNGE SSO へリダイレクトする。
+    """
+
+    context = sso_service.generate_authorization_context(redirect_uri=redirect_uri)
+
+    return SSOAuthorizationInitResponse(
+        authorization_endpoint=context["authorization_endpoint"],
+        authorization_base_url=context["authorization_base_url"],
+        response_type=context["response_type"],
+        client_id=context["client_id"],
+        redirect_uri=context["redirect_uri"],
+        scope=context["scope"],
+        state=context["state"],
+        nonce=context["nonce"],
+        expires_at=context["expires_at"],
+        code_challenge_method=context["code_challenge_method"],
+    )
+
+
 @router.post("/sso/login", response_model=TokenWithRefresh)
 @limiter.limit("10/minute")
 @handle_auth_errors("sso_login")
@@ -62,17 +98,18 @@ async def sso_login(
     """
     SSO ログインエンドポイント
 
-    外部SSOサービスから発行されたIDトークンを検証し、
-    内部認証システムでのアクセストークンとリフレッシュトークンを返します。
+    Authorization Code Flow (PKCE) で取得したコードをサーバー側でトークンに交換し、
+    IDトークンを検証した上で内部認証システムのトークンペアを返します。
 
     処理フロー:
-    1. IDトークンの署名検証と内容検証
-    2. SSO ユーザー情報の抽出
-    3. ローカルユーザーとの連携（自動作成含む）
-    4. 内部認証トークンペアの発行
+    1. state / nonce の整合性検証
+    2. Authorization Code をトークンエンドポイントで交換
+    3. 返却された ID トークンの署名・クレーム検証
+    4. SSO ユーザー情報の抽出とローカルユーザーとの連携
+    5. 内部認証トークンペアの発行
 
     Args:
-        sso_request: SSO ログインリクエスト（IDトークン含む）
+        sso_request: SSO ログインリクエスト（authorization_code等を含む）
 
     Returns:
         内部認証トークンペア（アクセストークン、リフレッシュトークン）
@@ -86,8 +123,33 @@ async def sso_login(
     logger.info("SSO login attempt", ip_address=ip_address, device_info=device_info)
 
     try:
-        # 1. IDトークンを検証してユーザー情報を抽出
-        user_info = await sso_service.verify_id_token(sso_request.id_token)
+        # 1. state / nonce の整合性を事前に検証
+        sso_service.validate_state(
+            state_token=sso_request.state,
+            expected_nonce=sso_request.nonce,
+        )
+
+        # 2. Authorization Code をトークンに交換
+        token_response = await sso_service.exchange_authorization_code(
+            authorization_code=sso_request.authorization_code,
+            code_verifier=sso_request.code_verifier,
+            redirect_uri=str(sso_request.redirect_uri),
+        )
+
+        id_token_from_provider: str | None = token_response.get("id_token")
+        if not id_token_from_provider:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="SSO provider did not return an ID token",
+            )
+
+        # 3. IDトークンを検証してユーザー情報を抽出
+        user_info = await sso_service.verify_id_token(
+            id_token=id_token_from_provider,
+            expected_nonce=sso_request.nonce,
+            state_token=sso_request.state,
+            provider_access_token=token_response.get("access_token"),
+        )
 
         logger.info(
             "ID token verification successful",
@@ -96,7 +158,7 @@ async def sso_login(
             ip_address=ip_address,
         )
 
-        # 2. SSO ユーザー情報を基にローカルユーザーを認証・取得
+        # 4. SSO ユーザー情報を基にローカルユーザーを認証・取得
         user, sso_response = await sso_service.authenticate_sso_user(user_info, db)
 
         logger.info(
@@ -107,7 +169,7 @@ async def sso_login(
             ip_address=ip_address,
         )
 
-        # 3. 内部認証トークンペアを発行
+        # 5. 内部認証トークンペアを発行
         (
             access_token,
             refresh_token,
@@ -246,6 +308,9 @@ async def sso_health_check(
         "jwks_uri_configured": bool(sso_settings.SSO_JWKS_URI),
         "auto_create_users": sso_settings.SSO_AUTO_CREATE_USERS,
         "signature_validation": sso_settings.SSO_SIGNATURE_VALIDATION,
+        "authorization_endpoint_configured": bool(sso_settings.SSO_AUTHORIZATION_ENDPOINT),
+        "default_redirect_uri_configured": bool(sso_settings.get_default_redirect_uri()),
+        "skip_ssl_verify": sso_settings.SSO_SKIP_SSL_VERIFY,
     }
 
     # JWKS接続テスト（オプション）
