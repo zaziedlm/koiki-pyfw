@@ -1,0 +1,76 @@
+{
+  "realm": "koiki",
+  "enabled": true,
+  "sslRequired": "NONE",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "displayName": "KOIKI Realm",
+  "displayNameHtml": "<strong>KOIKI Realm</strong>",
+  "clients": [
+    {
+      "clientId": "koiki-backend",
+      "name": "KOIKI Backend",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "koiki-backend-secret",
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:8000/docs/oauth2-redirect",
+        "http://localhost:8000/sso/callback",
+        "http://host.docker.internal:3000/*"
+      ],
+      "webOrigins": ["*"],
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "oauth2.device.authorization.grant.enabled": "false"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access"
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [],
+    "client": {}
+  },
+  "groups": [],
+  "users": [
+    {
+      "username": "sso-user",
+      "enabled": true,
+      "email": "sso-user@example.com",
+      "emailVerified": true,
+      "firstName": "SSO",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ]
+    }
+  ],
+  "scopeMappings": [],
+  "clientScopeMappings": {
+    "koiki-backend": []
+  }
+}
