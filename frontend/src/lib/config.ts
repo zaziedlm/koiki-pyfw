@@ -18,9 +18,12 @@ export const config = {
     tokenExpiration: 30 * 60 * 1000, // 30 minutes in milliseconds
     
     // Cookie認証設定
-    cookieAuth: {
-      enabled: process.env.NEXT_PUBLIC_COOKIE_AUTH_ENABLED === 'true' || true, // デフォルトで有効
-      csrfProtection: true,
-    },
+      cookieAuth: {
+        enabled: process.env.NEXT_PUBLIC_COOKIE_AUTH_ENABLED === 'true' || true, // デフォルトで有効
+        csrfProtection: true,
+      },
+  },
+  sso: {
+    redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI || '/sso/callback',
   },
 } as const;

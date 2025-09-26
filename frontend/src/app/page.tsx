@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useCookieAuth } from '@/hooks/use-cookie-auth-queries';
 import { config } from '@/lib/config';
 import { CheckCircle, Users, Shield, Clock } from 'lucide-react';
+import { useSsoLogin } from '@/hooks/use-sso-login';
 
 export default function Home() {
   const router = useRouter();
 
   const { isAuthenticated, isLoading } = useCookieAuth();
+  const { startSsoLogin, isLoading: isSsoLoading } = useSsoLogin();
+  const [ssoError, setSsoError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
@@ -51,6 +54,26 @@ export default function Home() {
     },
   ];
 
+  const handleLoginClick = () => {
+    router.push('/auth/login');
+  };
+
+  const handleSsoLogin = async () => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+      return;
+    }
+
+    try {
+      setSsoError(null);
+      await startSsoLogin();
+    } catch (error) {
+      console.error('[SSO][start] failed', error);
+      const message = error instanceof Error ? error.message : 'Unable to start SSO login. Please try again.';
+      setSsoError(message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
@@ -59,9 +82,20 @@ export default function Home() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {config.app.name}
           </h1>
-          <div className="space-x-4">
-            <Button variant="ghost" asChild>
-              <Link href="/auth/login">Sign In</Link>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              onClick={handleLoginClick}
+              disabled={isAuthenticated || isSsoLoading}
+            >
+              Sign In
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleSsoLogin}
+              disabled={isAuthenticated || isSsoLoading}
+            >
+              {isSsoLoading ? 'Redirecting…' : 'SSO Sign In'}
             </Button>
             <Button asChild>
               <Link href="/auth/register">Get Started</Link>
@@ -85,10 +119,28 @@ export default function Home() {
             <Button size="lg" asChild>
               <Link href="/auth/register">Start Free Trial</Link>
             </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link href="/auth/login">Sign In</Link>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleLoginClick}
+              disabled={isAuthenticated || isSsoLoading}
+            >
+              Sign In
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={handleSsoLogin}
+              disabled={isAuthenticated || isSsoLoading}
+            >
+              {isSsoLoading ? 'Redirecting…' : 'SSO Sign In'}
             </Button>
           </div>
+          {ssoError && (
+            <p className="text-sm text-red-500 dark:text-red-400">
+              {ssoError}
+            </p>
+          )}
         </div>
       </section>
 

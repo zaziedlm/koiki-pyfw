@@ -165,6 +165,34 @@ class CookieApiClient {
     },
   };
 
+  sso = {
+    authorization: async (params?: { redirect_uri?: string }) => {
+      const queryString =
+        params && params.redirect_uri
+          ? `?${new URLSearchParams({ redirect_uri: params.redirect_uri }).toString()}`
+          : '';
+
+      return this.fetchWithCredentials(`/api/sso/authorization${queryString}`);
+    },
+
+    login: async (payload: {
+      authorization_code: string;
+      code_verifier: string;
+      state: string;
+      nonce: string;
+      redirect_uri: string;
+    }) => {
+      if (!this.csrfToken) {
+        await this.initializeCSRFToken();
+      }
+
+      return this.fetchWithCredentials('/api/sso/login', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+  };
+
   // 既存のAPIクライアントとの互換性のためのプロキシメソッド
   get = async (url: string) => {
     return this.fetchWithCredentials(appConfig.api.baseUrl + url);
@@ -205,6 +233,7 @@ export const cookieApiClient = new CookieApiClient();
 export const cookieApi = {
   // 認証API（Route Handlers経由）
   auth: cookieApiClient.auth,
+  sso: cookieApiClient.sso,
 
   // その他のAPI（直接バックエンド、Cookie自動送信）
   get: cookieApiClient.get,
@@ -299,3 +328,4 @@ export const cookieUserApi = {
 
   delete: (id: number) => cookieApiClient.delete(`/users/${id}`),
 };
+
