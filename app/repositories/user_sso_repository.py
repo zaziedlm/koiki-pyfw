@@ -64,7 +64,7 @@ class UserSSORepository(BaseRepository[UserSSO, BaseModel, BaseModel]):
             .options(selectinload(UserSSO.user))
         )  # ユーザー情報も同時取得
 
-        result = await self.session.execute(query)
+        result = await self.db.execute(query)
         user_sso = result.scalar_one_or_none()
 
         if user_sso:
@@ -100,7 +100,7 @@ class UserSSORepository(BaseRepository[UserSSO, BaseModel, BaseModel]):
 
         query = query.order_by(desc(UserSSO.last_sso_login))
 
-        result = await self.session.execute(query)
+        result = await self.db.execute(query)
         user_ssos = result.scalars().all()
 
         logger.debug("Found SSO links", count=len(user_ssos), user_id=user_id)
@@ -115,19 +115,28 @@ class UserSSORepository(BaseRepository[UserSSO, BaseModel, BaseModel]):
         sso_email: str = None,
         sso_display_name: str = None,
     ) -> UserSSO:
-        """
-        新しいSSO連携を作成
+        """SSO連携の新規作成または既存連携の再利用"""
+        existing_links = await self.get_by_user_id(user_id, sso_provider)
+        if existing_links:
+            primary_link = existing_links[0]
+            logger.info(
+                "Updating existing SSO link",
+                user_id=user_id,
+                user_sso_id=primary_link.id,
+                sso_provider=sso_provider,
+            )
+            update_data = {
+                "sso_subject_id": sso_subject_id,
+                "last_sso_login": datetime.now(timezone.utc),
+            }
+            if sso_email is not None:
+                update_data["sso_email"] = sso_email
+            if sso_display_name is not None:
+                update_data["sso_display_name"] = sso_display_name
 
-        Args:
-            user_id: ユーザーID
-            sso_subject_id: SSO識別子
-            sso_provider: SSOプロバイダー名
-            sso_email: SSO側のメールアドレス
-            sso_display_name: SSO側の表示名
+            updated_link = await self.update(primary_link, update_data)
+            return updated_link
 
-        Returns:
-            作成されたUserSSOオブジェクト
-        """
         logger.info(
             "Creating SSO link",
             user_id=user_id,
@@ -151,7 +160,6 @@ class UserSSORepository(BaseRepository[UserSSO, BaseModel, BaseModel]):
         )
 
         return created_user_sso
-
     async def update_sso_login(
         self, user_sso_id: int, sso_email: str = None, sso_display_name: str = None
     ) -> Optional[UserSSO]:
@@ -180,7 +188,7 @@ class UserSSORepository(BaseRepository[UserSSO, BaseModel, BaseModel]):
         if sso_email is not None or sso_display_name is not None:
             user_sso.update_sso_info(sso_email, sso_display_name)
 
-        updated_user_sso = await self.update(user_sso)
+        updated_user_sso = await self.update(user_sso, {})
 
         logger.info(
             "SSO login info updated",
@@ -198,30 +206,37 @@ class UserSSORepository(BaseRepository[UserSSO, BaseModel, BaseModel]):
         sso_email: str = None,
         sso_display_name: str = None,
     ) -> tuple[UserSSO, bool]:
-        """
-        SSO連携を検索し、存在しない場合は新規作成
-
-        Args:
-            user_id: ユーザーID
-            sso_subject_id: SSO識別子
-            sso_provider: SSOプロバイダー名
-            sso_email: SSO側のメールアドレス
-            sso_display_name: SSO側の表示名
-
-        Returns:
-            (UserSSOオブジェクト, 新規作成フラグ)
-        """
-        # まず既存のSSO連携を検索
+        """SSO連携を検索し、存在しなければ作成する"""
         existing_sso = await self.get_by_sso_subject_id(sso_subject_id, sso_provider)
 
         if existing_sso:
-            # 既存連携が見つかった場合は情報を更新
             await self.update_sso_login(
-                existing_sso.id, sso_email=sso_email, sso_display_name=sso_display_name
+                existing_sso.id,
+                sso_email=sso_email,
+                sso_display_name=sso_display_name,
             )
             return existing_sso, False
 
-        # 見つからない場合は新規作成
+        existing_links = await self.get_by_user_id(user_id, sso_provider)
+        if existing_links:
+            primary_link = existing_links[0]
+            logger.info(
+                "Updating existing SSO link for provider",
+                user_id=user_id,
+                user_sso_id=primary_link.id,
+                sso_provider=sso_provider,
+            )
+            updated_link = await self.update(
+                primary_link,
+                {
+                    "sso_subject_id": sso_subject_id,
+                    "sso_email": sso_email,
+                    "sso_display_name": sso_display_name,
+                    "last_sso_login": datetime.now(timezone.utc),
+                },
+            )
+            return updated_link, False
+
         new_sso = await self.create_sso_link(
             user_id=user_id,
             sso_subject_id=sso_subject_id,
@@ -230,7 +245,6 @@ class UserSSORepository(BaseRepository[UserSSO, BaseModel, BaseModel]):
             sso_display_name=sso_display_name,
         )
         return new_sso, True
-
     async def get_recent_sso_logins(
         self, limit: int = 10, sso_provider: str = None
     ) -> List[UserSSO]:
@@ -255,5 +269,5 @@ class UserSSORepository(BaseRepository[UserSSO, BaseModel, BaseModel]):
 
         query = query.order_by(desc(UserSSO.last_sso_login)).limit(limit)
 
-        result = await self.session.execute(query)
+        result = await self.db.execute(query)
         return list(result.scalars().all())

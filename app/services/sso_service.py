@@ -13,6 +13,7 @@ import hashlib
 import hmac
 import json
 import secrets
+import string
 from urllib.parse import urlencode
 
 import structlog
@@ -38,6 +39,7 @@ from libkoiki.services.user_service import UserService
 from libkoiki.services.auth_service import AuthService
 from libkoiki.models.user import UserModel
 from libkoiki.schemas.user import UserCreate
+from libkoiki.core.security import check_password_complexity
 from libkoiki.core.exceptions import ValidationException
 
 from app.core.sso_config import SSOSettings, get_sso_settings
@@ -448,7 +450,20 @@ class SSOService:
             if existing_sso:
                 # 既存のSSO連携が見つかった場合
                 logger.info("Existing SSO link found", user_id=existing_sso.user_id)
-                user = existing_sso.user
+                user = await self.user_service.get_user_by_id(
+                    existing_sso.user_id,
+                    db,
+                )
+                if not user:
+                    logger.error(
+                        "Linked user not found for existing SSO",
+                        user_sso_id=existing_sso.id,
+                        user_id=existing_sso.user_id,
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Linked user account is missing",
+                    )
                 
                 # ログイン情報を更新
                 await self.user_sso_repository.update_sso_login(
@@ -459,7 +474,7 @@ class SSOService:
                 
             else:
                 # 2. メールアドレスで既存ユーザーを検索
-                user = await self.user_service.get_by_email(user_info.email, db)
+                user = await self.user_service.get_user_by_email(user_info.email, db)
                 
                 if user:
                     # 既存ユーザーに新しいSSO連携を追加
@@ -477,9 +492,8 @@ class SSOService:
                     # 3. 自動ユーザー作成
                     logger.info("Creating new user from SSO", email=user_info.email)
                     
-                    # UserCreateスキーマ構築
-                    import secrets
-                    dummy_password = secrets.token_urlsafe(32)  # SSO ユーザー用ダミーパスワード
+                    # UserCreateスキーマを構築
+                    dummy_password = self._generate_dummy_password()
                     user_create = UserCreate(
                         email=user_info.email,
                         password=dummy_password,  # ダミーパスワード（ログインには使用されない）
@@ -648,6 +662,14 @@ class SSOService:
         padding = "=" * (-len(value) % 4)
         return base64.urlsafe_b64decode(value + padding)
 
+    def _generate_dummy_password(self, length: int = 24) -> str:
+        """SSOユーザー用のダミーパスワードを生成する"""
+        symbols = '!@#$%^&*()-_=+[]{}|;:,.<>/?'
+        alphabet = string.ascii_lowercase + string.ascii_uppercase + string.digits + symbols
+        while True:
+            candidate = ''.join(secrets.choice(alphabet) for _ in range(length))
+            if check_password_complexity(candidate):
+                return candidate
     @staticmethod
     def _verify_at_hash(access_token: str, at_hash_value: str, signing_alg: str) -> bool:
         alg = signing_alg.upper()
@@ -776,6 +798,8 @@ class SSOService:
                     "verify_exp": self.sso_settings.SSO_EXPIRY_VALIDATION,
                     "verify_aud": self.sso_settings.SSO_AUDIENCE_VALIDATION,
                     "verify_iss": self.sso_settings.SSO_ISSUER_VALIDATION,
+                    "verify_at_hash": False,
+                    "leeway": self.sso_settings.SSO_CLOCK_SKEW_SECONDS,
                 },
                 audience=(
                     self.sso_settings.SSO_CLIENT_ID
@@ -787,7 +811,6 @@ class SSOService:
                     if self.sso_settings.SSO_ISSUER_VALIDATION
                     else None
                 ),
-                leeway=self.sso_settings.SSO_CLOCK_SKEW_SECONDS,
             )
             return payload, alg
 

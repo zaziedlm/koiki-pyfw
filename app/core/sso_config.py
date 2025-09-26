@@ -168,7 +168,17 @@ class SSOSettings(BaseSettings):
         allowed = self.get_allowed_redirect_uris()
         if not allowed:
             return True
-        return redirect_uri in allowed
+
+        # ワイルドカード("*")にも対応した許可判定
+        for pattern in allowed:
+            if pattern == redirect_uri:
+                return True
+            if "*" in pattern:
+                from fnmatch import fnmatch  # 遅延インポートで依存を限定
+                if fnmatch(redirect_uri, pattern):
+                    return True
+
+        return False
 
     def validate_required_settings(self) -> bool:
         """
@@ -207,3 +217,4 @@ def get_sso_settings() -> SSOSettings:
         SSOSettings インスタンス
     """
     return sso_settings
+
