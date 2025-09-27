@@ -16,7 +16,7 @@ The Docker setup includes:
 
 ```bash
 # Copy environment templates
-cp .env-sample .env
+cp .env.example .env
 cp frontend/.env.local.example frontend/.env.local
 
 # Edit configuration files as needed

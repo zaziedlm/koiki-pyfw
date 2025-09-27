@@ -12,12 +12,12 @@ Write-Host "🚀 Starting KOIKI Framework with Docker Compose..." -ForegroundCol
 
 # Check if .env file exists
 if (-not (Test-Path ".env")) {
-    Write-Host "⚠️  No .env file found. Creating from .env-sample..." -ForegroundColor Yellow
-    if (Test-Path ".env-sample") {
-        Copy-Item ".env-sample" ".env"
+    Write-Host "⚠️  No .env file found. Creating from .env.example..." -ForegroundColor Yellow
+    if (Test-Path ".env.example") {
+        Copy-Item ".env.example" ".env"
         Write-Host "📝 Please edit .env file with your configuration" -ForegroundColor Cyan
     } else {
-        Write-Host "❌ No .env-sample found. Please create .env file manually." -ForegroundColor Red
+        Write-Host "❌ No .env.example found. Please create .env file manually." -ForegroundColor Red
         exit 1
     }
 }

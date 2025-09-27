@@ -8,12 +8,12 @@ echo "🚀 Starting KOIKI Framework with Docker Compose..."
 
 # Check if .env file exists
 if [ ! -f .env ]; then
-    echo "⚠️  No .env file found. Creating from .env-sample..."
-    if [ -f .env-sample ]; then
-        cp .env-sample .env
+    echo "⚠️  No .env file found. Creating from .env.example..."
+    if [ -f .env.example ]; then
+        cp .env.example .env
         echo "📝 Please edit .env file with your configuration"
     else
-        echo "❌ No .env-sample found. Please create .env file manually."
+        echo "❌ No .env.example found. Please create .env file manually."
         exit 1
     fi
 fi
