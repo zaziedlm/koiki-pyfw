@@ -28,6 +28,7 @@ from libkoiki.core.rate_limiter import limiter
 from libkoiki.core.security import extract_device_info
 from libkoiki.core.security_logger import security_logger
 from libkoiki.core.security_metrics import security_metrics
+from libkoiki.core.transaction import transactional
 from libkoiki.schemas.token import TokenWithRefresh
 
 logger = structlog.get_logger(__name__)
@@ -89,6 +90,7 @@ async def sso_authorization_init(
 @router.post("/sso/login", response_model=TokenWithRefresh)
 @limiter.limit("10/minute")
 @handle_auth_errors("sso_login")
+@transactional
 async def sso_login(
     request: Request,
     sso_request: SSOLoginRequest,
@@ -306,8 +308,12 @@ async def sso_health_check(
         "jwks_uri_configured": bool(sso_settings.SSO_JWKS_URI),
         "auto_create_users": sso_settings.SSO_AUTO_CREATE_USERS,
         "signature_validation": sso_settings.SSO_SIGNATURE_VALIDATION,
-        "authorization_endpoint_configured": bool(sso_settings.SSO_AUTHORIZATION_ENDPOINT),
-        "default_redirect_uri_configured": bool(sso_settings.get_default_redirect_uri()),
+        "authorization_endpoint_configured": bool(
+            sso_settings.SSO_AUTHORIZATION_ENDPOINT
+        ),
+        "default_redirect_uri_configured": bool(
+            sso_settings.get_default_redirect_uri()
+        ),
         "skip_ssl_verify": sso_settings.SSO_SKIP_SSL_VERIFY,
     }
 
@@ -324,7 +330,9 @@ async def sso_health_check(
                 verify_ssl = not sso_settings.SSO_SKIP_SSL_VERIFY
                 timeout = httpx.Timeout(3.0, connect=2.0)
                 # HEAD が許可されていない場合に備えて GET にフォールバック
-                async with httpx.AsyncClient(verify=verify_ssl, timeout=timeout) as client:
+                async with httpx.AsyncClient(
+                    verify=verify_ssl, timeout=timeout
+                ) as client:
                     resp = await client.request("HEAD", sso_settings.SSO_JWKS_URI)
                     if resp.status_code >= 400:
                         resp = await client.get(sso_settings.SSO_JWKS_URI)
@@ -345,6 +353,3 @@ async def sso_health_check(
     logger.info("SSO health check completed", status=health_status["overall_status"])
 
     return health_status
-
-
-
