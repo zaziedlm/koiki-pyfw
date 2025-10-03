@@ -80,15 +80,19 @@ services:
       - KC_METRICS_ENABLED=true
     volumes:
       - ./docker/keycloak/realm-koiki.json:/opt/keycloak/data/import/realm-koiki.json:ro
+      - ./docker/keycloak/realm-saml.json:/opt/keycloak/data/import/realm-saml.json:ro
+      - keycloak_data:/opt/keycloak/data
     ports:
       - "8090:8080"
+      - "9000:9000"  # Management port for health checks
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/realms/master" ]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"]
       interval: 30s
       timeout: 10s
       retries: 10
-      start_period: 30s
+      start_period: 60s
     restart: unless-stopped
 
 volumes:
   postgres_data:
+  keycloak_data:

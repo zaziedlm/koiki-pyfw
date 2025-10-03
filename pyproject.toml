@@ -43,6 +43,10 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4,<1.8.0",        # Minor version locked, compatible with bcrypt 4.x
     "bcrypt>=4.1.3,<5.0.0",                  # Compatible bcrypt version
     "jwcrypto>=1.5.3,<1.6.0",              # JWT crypto library for JWKS support
+
+    # SAML Authentication
+    "python3-saml>=1.16.0,<1.17.0",         # SAML 2.0 authentication support
+    "xmlsec>=1.3.13,<1.4.0",                # XML security library for SAML signatures
     
     # HTTP & Communication
     "httpx>=0.28.1,<0.29.0",                # Updated HTTP client

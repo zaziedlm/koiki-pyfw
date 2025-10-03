@@ -1,0 +1,200 @@
+{
+  "realm": "koiki-saml",
+  "enabled": true,
+  "sslRequired": "NONE",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "displayName": "KOIKI SAML Realm",
+  "displayNameHtml": "<strong>KOIKI SAML Realm</strong>",
+  "attributes": {
+    "frontendUrl": "http://localhost:8090"
+  },
+  "clients": [
+    {
+      "clientId": "http://localhost:8000/api/v1/auth/saml/metadata",
+      "name": "KOIKI SAML Client",
+      "description": "KOIKI application SAML Service Provider",
+      "enabled": true,
+      "protocol": "saml",
+      "frontchannelLogout": true,
+      "attributes": {
+        "saml.authnstatement": "true",
+        "saml.server.signature": "true",
+        "saml.server.signature.keyinfo.ext": "false",
+        "saml.assertion.signature": "true",
+        "saml.client.signature": "false",
+        "saml.encrypt": "false",
+        "saml.onetimeuse.condition": "false",
+        "saml_name_id_format": "email",
+        "saml_force_name_id_format": "true",
+        "saml.signature.algorithm": "RSA_SHA256"
+      },
+      "redirectUris": [
+        "http://localhost:8000/api/v1/auth/saml/acs",
+        "http://host.docker.internal:8000/api/v1/auth/saml/acs",
+        "http://app:8000/api/v1/auth/saml/acs"
+      ],
+      "baseUrl": "http://localhost:8000",
+      "adminUrl": "http://localhost:8000/api/v1/auth/saml/sls",
+      "webOrigins": ["*"],
+      "protocolMappers": [
+        {
+          "name": "email",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "attribute.nameformat": "urn:oasis:names:tc:SAML:2.0:attrname-format:uri",
+            "attribute.name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+            "user.attribute": "email"
+          }
+        },
+        {
+          "name": "first name",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "attribute.nameformat": "urn:oasis:names:tc:SAML:2.0:attrname-format:uri",
+            "attribute.name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+            "user.attribute": "firstName"
+          }
+        },
+        {
+          "name": "last name",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "attribute.nameformat": "urn:oasis:names:tc:SAML:2.0:attrname-format:uri",
+            "attribute.name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
+            "user.attribute": "lastName"
+          }
+        },
+        {
+          "name": "name",
+          "protocol": "saml",
+          "protocolMapper": "saml-user-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "attribute.nameformat": "urn:oasis:names:tc:SAML:2.0:attrname-format:uri",
+            "attribute.name": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+            "user.attribute": "username"
+          }
+        },
+        {
+          "name": "role list",
+          "protocol": "saml",
+          "protocolMapper": "saml-role-list-mapper",
+          "consentRequired": false,
+          "config": {
+            "single": "false",
+            "attribute.nameformat": "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
+            "attribute.name": "roles"
+          }
+        }
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Standard user role"
+      },
+      {
+        "name": "admin",
+        "description": "Administrator role"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "Engineering",
+      "path": "/Engineering",
+      "attributes": {
+        "department": ["Engineering"]
+      },
+      "realmRoles": ["user"]
+    },
+    {
+      "name": "Administration",
+      "path": "/Administration",
+      "attributes": {
+        "department": ["Administration"]
+      },
+      "realmRoles": ["user", "admin"]
+    }
+  ],
+  "users": [
+    {
+      "username": "saml-user",
+      "enabled": true,
+      "email": "saml-user@example.com",
+      "emailVerified": true,
+      "firstName": "SAML",
+      "lastName": "User",
+      "attributes": {
+        "department": ["Engineering"],
+        "employee_id": ["EMP001"]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"],
+      "groups": ["/Engineering"]
+    },
+    {
+      "username": "saml-admin",
+      "enabled": true,
+      "email": "saml-admin@example.com",
+      "emailVerified": true,
+      "firstName": "SAML",
+      "lastName": "Administrator",
+      "attributes": {
+        "department": ["Administration"],
+        "employee_id": ["ADM001"]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "AdminPass123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user", "admin"],
+      "groups": ["/Administration"]
+    },
+    {
+      "username": "saml-test",
+      "enabled": true,
+      "email": "saml-test@koiki.local",
+      "emailVerified": true,
+      "firstName": "テスト",
+      "lastName": "太郎",
+      "attributes": {
+        "department": ["Engineering"],
+        "employee_id": ["TEST001"]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "TestPass123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"],
+      "groups": ["/Engineering"]
+    }
+  ],
+  "scopeMappings": [],
+  "clientScopeMappings": {}
+}
