@@ -9,13 +9,16 @@ import { useCookieAuth } from '@/hooks/use-cookie-auth-queries';
 import { config } from '@/lib/config';
 import { CheckCircle, Users, Shield, Clock } from 'lucide-react';
 import { useSsoLogin } from '@/hooks/use-sso-login';
+import { useSamlLogin } from '@/hooks/use-saml-login';
 
 export default function Home() {
   const router = useRouter();
 
   const { isAuthenticated, isLoading } = useCookieAuth();
   const { startSsoLogin, isLoading: isSsoLoading } = useSsoLogin();
+  const { startSamlLogin, isLoading: isSamlLoading } = useSamlLogin();
   const [ssoError, setSsoError] = useState<string | null>(null);
+  const [samlError, setSamlError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
@@ -74,6 +77,22 @@ export default function Home() {
     }
   };
 
+  const handleSamlLogin = async () => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+      return;
+    }
+
+    try {
+      setSamlError(null);
+      await startSamlLogin();
+    } catch (error) {
+      console.error('[SAML][start] failed', error);
+      const message = error instanceof Error ? error.message : 'Unable to start SAML login. Please try again.';
+      setSamlError(message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
@@ -86,16 +105,23 @@ export default function Home() {
             <Button
               variant="ghost"
               onClick={handleLoginClick}
-              disabled={isAuthenticated || isSsoLoading}
+              disabled={isAuthenticated || isSsoLoading || isSamlLoading}
             >
               Sign In
             </Button>
             <Button
               variant="outline"
               onClick={handleSsoLogin}
-              disabled={isAuthenticated || isSsoLoading}
+              disabled={isAuthenticated || isSsoLoading || isSamlLoading}
             >
               {isSsoLoading ? 'Redirecting…' : 'SSO Sign In'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleSamlLogin}
+              disabled={isAuthenticated || isSsoLoading || isSamlLoading}
+            >
+              {isSamlLoading ? 'Redirecting…' : 'SAML Sign In'}
             </Button>
             <Button asChild>
               <Link href="/auth/register">Get Started</Link>
@@ -123,7 +149,7 @@ export default function Home() {
               variant="outline"
               size="lg"
               onClick={handleLoginClick}
-              disabled={isAuthenticated || isSsoLoading}
+              disabled={isAuthenticated || isSsoLoading || isSamlLoading}
             >
               Sign In
             </Button>
@@ -131,14 +157,27 @@ export default function Home() {
               variant="secondary"
               size="lg"
               onClick={handleSsoLogin}
-              disabled={isAuthenticated || isSsoLoading}
+              disabled={isAuthenticated || isSsoLoading || isSamlLoading}
             >
               {isSsoLoading ? 'Redirecting…' : 'SSO Sign In'}
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={handleSamlLogin}
+              disabled={isAuthenticated || isSsoLoading || isSamlLoading}
+            >
+              {isSamlLoading ? 'Redirecting…' : 'SAML Sign In'}
             </Button>
           </div>
           {ssoError && (
             <p className="text-sm text-red-500 dark:text-red-400">
               {ssoError}
+            </p>
+          )}
+          {samlError && (
+            <p className="text-sm text-red-500 dark:text-red-400">
+              {samlError}
             </p>
           )}
         </div>

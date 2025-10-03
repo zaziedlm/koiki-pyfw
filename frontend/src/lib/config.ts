@@ -26,4 +26,7 @@ export const config = {
   sso: {
     redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI || '/sso/callback',
   },
+  saml: {
+    redirectUri: process.env.NEXT_PUBLIC_SAML_REDIRECT_URI || '/auth/saml/callback',
+  },
 } as const;
