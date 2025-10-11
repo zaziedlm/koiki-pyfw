@@ -159,6 +159,9 @@ class SAMLSettings(BaseSettings):
     SAML_METADATA_AUTO_REFRESH_ON_ERROR: bool = True
     """署名検証失敗時にメタデータを自動再取得するか"""
 
+    SAML_ALLOW_REPEAT_ATTRIBUTE_NAME: bool = True
+    """同じAttribute Nameの繰り返しを許可（IdPが複数値を返すケースに対応）"""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -294,6 +297,7 @@ class SAMLSettings(BaseSettings):
             "requestedAuthnContext": True,
             "signatureAlgorithm": self.SAML_SIGNATURE_ALGORITHM,
             "digestAlgorithm": self.SAML_DIGEST_ALGORITHM,
+            "allowRepeatAttributeName": self.SAML_ALLOW_REPEAT_ATTRIBUTE_NAME,
         }
 
     def get_saml_sp_settings(self) -> Dict[str, Any]:
