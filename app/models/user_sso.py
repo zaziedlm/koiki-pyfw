@@ -10,7 +10,8 @@ from datetime import datetime, timezone
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 
-from libkoiki.db.base import Base
+from app.db.base import Base
+from libkoiki.models.user import UserModel
 
 
 class UserSSO(Base):
@@ -22,8 +23,6 @@ class UserSSO(Base):
     """
     __tablename__ = "user_sso"
 
-    id = Column(Integer, primary_key=True, index=True)
-    
     # ローカルユーザーとの関連
     user_id = Column(
         Integer, 
@@ -66,23 +65,8 @@ class UserSSO(Base):
         comment="最終SSO経由ログイン日時"
     )
     
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False,
-        comment="SSO連携作成日時"
-    )
-    
-    updated_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
-        nullable=False,
-        comment="SSO連携更新日時"
-    )
-
     # リレーションシップ
-    user = relationship("UserModel", back_populates="sso_links")
+    user = relationship(UserModel, back_populates="sso_links")
 
     # インデックスと制約
     __table_args__ = (
