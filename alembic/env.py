@@ -12,12 +12,13 @@ sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..'
 # --- モデルのインポート ---
 # target_metadata にアプリケーションの Base.metadata を設定するために必要
 # src/models/__init__.py ですべてのモデルがインポートされていることを確認
-from libkoiki.db.base import Base # SQLAlchemy Base from your application
+from libkoiki.db.base import Base as LibBase # SQLAlchemy Base from your application
 from libkoiki.core.config import settings # アプリケーション設定を読み込む
 from libkoiki.models import * # src/models/__init__.py から全てインポート (ToDoModelも含まれる)
 
 # アプリケーション固有のモデルもインポート（SSO機能含む）
 from app.models import * # app/models/__init__.py からSSO関連モデルをインポート
+from app.db.base import Base as AppBase
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -42,7 +43,7 @@ config.set_main_option("sqlalchemy.url", sync_db_url)
 
 # --- ターゲットメタデータの設定 ---
 # Autogenerateのためにモデルのメタデータを設定
-target_metadata = Base.metadata
+target_metadata = [LibBase.metadata, AppBase.metadata]
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -111,4 +112,3 @@ if context.is_offline_mode():
 else:
     # import asyncio # asyncioを削除
     run_migrations_online() # asyncio.runを削除
-
