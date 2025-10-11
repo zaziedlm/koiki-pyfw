@@ -46,12 +46,28 @@ def upgrade() -> None:
         ORDER BY id
     """)
     
-    # 3. 外部キー制約を一時的に削除
-    op.drop_constraint('login_attempts_user_id_fkey', 'login_attempts', type_='foreignkey')
-    op.drop_constraint('password_reset_tokens_user_id_fkey', 'password_reset_tokens', type_='foreignkey')
-    op.drop_constraint('refresh_tokens_user_id_fkey', 'refresh_tokens', type_='foreignkey')
-    op.drop_constraint('todos_owner_id_fkey', 'todos', type_='foreignkey')
-    op.drop_constraint('user_roles_user_id_fkey', 'user_roles', type_='foreignkey')
+    # 3. usersテーブルを参照する全外部キー制約を動的に削除
+    op.execute("""
+        DO $$
+        DECLARE constraint_record RECORD;
+        BEGIN
+            FOR constraint_record IN
+                SELECT conname, n.nspname, c.relname
+                FROM pg_constraint AS con
+                JOIN pg_class AS c ON con.conrelid = c.oid
+                JOIN pg_namespace AS n ON c.relnamespace = n.oid
+                WHERE con.contype = 'f'
+                  AND con.confrelid = 'users'::regclass
+            LOOP
+                EXECUTE format(
+                    'ALTER TABLE %I.%I DROP CONSTRAINT %I',
+                    constraint_record.nspname,
+                    constraint_record.relname,
+                    constraint_record.conname
+                );
+            END LOOP;
+        END $$;
+    """)
     
     # 4. 元のテーブルを削除
     op.drop_table('users')
@@ -84,6 +100,7 @@ def upgrade() -> None:
     op.create_foreign_key('refresh_tokens_user_id_fkey', 'refresh_tokens', 'users', ['user_id'], ['id'], ondelete='CASCADE')
     op.create_foreign_key('todos_owner_id_fkey', 'todos', 'users', ['owner_id'], ['id'], ondelete='CASCADE')
     op.create_foreign_key('user_roles_user_id_fkey', 'user_roles', 'users', ['user_id'], ['id'])
+    op.create_foreign_key('user_sso_user_id_fkey', 'user_sso', 'users', ['user_id'], ['id'], ondelete='CASCADE')
 
 
 def downgrade() -> None:
@@ -112,12 +129,28 @@ def downgrade() -> None:
         ORDER BY id
     """)
     
-    # 3. 外部キー制約を削除
-    op.drop_constraint('login_attempts_user_id_fkey', 'login_attempts', type_='foreignkey')
-    op.drop_constraint('password_reset_tokens_user_id_fkey', 'password_reset_tokens', type_='foreignkey')
-    op.drop_constraint('refresh_tokens_user_id_fkey', 'refresh_tokens', type_='foreignkey')
-    op.drop_constraint('todos_owner_id_fkey', 'todos', type_='foreignkey')
-    op.drop_constraint('user_roles_user_id_fkey', 'user_roles', type_='foreignkey')
+    # 3. usersテーブルを参照する外部キー制約を動的に削除
+    op.execute("""
+        DO $$
+        DECLARE constraint_record RECORD;
+        BEGIN
+            FOR constraint_record IN
+                SELECT conname, n.nspname, c.relname
+                FROM pg_constraint AS con
+                JOIN pg_class AS c ON con.conrelid = c.oid
+                JOIN pg_namespace AS n ON c.relnamespace = n.oid
+                WHERE con.contype = 'f'
+                  AND con.confrelid = 'users'::regclass
+            LOOP
+                EXECUTE format(
+                    'ALTER TABLE %I.%I DROP CONSTRAINT %I',
+                    constraint_record.nspname,
+                    constraint_record.relname,
+                    constraint_record.conname
+                );
+            END LOOP;
+        END $$;
+    """)
     
     # 4. 現在のテーブルを削除
     op.drop_table('users')
@@ -150,3 +183,4 @@ def downgrade() -> None:
     op.create_foreign_key('refresh_tokens_user_id_fkey', 'refresh_tokens', 'users', ['user_id'], ['id'], ondelete='CASCADE')
     op.create_foreign_key('todos_owner_id_fkey', 'todos', 'users', ['owner_id'], ['id'], ondelete='CASCADE')
     op.create_foreign_key('user_roles_user_id_fkey', 'user_roles', 'users', ['user_id'], ['id'])
+    op.create_foreign_key('user_sso_user_id_fkey', 'user_sso', 'users', ['user_id'], ['id'], ondelete='CASCADE')
