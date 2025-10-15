@@ -3,6 +3,7 @@
 .env.*
 !.env.ci
 !.env.example
+!.env.saml.example
 !.env.test
 
 # Database
