@@ -3,6 +3,8 @@
 .env.*
 !.env.ci
 !.env.example
+!.env.saml.example
+!.env.test
 
 # Database
 *.db
@@ -54,3 +56,6 @@ _backup*/
 # SpecStory explanation file
 .specstory/.what-is-this.md
 # .specstory/**
+
+# SSL certificate (ignore all *.pem files anywhere)
+**/*.pem
