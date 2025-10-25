@@ -33,18 +33,31 @@ if (-not (Test-Path "frontend\.env.local")) {
 function Show-Help {
     Write-Host ""
     Write-Host "Available commands:" -ForegroundColor Yellow
-    Write-Host "  .\start-docker.ps1 up              - Start all services (production mode)" -ForegroundColor White
-    Write-Host "  .\start-docker.ps1 dev             - Start all services (development mode with hot reload)" -ForegroundColor White
-    Write-Host "  .\start-docker.ps1 build           - Build all Docker images" -ForegroundColor White
-    Write-Host "  .\start-docker.ps1 down            - Stop and remove all containers" -ForegroundColor White
-    Write-Host "  .\start-docker.ps1 logs            - Show logs from all services" -ForegroundColor White
-    Write-Host "  .\start-docker.ps1 logs-frontend   - Show frontend logs only" -ForegroundColor White
-    Write-Host "  .\start-docker.ps1 logs-backend    - Show backend logs only" -ForegroundColor White
-    Write-Host "  .\start-docker.ps1 logs-db         - Show database logs only" -ForegroundColor White
-    Write-Host "  .\start-docker.ps1 shell-frontend  - Access frontend container shell" -ForegroundColor White
-    Write-Host "  .\start-docker.ps1 shell-backend   - Access backend container shell" -ForegroundColor White
-    Write-Host "  .\start-docker.ps1 health          - Check health of all services" -ForegroundColor White
-    Write-Host "  .\start-docker.ps1 clean           - Clean up Docker resources" -ForegroundColor White
+    Write-Host "  Production mode:" -ForegroundColor Cyan
+    Write-Host "    .\start-docker.ps1 up              - Start all services (production mode)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 build           - Build all Docker images (production)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 down            - Stop and remove all containers (production)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 logs            - Show logs from all services (production)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 logs-frontend   - Show frontend logs only (production)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 logs-backend    - Show backend logs only (production)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 logs-db         - Show database logs only (production)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 shell-frontend  - Access frontend container shell (production)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 shell-backend   - Access backend container shell (production)" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  Development mode:" -ForegroundColor Cyan
+    Write-Host "    .\start-docker.ps1 dev             - Start all services (development mode with hot reload)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 build-dev       - Build all Docker images (development)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 down-dev        - Stop and remove all containers (development)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 logs-dev        - Show logs from all services (development)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 logs-frontend-dev   - Show frontend logs only (development)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 logs-backend-dev    - Show backend logs only (development)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 logs-db-dev         - Show database logs only (development)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 shell-frontend-dev  - Access frontend container shell (development)" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 shell-backend-dev   - Access backend container shell (development)" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  General:" -ForegroundColor Cyan
+    Write-Host "    .\start-docker.ps1 health          - Check health of all services" -ForegroundColor White
+    Write-Host "    .\start-docker.ps1 clean           - Clean up Docker resources" -ForegroundColor White
     Write-Host ""
 }
 
@@ -52,7 +65,7 @@ function Show-Help {
 switch ($Command.ToLower()) {
     "up" {
         Write-Host "🏗️  Starting services in production mode..." -ForegroundColor Blue
-        docker-compose up -d
+        docker compose up -d
         if ($LASTEXITCODE -eq 0) {
             Write-Host "✅ Services started!" -ForegroundColor Green
             Write-Host "🌐 Frontend: http://localhost:3000" -ForegroundColor Cyan
@@ -65,11 +78,11 @@ switch ($Command.ToLower()) {
     }
     "dev" {
         Write-Host "🛠️  Starting services in development mode..." -ForegroundColor Blue
-        docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml up
     }
     "build" {
-        Write-Host "🏗️  Building Docker images..." -ForegroundColor Blue
-        docker-compose build
+        Write-Host "🏗️  Building Docker images (production)..." -ForegroundColor Blue
+        docker compose build
         if ($LASTEXITCODE -eq 0) {
             Write-Host "✅ Build completed!" -ForegroundColor Green
         } else {
@@ -77,9 +90,29 @@ switch ($Command.ToLower()) {
             exit 1
         }
     }
+    "build-dev" {
+        Write-Host "🏗️  Building Docker images (development)..." -ForegroundColor Blue
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml build
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✅ Development build completed!" -ForegroundColor Green
+        } else {
+            Write-Host "❌ Build failed" -ForegroundColor Red
+            exit 1
+        }
+    }
     "down" {
-        Write-Host "🛑 Stopping services..." -ForegroundColor Yellow
-        docker-compose down
+        Write-Host "🛑 Stopping services (production)..." -ForegroundColor Yellow
+        docker compose down
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✅ Services stopped!" -ForegroundColor Green
+        } else {
+            Write-Host "❌ Failed to stop services" -ForegroundColor Red
+            exit 1
+        }
+    }
+    "down-dev" {
+        Write-Host "🛑 Stopping services (development)..." -ForegroundColor Yellow
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml down
         if ($LASTEXITCODE -eq 0) {
             Write-Host "✅ Services stopped!" -ForegroundColor Green
         } else {
@@ -88,24 +121,44 @@ switch ($Command.ToLower()) {
         }
     }
     "logs" {
-        docker-compose logs -f
+        docker compose logs -f
+    }
+    "logs-dev" {
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f
     }
     "logs-frontend" {
-        docker-compose logs -f frontend
+        docker compose logs -f frontend
+    }
+    "logs-frontend-dev" {
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f frontend
     }
     "logs-backend" {
-        docker-compose logs -f app
+        docker compose logs -f app
+    }
+    "logs-backend-dev" {
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f app
     }
     "logs-db" {
-        docker-compose logs -f db
+        docker compose logs -f db
+    }
+    "logs-db-dev" {
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f db
     }
     "shell-frontend" {
-        Write-Host "🐚 Accessing frontend container..." -ForegroundColor Cyan
-        docker-compose exec frontend sh
+        Write-Host "🐚 Accessing frontend container (production)..." -ForegroundColor Cyan
+        docker compose exec frontend sh
+    }
+    "shell-frontend-dev" {
+        Write-Host "🐚 Accessing frontend container (development)..." -ForegroundColor Cyan
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml exec frontend sh
     }
     "shell-backend" {
-        Write-Host "🐚 Accessing backend container..." -ForegroundColor Cyan
-        docker-compose exec app bash
+        Write-Host "🐚 Accessing backend container (production)..." -ForegroundColor Cyan
+        docker compose exec app bash
+    }
+    "shell-backend-dev" {
+        Write-Host "🐚 Accessing backend container (development)..." -ForegroundColor Cyan
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app bash
     }
     "health" {
         Write-Host "🏥 Checking service health..." -ForegroundColor Blue
@@ -144,7 +197,7 @@ switch ($Command.ToLower()) {
                 }
             }
             
-            docker-compose exec db pg_isready -U $postgresUser -d $postgresDb
+            docker compose exec db pg_isready -U $postgresUser -d $postgresDb
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "✅ Database is healthy" -ForegroundColor Green
             } else {
@@ -156,7 +209,7 @@ switch ($Command.ToLower()) {
     }
     "clean" {
         Write-Host "🧹 Cleaning up Docker resources..." -ForegroundColor Yellow
-        docker-compose down -v
+        docker compose down -v
         docker system prune -f
         if ($LASTEXITCODE -eq 0) {
             Write-Host "✅ Cleanup completed!" -ForegroundColor Green

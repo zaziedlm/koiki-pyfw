@@ -31,6 +31,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: production
     container_name: osskk_fastapi_app
     depends_on:
       db:
@@ -48,6 +49,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: runner
     container_name: osskk_nextjs_frontend
     depends_on:
       - app
@@ -84,9 +86,9 @@ services:
       - keycloak_data:/opt/keycloak/data
     ports:
       - "8090:8080"
-      - "9000:9000"  # Management port for health checks
+      - "9000:9000" # Management port for health checks
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'" ]
       interval: 30s
       timeout: 10s
       retries: 10
