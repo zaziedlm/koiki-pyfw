@@ -1,5 +1,9 @@
-# Dockerfile
-FROM python:3.11-slim
+# Dockerfile - Multi-stage build for FastAPI backend
+
+# ---------------------
+# Base stage with Poetry and dependencies
+# ---------------------
+FROM python:3.11-slim AS base
 
 # Add custom certificate and ensure CA bundle is installed/updated
 COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
@@ -28,8 +32,6 @@ ENV POETRY_VERSION=2.1.0 \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on
 
-# 必要なパッケージ（curl）は上のレイヤーで同時にインストール済み
-
 # poetryのインストール
 RUN curl -sSL https://install.python-poetry.org | python3 - --version $POETRY_VERSION \
     && ln -s $POETRY_HOME/bin/poetry /usr/local/bin/poetry \
@@ -37,10 +39,10 @@ RUN curl -sSL https://install.python-poetry.org | python3 - --version $POETRY_VE
 
 WORKDIR /app
 
-# セキュリティ強化: 非rootユーザーの作成
-RUN adduser --disabled-password --gecos "" appuser
+# Poetry 2.x: Copy dependency files for better Docker layer caching
+COPY pyproject.toml poetry.lock README.md ./
 
-# アプリケーションコードのコピー
+# アプリケーションコードのコピー (libkoikiはローカル依存のため先にコピー)
 COPY ./app ./app
 COPY ./libkoiki ./libkoiki
 COPY ./alembic ./alembic
@@ -48,10 +50,7 @@ COPY ./alembic.ini ./
 COPY ./main.py ./
 COPY ./ops ./ops
 
-# Poetry 2.x: Copy dependency files for better Docker layer caching
-COPY pyproject.toml poetry.lock README.md ./
-
-# Poetry 2.x: Optimize configuration and installation
+# Poetry 2.x: Install all dependencies (including dev)
 RUN mkdir -p $POETRY_CACHE_DIR \
     && poetry config virtualenvs.create false \
     && poetry config installer.parallel true \
@@ -64,6 +63,57 @@ RUN mkdir -p $POETRY_CACHE_DIR \
 COPY docker-entrypoint.sh ./
 RUN chmod +x /app/docker-entrypoint.sh
 
+# ---------------------
+# Development stage
+# ---------------------
+FROM base AS dev
+
+# セキュリティ強化: 非rootユーザーの作成
+RUN adduser --disabled-password --gecos "" appuser
+
+# alembic/versionsディレクトリの作成と所有者変更
+RUN mkdir -p /app/alembic/versions && chown -R appuser:appuser /app
+
+# 非rootユーザーに切り替え
+USER appuser
+
+# エントリポイントとコマンドの設定
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+
+# Uvicornのデフォルトポート
+EXPOSE 8000
+
+# デフォルトコマンド (docker-compose で上書き可能)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+# ---------------------
+# Production stage
+# ---------------------
+FROM python:3.11-slim AS production
+
+# Add custom certificate
+COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl && \
+    update-ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
+    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app
+
+# セキュリティ強化: 非rootユーザーの作成
+RUN adduser --disabled-password --gecos "" appuser
+
+# Copy only necessary files from base stage
+COPY --from=base /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=base /usr/local/bin /usr/local/bin
+COPY --from=base /app /app
+
 # alembic/versionsディレクトリの作成と所有者変更
 RUN mkdir -p /app/alembic/versions && chown -R appuser:appuser /app
 
@@ -75,10 +125,10 @@ ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
 # ヘルスチェック設定
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8000/ || exit 1
+    CMD curl -f http://localhost:8000/ || exit 1
 
 # Uvicornのデフォルトポート
 EXPOSE 8000
 
 # デフォルトコマンド (docker-compose で上書き可能)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

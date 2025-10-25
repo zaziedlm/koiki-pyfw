@@ -1,31 +1,31 @@
 # syntax=docker/dockerfile:1
-# Dockerfile.production - 本番環境向け最適化版
-FROM python:3.11-slim
+# Dockerfile.production - 本番環境向けマルチステージ最適化版
+
+# ---------------------
+# Builder stage - 依存をインストール
+# ---------------------
+FROM python:3.11-slim AS builder
 
 # 本番環境用のラベル
 LABEL maintainer="koiki-team"
 LABEL environment="production"
 LABEL version="1.0"
 
-# BuildKit explicit cache mount for apt
+# BuildKit cache mount for apt packages
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates curl && \
-    # 本番環境では不要なパッケージをクリーンアップ
-    apt-get autoremove -y && \
-    apt-get clean
+    apt-get install -y --no-install-recommends ca-certificates curl
 
 # Add custom certificate
 COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
 RUN update-ca-certificates
 
-# Environment variables (本番環境向け)
+# Environment variables
 ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
-    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
-    ENVIRONMENT=production
+    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 
-# Poetry environment (本番最適化)
+# Poetry environment (本番最適化: ワーカー数削減)
 ENV POETRY_VERSION=2.1.0 \
     POETRY_HOME=/opt/poetry \
     POETRY_VENV_CREATE=false \
@@ -40,7 +40,7 @@ ENV POETRY_VERSION=2.1.0 \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on
 
-# Poetry installation with cache mount
+# Poetry installation with BuildKit cache mount
 RUN --mount=type=cache,target=/root/.cache/pip \
     curl -sSL https://install.python-poetry.org | python3 - --version $POETRY_VERSION \
     && ln -s $POETRY_HOME/bin/poetry /usr/local/bin/poetry \
@@ -48,52 +48,82 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 WORKDIR /app
 
-# Create user (本番セキュリティ強化)
-RUN adduser --disabled-password --gecos "" --shell /bin/bash appuser
-
 # Copy dependency files first for better caching
 COPY pyproject.toml poetry.lock README.md ./
-COPY ./libkoiki ./libkoiki
 
-# Install dependencies with cache mount (本番向け設定)
+# Copy application code (libkoikiはローカル依存のため必要)
+COPY ./app ./app
+COPY ./libkoiki ./libkoiki
+COPY ./alembic ./alembic
+COPY ./alembic.ini ./
+COPY ./main.py ./
+COPY ./ops ./ops
+
+# Install production dependencies only with BuildKit cache mount
 RUN --mount=type=cache,target=$POETRY_CACHE_DIR \
     mkdir -p $POETRY_CACHE_DIR \
     && poetry config virtualenvs.create false \
     && poetry config installer.parallel true \
     && poetry config installer.max-workers 4 \
     && poetry check --lock \
-    && poetry install --no-interaction --no-ansi --no-root --only=main \
-    && poetry cache clear --all pypi  # 本番環境ではキャッシュクリア
+    && poetry install --no-interaction --no-ansi --no-root --only=main
 
-# Copy application code (done last for better caching)
-COPY ./app ./app
-COPY ./alembic ./alembic
-COPY ./alembic.ini ./
-COPY ./main.py ./
-COPY ./ops ./ops
+# docker-entrypoint.shをコピー
 COPY docker-entrypoint.sh ./
+RUN chmod +x /app/docker-entrypoint.sh
 
-# Final setup (本番環境向け権限設定)
-RUN chmod +x /app/docker-entrypoint.sh \
-    && mkdir -p /app/alembic/versions \
+# ---------------------
+# Production runtime stage - 最小限のファイルのみ
+# ---------------------
+FROM python:3.11-slim AS production
+
+# BuildKit cache mount for apt packages
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add custom certificate
+COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
+RUN update-ca-certificates
+
+# Environment variables (本番環境向け)
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
+    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    ENVIRONMENT=production
+
+WORKDIR /app
+
+# セキュリティ強化: 非rootユーザーの作成
+RUN adduser --disabled-password --gecos "" --shell /bin/bash appuser
+
+# Copy only necessary files from builder stage
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /app /app
+
+# 本番環境向け権限設定
+RUN mkdir -p /app/alembic/versions \
     && chown -R appuser:appuser /app \
     && chmod -R 750 /app
 
-# セキュリティ強化: 不要なパッケージを削除
-RUN apt-get purge -y curl \
-    && apt-get autoremove -y \
-    && rm -rf /var/lib/apt/lists/*
-
+# 非rootユーザーに切り替え
 USER appuser
 
+# エントリポイントとコマンドの設定
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
-# 本番環境向けヘルスチェック（より厳格）
+# 本番環境向けヘルスチェック（Python組み込みモジュール使用、curlなしで動作）
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
-  CMD curl -fsS --max-time 5 http://localhost:8000/health || exit 1
+    CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/', timeout=5).read()" || exit 1
 
+# Uvicornのデフォルトポート
 EXPOSE 8000
 
-# 動的ワーカー数（環境変数で制御可能）
+# 動的ワーカー数（環境変数で制御可能、デフォルト4）
 ENV UVICORN_WORKERS=4
-CMD sh -c "uvicorn main:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS}"
+CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS}"
