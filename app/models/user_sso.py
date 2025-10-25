@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 
-from app.db.base import Base
+from libkoiki.db.base import Base
 from libkoiki.models.user import UserModel
 
 
