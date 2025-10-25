@@ -2,23 +2,25 @@
 import os
 import sys
 from logging.config import fileConfig
+
 from sqlalchemy import engine_from_config, pool
-from sqlalchemy.ext.asyncio import create_async_engine # Async engine
+from sqlalchemy.ext.asyncio import create_async_engine  # Async engine
+
 from alembic import context
 
 # src ディレクトリをパスに追加
-sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
 
 # --- モデルのインポート ---
 # target_metadata にアプリケーションの Base.metadata を設定するために必要
 # src/models/__init__.py ですべてのモデルがインポートされていることを確認
-from libkoiki.db.base import Base as LibBase # SQLAlchemy Base from your application
-from libkoiki.core.config import settings # アプリケーション設定を読み込む
-from libkoiki.models import * # src/models/__init__.py から全てインポート (ToDoModelも含まれる)
+from app.db.base import Base as AppBase
 
 # アプリケーション固有のモデルもインポート（SSO機能含む）
-from app.models import * # app/models/__init__.py からSSO関連モデルをインポート
-from app.db.base import Base as AppBase
+from app.models import *  # app/models/__init__.py からSSO関連モデルをインポート
+from libkoiki.core.config import settings  # アプリケーション設定を読み込む
+from libkoiki.db.base import Base as LibBase  # SQLAlchemy Base from your application
+from libkoiki.models import *  # src/models/__init__.py から全てインポート (ToDoModelも含まれる)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -43,12 +45,13 @@ config.set_main_option("sqlalchemy.url", sync_db_url)
 
 # --- ターゲットメタデータの設定 ---
 # Autogenerateのためにモデルのメタデータを設定
-target_metadata = [LibBase.metadata, AppBase.metadata]
+target_metadata = LibBase.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -80,6 +83,7 @@ def do_run_migrations(connection):
     with context.begin_transaction():
         context.run_migrations()
 
+
 def run_migrations_online() -> None:  # async を削除
     """Run migrations in 'online' mode.
 
@@ -90,7 +94,7 @@ def run_migrations_online() -> None:  # async を削除
     # iniファイルから設定を読み込む
     connectable_config = config.get_section(config.config_ini_section)
     # 設定から同期URLを取得 (非同期マイグレーションではなく、接続確認に使用)
-    connectable_config['sqlalchemy.url'] = sync_db_url
+    connectable_config["sqlalchemy.url"] = sync_db_url
 
     # 同期エンジンを使用する
     connectable = engine_from_config(
@@ -111,4 +115,4 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     # import asyncio # asyncioを削除
-    run_migrations_online() # asyncio.runを削除
+    run_migrations_online()  # asyncio.runを削除

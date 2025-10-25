@@ -1,7 +1,7 @@
 """Add application-specific columns to user_sso
 
 Revision ID: 20251010001
-Revises: merge_300ab7334998_20250908001
+Revises: 38e7ad6278bf
 Create Date: 2025-10-10 23:00:00.000000
 """
 
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "20251010001"
-down_revision = "merge_300ab7334998_20250908001"
+down_revision = "38e7ad6278bf"
 branch_labels = None
 depends_on = None
 
