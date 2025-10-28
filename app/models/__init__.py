@@ -17,6 +17,7 @@ from libkoiki.models.todo import TodoModel
 from libkoiki.models.user import UserModel
 
 # アプリ内の SSO 関連モデル
+from .kkbiz import BusinessClock
 from .user_sso import UserSSO
 
 # UserModel に SSO のリレーションを追加
@@ -36,4 +37,5 @@ __all__ = [
     "LoginAttemptModel",
     "PasswordResetModel",
     "UserSSO",
+    "BusinessClock",
 ]

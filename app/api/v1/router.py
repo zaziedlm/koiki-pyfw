@@ -7,7 +7,7 @@ libkoikiの標準APIに加えて、アプリケーション固有のAPIエンド
 """
 from fastapi import APIRouter
 
-from .endpoints import sso_auth, saml_auth
+from .endpoints import business_clock, saml_auth, sso_auth
 
 # アプリケーション固有のAPIルーター
 router = APIRouter()
@@ -24,6 +24,13 @@ router.include_router(
     saml_auth.router,
     prefix="/auth",
     tags=["SAML Authentication"]
+)
+
+# Business clock management endpoints
+router.include_router(
+    business_clock.router,
+    prefix="/kkbiz/business-clock",
+    tags=["Business Clock"]
 )
 
 # 今後の拡張用:
