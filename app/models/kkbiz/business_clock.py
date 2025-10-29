@@ -8,10 +8,10 @@ class BusinessClock(Base):
     Business clock singleton row controlling visible time behaviour.
     """
 
-    __tablename__ = "business_clock"
+    __tablename__ = "kkbiz_business_clock"
 
     __table_args__ = (
-        CheckConstraint("id = 1", name="ck_business_clock_singleton"),
+        CheckConstraint("id = 1", name="ck_kkbiz_business_clock_singleton"),
     )
 
     mode = Column(String(16), nullable=False, default="REALTIME")
