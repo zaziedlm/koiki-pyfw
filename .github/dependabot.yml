@@ -1,8 +1,7 @@
 version: 2
 updates:
-  # Python backend dependencies via requirements.txt (Poetry 管理プロジェクト向け)
-  - package-ecosystem: "pip"
-    directory: "/"                          # ルートに requirements.txt を配置またはエクスポート
+  - package-ecosystem: "poetry"
+    directory: "/"
     schedule:
       interval: "daily"
       time: "05:00"
@@ -18,10 +17,7 @@ updates:
         update-types:
           - "patch"
           - "minor"
-    # もし major 更新も自動化対象にしたいなら update-types に "major" を追加
-    # ignore や allow を使って細かく制御も可能（公式ドキュメント参照）:contentReference[oaicite:2]{index=2}
 
-  # Frontend npm 依存
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
@@ -40,7 +36,6 @@ updates:
           - "patch"
           - "minor"
 
-  # Docker イメージ（ルート）
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
@@ -52,7 +47,6 @@ updates:
       - "dependencies"
       - "docker"
 
-  # Docker イメージ（フロントエンド）
   - package-ecosystem: "docker"
     directory: "/frontend"
     schedule:
@@ -65,7 +59,6 @@ updates:
       - "docker"
       - "frontend"
 
-  # GitHub Actions ワークフロー
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
