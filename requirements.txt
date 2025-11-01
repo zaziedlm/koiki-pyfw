@@ -36,7 +36,7 @@ msgpack==1.1.1
 packageurl-python==0.17.1
 packaging==25.0
 passlib==1.7.4
-pbr==6.1.1
+pbr==7.0.2
 pip-api==0.0.34
 pip-audit==2.9.0
 pip-requirements-parser==32.0.1
