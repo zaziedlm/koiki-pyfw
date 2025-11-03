@@ -1,6 +1,6 @@
 [project]
 name = "koiki-pyfw"
-version = "0.6.0"
+version = "0.6.1"
 description = "FastAPI enterprise application framework"
 readme = "README.md"
 requires-python = ">=3.11.7,<4.0"
