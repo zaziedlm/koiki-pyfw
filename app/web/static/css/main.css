@@ -90,6 +90,7 @@ body {
   padding: 0.85rem 1rem;
   text-align: left;
   border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
 }
 
 .todo-status {
@@ -100,6 +101,104 @@ body {
   color: var(--app-accent);
 }
 
+.todo-status.status-done {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.todo-status.status-open {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.todo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.todo-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 48px;
+}
+
+.todo-create {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.btn-secondary,
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.btn-secondary:hover {
+  background: #d1d5db;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+.todo-title {
+  font-weight: 600;
+}
+
+.todo-cell {
+  vertical-align: top;
+}
+
+.todo-title-cell {
+  width: 50%;
+}
+
+.todo-deadline {
+  width: 10%;
+  min-width: 80px;
+}
+
+.todo-status-cell {
+  width: 15%;
+  min-width: 120px;
+}
+
+.todo-actions-cell {
+  width: 25%;
+  min-width: 260px;
+}
+
+.todo-desc {
+  margin: 0.2rem 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+}
 .empty-state {
   padding: 2rem;
   text-align: center;

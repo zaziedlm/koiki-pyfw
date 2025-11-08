@@ -1,15 +1,6 @@
 {% if todos %}
   {% for todo in todos %}
-    <tr>
-      <td>{{ todo.title }}</td>
-      <td>{{ todo.description or "-" }}</td>
-      <td>-</td>
-      <td>
-        <span class="todo-status">
-          {{ "完了" if todo.is_completed else "未完了" }}
-        </span>
-      </td>
-    </tr>
+    {% include "todo/_row.html" %}
   {% endfor %}
 {% else %}
   <tr>

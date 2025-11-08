@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}{{ settings.APP_NAME }}{% endblock %}</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sprucecss/dist/spruce.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/sprucecss@2.3.4/css/spruce.min.css">
   <link rel="stylesheet" href="{{ url_for('static', path='/css/main.css') }}">
   <script defer src="https://unpkg.com/htmx.org@2.0.8/dist/htmx.min.js"></script>
   {% block head %}{% endblock %}

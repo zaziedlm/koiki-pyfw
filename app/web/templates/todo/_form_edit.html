@@ -1,0 +1,29 @@
+<tr id="todo-row-{{ todo.id }}">
+  <td colspan="4">
+    <form
+      class="todo-form"
+      hx-put="/app/todo/{{ todo.id }}"
+      hx-target="#todo-row-{{ todo.id }}"
+      hx-swap="outerHTML"
+    >
+      <label class="spruce-field">
+        <span>タイトル</span>
+        <input type="text" name="title" value="{{ todo.title }}" required />
+      </label>
+      <label class="spruce-field">
+        <span>説明</span>
+        <textarea name="description" rows="2">{{ todo.description }}</textarea>
+      </label>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">保存</button>
+        <button
+          type="button"
+          class="btn-secondary"
+          hx-get="/app/todo/{{ todo.id }}/view"
+          hx-target="#todo-row-{{ todo.id }}"
+          hx-swap="outerHTML"
+        >キャンセル</button>
+      </div>
+    </form>
+  </td>
+</tr>

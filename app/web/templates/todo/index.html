@@ -9,24 +9,13 @@
 </section>
 
 <section class="todo-board">
-  <div id="todo-table"
-       hx-get="/app/todo/rows"
-       hx-trigger="load, every 30s"
-       hx-target="#todo-tbody"
-       hx-swap="innerHTML">
-    <table class="todo-table">
-      <thead>
-        <tr>
-          <th>タイトル</th>
-          <th>説明</th>
-          <th>期限</th>
-          <th>状態</th>
-        </tr>
-      </thead>
-      <tbody id="todo-tbody">
-        {% include "todo/_rows.html" %}
-      </tbody>
-    </table>
+  <div class="todo-create">
+    <h2>新規作成</h2>
+    {% include "todo/_form_create.html" %}
+  </div>
+
+  <div id="todo-table-container">
+    {% include "todo/_table.html" %}
   </div>
 </section>
 {% endblock %}

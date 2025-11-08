@@ -1,0 +1,48 @@
+<tr id="todo-row-{{ todo.id }}">
+  <td class="todo-cell todo-title-cell">
+    <div class="todo-title">
+      {% if todo.is_completed %}
+        <s>{{ todo.title }}</s>
+      {% else %}
+        {{ todo.title }}
+      {% endif %}
+    </div>
+    <p class="todo-desc">{{ todo.description or "説明なし" }}</p>
+  </td>
+  <td class="todo-cell todo-deadline">-</td>
+  <td class="todo-cell todo-status-cell">
+    <span class="todo-status {{ 'status-done' if todo.is_completed else 'status-open' }}">
+      {{ "完了" if todo.is_completed else "未完了" }}
+    </span>
+  </td>
+  <td class="todo-cell todo-actions-cell">
+    <button
+      type="button"
+      class="btn-secondary"
+      hx-post="/app/todo/{{ todo.id }}/toggle"
+      hx-target="#todo-row-{{ todo.id }}"
+      hx-swap="outerHTML"
+    >
+      {{ "未完了に戻す" if todo.is_completed else "完了にする" }}
+    </button>
+    <button
+      type="button"
+      class="btn-secondary"
+      hx-get="/app/todo/{{ todo.id }}/edit"
+      hx-target="#todo-row-{{ todo.id }}"
+      hx-swap="outerHTML"
+    >
+      編集
+    </button>
+    <button
+      type="button"
+      class="btn-danger"
+      hx-delete="/app/todo/{{ todo.id }}"
+      hx-target="#todo-table"
+      hx-swap="outerHTML"
+      hx-confirm="タスクを削除しますか？"
+    >
+      削除
+    </button>
+  </td>
+</tr>

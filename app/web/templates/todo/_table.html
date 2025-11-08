@@ -1,0 +1,18 @@
+<div id="todo-table"
+     hx-get="/app/todo/rows"
+     hx-swap="outerHTML">
+  {# 自動再描画を戻す場合は hx-trigger="every 30s" などを追加してください #}
+  <table class="todo-table">
+    <thead>
+      <tr>
+        <th>タイトル</th>
+        <th>期限</th>
+        <th>状態</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="todo-tbody">
+      {% include "todo/_rows.html" %}
+    </tbody>
+  </table>
+</div>
