@@ -2,12 +2,13 @@
 
 from typing import Annotated, Optional
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, Header, HTTPException, Request, status
 from jose import JWTError, jwt
 from pydantic import ValidationError
 
 from libkoiki.api.dependencies import DBSessionDep
 from libkoiki.core.config import settings
+from libkoiki.core.csrf import create_csrf_token, validate_csrf_token
 from libkoiki.core.logging import get_logger
 from libkoiki.models.user import UserModel
 from libkoiki.repositories.user_repository import UserRepository
@@ -70,3 +71,31 @@ WebActiveUser = Annotated[
     UserModel,
     Depends(require_active_user),
 ]
+
+
+def issue_csrf_token_for_user(user: Optional[UserModel]) -> Optional[str]:
+    """Return a stateless CSRF token tied to the given user."""
+    if not user:
+        return None
+    return create_csrf_token(
+        subject=str(user.id),
+        secret=settings.CSRF_SECRET,
+        ttl_seconds=settings.CSRF_TOKEN_TTL_SECONDS,
+    )
+
+
+async def verify_web_csrf_token(
+    current_user: WebActiveUser,
+    csrf_header: Annotated[Optional[str], Header(alias="X-CSRF-Token")] = None,
+) -> None:
+    """Validate the CSRF token sent from HTMX requests."""
+    if not csrf_header or not validate_csrf_token(
+        token=csrf_header,
+        subject=str(current_user.id),
+        secret=settings.CSRF_SECRET,
+        ttl_seconds=settings.CSRF_TOKEN_TTL_SECONDS,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid CSRF token",
+        )

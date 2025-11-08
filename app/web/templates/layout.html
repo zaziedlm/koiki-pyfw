@@ -11,7 +11,7 @@
   {% block head %}{% endblock %}
 </head>
 
-<body>
+<body{% if csrf_token %} hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'{% endif %}>
   <header class="app-header">
     <div class="container">
       <div class="header-content">
@@ -23,8 +23,10 @@
       </div>
     </div>
   </header>
-  <main class="container app-container">
-    {% block content %}{% endblock %}
+  <main class="page-shell">
+    <div class="container app-container">
+      {% block content %}{% endblock %}
+    </div>
   </main>
 </body>
 
