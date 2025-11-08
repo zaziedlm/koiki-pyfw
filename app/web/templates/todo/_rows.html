@@ -1,0 +1,18 @@
+{% if todos %}
+  {% for todo in todos %}
+    <tr>
+      <td>{{ todo.title }}</td>
+      <td>{{ todo.description or "-" }}</td>
+      <td>-</td>
+      <td>
+        <span class="todo-status">
+          {{ "完了" if todo.is_completed else "未完了" }}
+        </span>
+      </td>
+    </tr>
+  {% endfor %}
+{% else %}
+  <tr>
+    <td colspan="4" class="empty-state">登録されたタスクはまだありません。</td>
+  </tr>
+{% endif %}

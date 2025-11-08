@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}Todo 管理 | {{ settings.APP_NAME }}{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <h1>Todo 管理</h1>
+  <p>{{ current_user.full_name or current_user.email }} のタスク一覧</p>
+</section>
+
+<section class="todo-board">
+  <div id="todo-table"
+       hx-get="/app/todo/rows"
+       hx-trigger="load, every 30s"
+       hx-target="#todo-tbody"
+       hx-swap="innerHTML">
+    <table class="todo-table">
+      <thead>
+        <tr>
+          <th>タイトル</th>
+          <th>説明</th>
+          <th>期限</th>
+          <th>状態</th>
+        </tr>
+      </thead>
+      <tbody id="todo-tbody">
+        {% include "todo/_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

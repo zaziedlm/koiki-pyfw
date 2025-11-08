@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block title %}ログイン | {{ settings.APP_NAME }}{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+  <div class="app-card">
+    <h1>ログイン</h1>
+    <p>FastAPI 管理機能を利用するには、認証が必要です。</p>
+
+    {% if error %}
+      <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/auth/login" class="auth-form">
+      <input type="hidden" name="next" value="{{ next }}" />
+      <label class="spruce-field">
+        <span>メールアドレス</span>
+        <input type="email" name="email" required placeholder="user@example.com" />
+      </label>
+      <label class="spruce-field">
+        <span>パスワード</span>
+        <input type="password" name="password" required placeholder="********" />
+      </label>
+      <button type="submit" class="btn-primary">ログイン</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

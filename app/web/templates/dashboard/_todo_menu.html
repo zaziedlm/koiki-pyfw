@@ -1,0 +1,9 @@
+<article class="app-card">
+  <h2>Todo 管理</h2>
+  <p>タスクの登録・更新・完了管理を行います。</p>
+  {% if current_user %}
+    <a class="btn-primary" href="/app/todo">Todo ダッシュボードへ</a>
+  {% else %}
+    <a class="btn-primary" href="/auth/login?next=/app/todo">先にログインしてください</a>
+  {% endif %}
+</article>

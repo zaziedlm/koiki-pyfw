@@ -1,0 +1,12 @@
+<article class="app-card">
+  <h2>認証</h2>
+  {% if current_user %}
+    <p>{{ current_user.full_name or current_user.email }} としてログインしています。</p>
+    <form method="post" action="/auth/logout">
+      <button type="submit" class="btn-primary">ログアウト</button>
+    </form>
+  {% else %}
+    <p>ログインして各機能にアクセスしてください。</p>
+    <a class="btn-primary" href="/auth/login?next=/app/">ログイン</a>
+  {% endif %}
+</article>

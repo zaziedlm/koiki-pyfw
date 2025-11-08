@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="spruce">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}{{ settings.APP_NAME }}{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sprucecss/dist/spruce.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/main.css') }}">
+  <script defer src="https://unpkg.com/htmx.org@2.0.8/dist/htmx.min.js"></script>
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  <header class="app-header">
+    <div class="container">
+      <div class="header-content">
+        <span class="app-title">{{ settings.APP_NAME }}</span>
+        <nav class="nav-links">
+          <a href="/app/">ダッシュボード</a>
+          <a href="/app/todo">Todo</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+  <main class="container app-container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+
+</html>
