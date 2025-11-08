@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     # レート制限設定
     RATE_LIMIT_PER_SECOND: int = 10
 
+    # CSRF tokens
+    CSRF_SECRET: str = "csrf_secret_development_only"
+    CSRF_TOKEN_TTL_SECONDS: int = 3600
+
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):
