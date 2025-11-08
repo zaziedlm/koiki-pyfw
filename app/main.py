@@ -5,6 +5,7 @@ from typing import AsyncGenerator, Optional
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 import structlog
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -48,6 +49,7 @@ from libkoiki.core.middleware import AuditLogMiddleware, SecurityHeadersMiddlewa
 from libkoiki.core.monitoring import setup_monitoring
 from libkoiki.api.v1.router import api_router as api_router_v1
 from libkoiki.db.session import connect_db, disconnect_db
+from app.web import auth_router as web_auth_router, web_router as web_ui_router
 from libkoiki.events.publisher import EventPublisher
 from libkoiki.events.handlers import EventHandler, user_created_handler # サンプルハンドラ
 #TODO : Celeryひとまずコメントアウト
@@ -56,7 +58,6 @@ from libkoiki.events.handlers import EventHandler, user_created_handler # サン
 # ロギング設定を最初に呼び出す
 setup_logging()
 logger = get_logger(__name__)
-
 # --- Application Lifespan ---
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -131,6 +132,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     app.state.limiter = limiter
     # slowapi のデフォルトハンドラを使用（カスタムする場合は error_handlers で設定）
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
     # オプション: グローバル制限をミドルウェアでかける場合
     # app.add_middleware(SlowAPIMiddleware) # limiterインスタンスは自動でstateから取得される
     logger.info("Rate limiter initialized.", enabled=settings.RATE_LIMIT_ENABLED, strategy=settings.RATE_LIMIT_STRATEGY)
@@ -170,6 +172,12 @@ app = FastAPI(
     lifespan=lifespan, # アプリケーションライフサイクル管理
 )
 
+# --- Static assets & Web UI routers ---
+app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
+app.include_router(web_auth_router)
+app.include_router(web_ui_router)
+
+
 # --- ミドルウェア設定 ---
 # 注意: ミドルウェアの順序は重要。外側から内側へ処理される。
 # 1. CORS (最初に適用することが多い)
@@ -182,7 +190,6 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
     logger.info("CORS middleware enabled.", origins=settings.BACKEND_CORS_ORIGINS)
-
 # 2. セキュリティヘッダ
 app.add_middleware(SecurityHeadersMiddleware)
 logger.info("Security headers middleware enabled.")
