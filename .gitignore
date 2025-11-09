@@ -61,4 +61,4 @@ _backup*/
 **/*.pem
 
 # Local docker-compose override (branch-specific) - prevent accidental commit
-docker-compose.override.yml
+# docker-compose.override.yml
