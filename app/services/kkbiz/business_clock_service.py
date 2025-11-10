@@ -4,7 +4,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from zoneinfo import ZoneInfo
 
+import structlog
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.kkbiz import BusinessClock
@@ -17,6 +19,8 @@ from app.schemas.kkbiz import (
 from libkoiki.core.transaction import transactional
 from libkoiki.db.session import AsyncSessionFactory
 from libkoiki.models.user import UserModel
+
+logger = structlog.get_logger(__name__)
 
 
 class BusinessClockService:
@@ -147,6 +151,7 @@ class BusinessClockService:
         lock_for_update: bool = False,
     ) -> BusinessClock:
         default_clock = BusinessClock(
+            id=1,
             mode=BusinessClockMode.REALTIME.value,
             base_timezone="Asia/Tokyo",
             offset_days=0,
@@ -155,9 +160,25 @@ class BusinessClockService:
             updated_by="system",
         )
         db.add(default_clock)
-        await db.flush()
-        await db.refresh(default_clock)
+        try:
+            await db.flush()
+            await db.refresh(default_clock)
+        except IntegrityError:
+            logger.info("Business clock already initialized; loading existing record")
+            await db.rollback()
+            self.repository.set_session(db)
+            if lock_for_update:
+                existing = await self.repository.get_for_update()
+            else:
+                existing = await self.repository.get_singleton()
+            if existing is None:
+                raise
+            return existing
+
         if lock_for_update:
             self.repository.set_session(db)
-            default_clock = await self.repository.get_for_update() or default_clock
+            seeded_clock = await self.repository.get_for_update()
+            if seeded_clock:
+                return seeded_clock
+
         return default_clock
