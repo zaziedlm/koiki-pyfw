@@ -162,6 +162,7 @@ class BusinessClockService:
         db.add(default_clock)
         try:
             await db.flush()
+            await db.commit()
             await db.refresh(default_clock)
         except IntegrityError:
             logger.info("Business clock already initialized; loading existing record")
