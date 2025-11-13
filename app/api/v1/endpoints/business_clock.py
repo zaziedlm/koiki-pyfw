@@ -9,11 +9,9 @@ logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 
-_service = BusinessClockService()
-
 
 def get_business_clock_service() -> BusinessClockService:
-    return _service
+    return BusinessClockService()
 
 
 @router.get("", response_model=BusinessClockRead, status_code=status.HTTP_200_OK)
