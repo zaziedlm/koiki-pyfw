@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   // Enable standalone output for Docker (disabled for development)
-  // output: 'standalone',
+  output: 'standalone',
   async rewrites() {
     return [
       {
