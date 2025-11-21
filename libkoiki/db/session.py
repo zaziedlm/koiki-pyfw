@@ -36,11 +36,23 @@ def init_db_engine():
                     db_url=f"postgresql+asyncpg://...@{settings.POSTGRES_SERVER}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}")
         
         # エンジンの初期化
+        pool_kwargs = {}
+        if settings.APP_ENV == "testing":
+            pool_kwargs["poolclass"] = NullPool
+        else:
+            pool_kwargs.update(
+                {
+                    "pool_size": settings.DB_POOL_SIZE,
+                    "max_overflow": settings.DB_MAX_OVERFLOW,
+                    "pool_timeout": settings.DB_POOL_TIMEOUT,
+                }
+            )
+
         engine = create_async_engine(
             db_url,
             echo=settings.DEBUG,
             connect_args=connect_args,
-            poolclass=NullPool if settings.APP_ENV == "testing" else None,
+            **pool_kwargs,
         )
         
         # セッションファクトリの初期化

@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     # データベース接続プール設定
     DB_POOL_SIZE: int = 5  # 接続プールサイズ
     DB_MAX_OVERFLOW: int = 10  # 最大オーバーフロー
+    DB_POOL_TIMEOUT: int = 30       # プール枯渇時に待つ秒数 (SQLAlchemy デフォルト 30s)
     DB_ECHO: bool = False  # SQLログ出力
 
     PROJECT_NAME: str = "KOIKI Framework"
