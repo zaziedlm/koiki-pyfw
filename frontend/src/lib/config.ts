@@ -13,15 +13,15 @@ export const config = {
     version: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
   },
   auth: {
-    tokenKey: 'koiki_access_token',
-    refreshTokenKey: 'koiki_refresh_token',
+    tokenKey: process.env.NEXT_PUBLIC_ACCESS_TOKEN_NAME || 'koiki_access_token',
+    refreshTokenKey: process.env.NEXT_PUBLIC_REFRESH_TOKEN_NAME || 'koiki_refresh_token',
     tokenExpiration: 30 * 60 * 1000, // 30 minutes in milliseconds
-    
-    // Cookie認証設定
-      cookieAuth: {
-        enabled: process.env.NEXT_PUBLIC_COOKIE_AUTH_ENABLED === 'true' || true, // デフォルトで有効
-        csrfProtection: true,
-      },
+    cookieAuth: {
+      enabled: process.env.NEXT_PUBLIC_COOKIE_AUTH_ENABLED === 'true',
+      csrfProtection: true,
+      sameSite: (process.env.NEXT_PUBLIC_COOKIE_SAMESITE as 'lax' | 'strict' | 'none') || 'lax',
+      secure: process.env.NEXT_PUBLIC_COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production',
+    },
   },
   sso: {
     redirectUri: process.env.NEXT_PUBLIC_SSO_REDIRECT_URI || '/sso/callback',

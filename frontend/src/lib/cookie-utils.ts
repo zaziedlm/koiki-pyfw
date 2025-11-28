@@ -3,11 +3,11 @@ import { NextResponse } from 'next/server';
 // Cookie設定の定数
 export const COOKIE_CONFIG = {
   ACCESS_TOKEN: {
-    name: 'koiki_access_token',
+    name: process.env.NEXT_PUBLIC_ACCESS_TOKEN_NAME || 'koiki_access_token',
     maxAge: 30 * 60, // 30分
   },
   REFRESH_TOKEN: {
-    name: 'koiki_refresh_token',
+    name: process.env.NEXT_PUBLIC_REFRESH_TOKEN_NAME || 'koiki_refresh_token',
     maxAge: 7 * 24 * 60 * 60, // 7日
   },
 } as const;
@@ -15,8 +15,8 @@ export const COOKIE_CONFIG = {
 // 共通のCookie設定オプション
 export const getSecureCookieOptions = (maxAge: number) => ({
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  secure: process.env.NEXT_PUBLIC_COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production',
+  sameSite: (process.env.NEXT_PUBLIC_COOKIE_SAMESITE as 'lax' | 'strict' | 'none') || 'lax',
   maxAge,
   path: '/',
 });

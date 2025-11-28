@@ -29,7 +29,21 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { login_ticket } = body;
+    const { login_ticket, relay_state } = body;
+
+    if (!login_ticket) {
+      return NextResponse.json(
+        { detail: 'login_ticket is required' },
+        { status: 400 },
+      );
+    }
+
+    if (!relay_state) {
+      return NextResponse.json(
+        { detail: 'relay_state is required' },
+        { status: 400 },
+      );
+    }
 
     if (!login_ticket) {
       return NextResponse.json(

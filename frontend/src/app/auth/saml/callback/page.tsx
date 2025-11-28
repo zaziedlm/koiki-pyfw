@@ -57,6 +57,10 @@ function SamlCallbackContent() {
         throw new Error('SAML login session has expired. Please retry.');
       }
 
+      if (!stored.relayState) {
+        throw new Error('Missing RelayState. Please retry the SAML login.');
+      }
+
       try {
         if (stored.expiresAt) {
           const expiresAt = new Date(stored.expiresAt).getTime();
@@ -77,6 +81,7 @@ function SamlCallbackContent() {
           credentials: 'include',
           body: JSON.stringify({
             login_ticket: samlTicket,
+            relay_state: stored.relayState,
           }),
         });
 
