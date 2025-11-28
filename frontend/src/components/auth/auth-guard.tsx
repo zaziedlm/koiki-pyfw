@@ -12,53 +12,54 @@ interface AuthGuardProps {
   fallback?: React.ReactNode;
 }
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => {
+  if (isDev) {
+    console.log('[auth-guard]', ...args);
+  }
+};
+
 export function AuthGuard({
   children,
   requireAuth = true,
   requiredRoles = [],
-  fallback
+  fallback,
 }: AuthGuardProps) {
   const [isChecking, setIsChecking] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
-
-
   const { user, isAuthenticated, isLoading, error: cookieError } = useCookieAuth();
 
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('🔐 AuthGuard checkAuth - Start:', {
-        isAuthenticated,
-        isLoading,
-        user: !!user,
-        cookieError,
-      });
+      devLog('checkAuth:start', { isAuthenticated, isLoading, hasUser: !!user });
 
       // If auth is loading, wait for it to complete
       if (isLoading) {
-        console.log('🔐 AuthGuard - Still loading auth state');
+        devLog('checkAuth:loading');
         return;
       }
 
       try {
-        // Cookie認証の場合は、useCookieAuth hookが自動的に認証状態を管理
-        console.log('🔐 Cookie Auth State:', {
+        // Cookie認証の状態確認（本番ではログ非表示）
+        devLog('state', {
           isAuthenticated,
           hasUser: !!user,
           error: cookieError ? String(cookieError) : null,
         });
       } catch (error) {
-        console.error('Auth check failed:', error);
+        if (isDev) {
+          console.error('Auth check failed:', error instanceof Error ? error.message : error);
+        }
       } finally {
-        console.log('🔐 AuthGuard checkAuth - Complete:', { isAuthenticated, hasUser: !!user });
+        devLog('checkAuth:complete', { isAuthenticated, hasUser: !!user });
         setIsChecking(false);
       }
     };
 
     checkAuth();
   }, [isAuthenticated, user, isLoading, cookieError]);
-
 
   // Handle authentication redirect in useEffect to avoid rendering during render
   useEffect(() => {

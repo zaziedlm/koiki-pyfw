@@ -7,6 +7,36 @@ import { Button } from '@/components/ui/button';
 
 type Status = 'pending' | 'error';
 
+const CSRF_COOKIE_NAME = 'koiki_csrf_token';
+const CSRF_HEADER_NAME = 'x-csrf-token';
+const isDev = process.env.NODE_ENV !== 'production';
+
+function readCsrfFromCookie(): string | null {
+  if (typeof document === 'undefined') return null;
+  const cookie = document.cookie
+    .split('; ')
+    .find((row) => row.startsWith(`${CSRF_COOKIE_NAME}=`));
+  return cookie ? decodeURIComponent(cookie.split('=')[1]) : null;
+}
+
+async function ensureCsrfToken(): Promise<string | null> {
+  const cookieToken = readCsrfFromCookie();
+  if (cookieToken) return cookieToken;
+
+  try {
+    const resp = await fetch('/api/auth/csrf', { credentials: 'include' });
+    if (!resp.ok) {
+      if (isDev) console.warn('[SAML][callback] failed to refresh CSRF token', resp.status);
+      return null;
+    }
+    const data = await resp.json().catch(() => null);
+    return data?.csrf_token || null;
+  } catch (e) {
+    if (isDev) console.warn('[SAML][callback] CSRF fetch error', e);
+    return null;
+  }
+}
+
 function SamlCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,11 +65,14 @@ function SamlCallbackContent() {
           }
         }
 
+        const csrfToken = await ensureCsrfToken();
+
         // Exchange login ticket for auth tokens via Next.js API route
         const response = await fetch('/api/saml/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            ...(csrfToken ? { [CSRF_HEADER_NAME]: csrfToken } : {}),
           },
           credentials: 'include',
           body: JSON.stringify({

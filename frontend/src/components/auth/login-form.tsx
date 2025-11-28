@@ -20,6 +20,13 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => {
+  if (isDev) {
+    console.log('[login-form]', ...args);
+  }
+};
+
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const addNotification = useUIStore((state) => state.addNotification);
@@ -36,31 +43,27 @@ export function LoginForm() {
   const loginMutation = cookieLoginMutation;
 
   const onSubmit = async (data: LoginFormData) => {
-    console.log('=== Login Form Submit ===');
-    console.log('Login data:', data);
-
     try {
-      console.log('Calling loginMutation.mutateAsync...');
+      devLog('submit');
       const result = await loginMutation.mutateAsync(data);
-      console.log('Login mutation result:', result);
-      console.log('Login mutation completed successfully');
+      devLog('success', { hasUser: !!result?.user });
 
       addNotification({
         type: 'success',
         title: 'ログイン成功',
-        message: 'おかえりなさい！',
+        message: 'ログインに成功しました',
       });
 
-      // リダイレクトは useCookieLogin の onSuccess で処理
+      // リダイレクトは useCookieLogin の onSuccess で実施
 
     } catch (error: unknown) {
-      console.error('Login error in form:', error);
+      if (isDev) {
+        console.error('Login error in form:', error instanceof Error ? error.message : error);
+      }
       let errorMessage = 'メールアドレスまたはパスワードが正しくありません';
 
       if (error instanceof Error) {
         errorMessage = error.message;
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
       }
 
       addNotification({

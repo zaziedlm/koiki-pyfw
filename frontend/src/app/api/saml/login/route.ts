@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { validateCSRFToken, createCSRFErrorResponse } from '@/lib/csrf-utils';
 
 const rawBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
   || `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1`;
@@ -6,6 +7,27 @@ const API_BASE_URL = rawBaseUrl.replace(/\/$/, '');
 
 export async function POST(request: NextRequest) {
   try {
+    // Basic CSRF/Origin guard (SAML login is a state-changing call)
+    if (!validateCSRFToken(request)) {
+      return createCSRFErrorResponse();
+    }
+
+    // Originチェック（開発では緩め、本番は厳格）
+    const origin = request.headers.get('origin');
+    const allowedOrigins =
+      process.env.NEXT_PUBLIC_ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) ??
+      [request.nextUrl.origin];
+
+    const isOriginAllowed =
+      !origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production';
+
+    if (!isOriginAllowed) {
+      return NextResponse.json(
+        { detail: 'Invalid request origin' },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
     const { login_ticket } = body;
 
