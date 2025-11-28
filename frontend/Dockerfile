@@ -93,15 +93,9 @@ RUN addgroup --system --gid 1001 nodejs && \
 ENV HOME=/home/nextjs \
     NPM_CONFIG_CACHE=/home/nextjs/.npm
 
-# Install only production dependencies (ensure cache dir owned afterward)
-COPY --chown=nextjs:nodejs package*.json ./
-RUN mkdir -p /home/nextjs/.npm && \
-    npm ci --omit=dev && \
-    npm cache clean --force && \
-    chown -R nextjs:nodejs /home/nextjs/.npm /app
-
-# Copy build artifacts and needed assets from builder
-COPY --chown=nextjs:nodejs --from=builder /app/.next /app/.next
+# Copy standalone output and static assets from builder
+COPY --chown=nextjs:nodejs --from=builder /app/.next/standalone /app
+COPY --chown=nextjs:nodejs --from=builder /app/.next/static /app/.next/static
 COPY --chown=nextjs:nodejs --from=builder /app/public /app/public
 
 # Switch to non-root
@@ -114,5 +108,10 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))" || exit 1
 
-# Start command (will be overridden by docker-compose for development)
-CMD ["npm", "start"]
+# Default API endpoint (override per environment; set service name in compose/k8s)
+ENV NEXT_PUBLIC_API_URL=http://backend:8000 \
+    NEXT_PUBLIC_API_PREFIX=/api/v1 \
+    NEXT_PUBLIC_API_BASE_URL=http://backend:8000/api/v1
+
+# Start standalone server
+CMD ["node", "server.js"]
