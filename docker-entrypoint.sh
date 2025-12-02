@@ -59,17 +59,17 @@ fi
 
 # マイグレーション実行
 echo "データベースマイグレーションを実行中..."
-alembic upgrade head || {
+alembic -c /app/alembic.ini upgrade head || {
     echo "マイグレーション実行中にエラーが発生しました。"
     echo "alembicリビジョンの状態確認..."
-    alembic current
+    alembic -c /app/alembic.ini current
     
     echo "マイグレーションファイルが存在しない場合、初期マイグレーションを作成します..."
     if [ -z "$(ls -A /app/alembic/versions)" ]; then
         echo "初期マイグレーションを作成..."
-        alembic revision --autogenerate -m "initial_migration"
+        alembic -c /app/alembic.ini revision --autogenerate -m "initial_migration"
         echo "マイグレーション実行..."
-        alembic upgrade head
+        alembic -c /app/alembic.ini upgrade head
     fi
 }
 

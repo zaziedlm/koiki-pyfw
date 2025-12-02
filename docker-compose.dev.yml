@@ -7,6 +7,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: dev
+    ports:
+      - "3000:3000"
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_BASE_URL=http://app:8000/api/v1
@@ -33,6 +35,15 @@ services:
       context: .
       dockerfile: Dockerfile
       target: dev
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    ports:
+      - "8000:8000"
     environment:
       - APP_ENV=development
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload # 開発時はリロード有効
@@ -41,5 +52,12 @@ services:
       - ./app:/app/app:cached # アプリケーションコード
       - ./libkoiki:/app/libkoiki:cached # フレームワークコード
       - ./alembic:/app/alembic:cached # Alembic 設定
-      - ./alembic.ini:/app/alembic.ini:cached
+      # alembic.ini はイメージに含めて使用する。バインドマウントすると Windows 環境で
+      # 既存の壊れたレイヤと衝突しやすいため削除。
       - ./ops:/app/ops:cached # 運用・テストスクリプト
+
+  keycloak:
+    command: [ "start-dev", "--import-realm" ]
+    ports:
+      - "8090:8080"
+      - "9000:9000"

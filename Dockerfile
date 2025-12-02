@@ -46,7 +46,7 @@ COPY pyproject.toml poetry.lock README.md ./
 COPY ./app ./app
 COPY ./libkoiki ./libkoiki
 COPY ./alembic ./alembic
-COPY ./alembic.ini ./
+COPY ./alembic.ini /app/alembic.ini
 COPY ./main.py ./
 COPY ./ops ./ops
 
@@ -113,6 +113,7 @@ RUN adduser --disabled-password --gecos "" appuser
 COPY --from=base /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=base /usr/local/bin /usr/local/bin
 COPY --from=base /app /app
+COPY --from=base /app/alembic.ini /app/alembic.ini
 
 # alembic/versionsディレクトリの作成と所有者変更
 RUN mkdir -p /app/alembic/versions && chown -R appuser:appuser /app

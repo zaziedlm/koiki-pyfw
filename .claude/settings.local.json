@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash($env:DOCKER_BUILDKIT=\"1\")",
+      "Bash(docker build:*)",
+      "Bash(DOCKER_BUILDKIT=1 docker build:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker-compose:*)",
+      "Bash(DOCKER_BUILDKIT=1 docker-compose:*)",
+      "Bash(curl:*)",
+      "Bash(docker logs:*)",
+      "Bash(powershell:*)",
+      "Bash(docker run:*)",
+      "Bash(docker stop:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

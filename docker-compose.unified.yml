@@ -1,0 +1,147 @@
+# docker-compose.unified.yml
+# 本番/ステージング環境向け統一構成 (Dockerfile.unified使用)
+# 使用方法: docker-compose -f docker-compose.unified.yml up --build
+
+services:
+  db:
+    image: postgres:15
+    container_name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_postgres_db
+    env_file:
+      - ${ENV_FILE:-.env}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-koiki_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-koiki_password}
+      POSTGRES_DB: ${POSTGRES_DB:-koiki_todo_db}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: ${DB_HEALTHCHECK_INTERVAL:-10s}
+      timeout: ${DB_HEALTHCHECK_TIMEOUT:-5s}
+      retries: ${DB_HEALTHCHECK_RETRIES:-5}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=512MB"
+      - "-c"
+      - "effective_cache_size=1GB"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+      target: production
+      args:
+        INSTALL_SCOPE: main
+        POETRY_MAX_WORKERS: 4
+    image: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}-app:prod-unified
+    container_name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_fastapi_app
+    env_file:
+      - ${ENV_FILE:-.env}
+    environment:
+      - ENVIRONMENT=production
+      - UVICORN_WORKERS=${UVICORN_WORKERS:-4}
+    depends_on:
+      db:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    restart: ${RESTART_POLICY:-unless-stopped}
+    # 本番環境リソース制限
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+    # ログ設定
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.unified
+      target: runner
+    image: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}-frontend:prod-unified
+    container_name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_nextjs_frontend
+    depends_on:
+      - app
+    env_file:
+      - ./frontend/.env.docker
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://app:8000/api/v1
+      - NEXT_PUBLIC_API_PREFIX=/api/v1
+      - NEXT_PUBLIC_API_URL=http://app:8000
+      - NODE_ENV=production
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    restart: ${RESTART_POLICY:-unless-stopped}
+    # フロントエンド用リソース制限
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.25'
+    # ログ設定
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.5
+    container_name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_keycloak
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN:-admin}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      - KC_HEALTH_ENABLED=true
+      - KC_METRICS_ENABLED=true
+      - KC_LOG_LEVEL=${KEYCLOAK_LOG_LEVEL:-WARN}
+    volumes:
+      - ./docker/keycloak/realm-koiki.json:/opt/keycloak/data/import/realm-koiki.json:ro
+      - ./docker/keycloak/realm-saml.json:/opt/keycloak/data/import/realm-saml.json:ro
+      - keycloak_data:/opt/keycloak/data
+    ports:
+      - "${KEYCLOAK_HTTP_PORT:-8090}:8080"
+      - "${KEYCLOAK_MGMT_PORT:-9000}:9000"
+    command:
+      - start-dev
+      - --import-realm
+    healthcheck:
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: ${RESTART_POLICY:-unless-stopped}
+    # Keycloak用リソース制限
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+volumes:
+  postgres_data:
+    name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_postgres_data
+  keycloak_data:
+    name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_keycloak_data
+
+networks:
+  default:
+    name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_network
+    driver: bridge
