@@ -9,6 +9,7 @@ The Docker setup includes:
 - **Frontend**: Next.js application with TypeScript and Tailwind CSS
 - **Database**: PostgreSQL 15 with persistent storage
 - **Networking**: Internal Docker network for service communication
+- **Unified stack**: `docker-compose.unified.yml` with profiles (dev / optimized / prod / prod-external) for consistent service naming and build targets
 
 ## Quick Start
 
@@ -52,11 +53,21 @@ notepad frontend\.env.local
 # Production mode
 ./start-docker.sh up
 
+# Production mode (external DB / external IdP)
+docker compose -f docker-compose.production-external.yml up -d
+
 # Development mode (with hot reload)
 ./start-docker.sh dev
 
 # View logs
 ./start-docker.sh logs
+
+# Unified stack (profiles: dev / optimized / prod / prod-external)
+# env_file is chosen via ENV_FILE (.env for dev/optimized, .env.production for prod/prod-external)
+ENV_FILE=.env docker compose -f docker-compose.unified.yml --profile dev up
+ENV_FILE=.env docker compose -f docker-compose.unified.yml --profile optimized up -d
+ENV_FILE=.env.production docker compose -f docker-compose.unified.yml --profile prod up -d
+ENV_FILE=.env.production docker compose -f docker-compose.unified.yml --profile prod-external up -d
 ```
 
 ### 3. Access Applications

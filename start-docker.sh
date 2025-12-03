@@ -51,6 +51,14 @@ show_help() {
     echo "    $0 shell-frontend-dev  - Access frontend container shell (development)"
     echo "    $0 shell-backend-dev   - Access backend container shell (development)"
     echo ""
+    echo "  Unified (profiles: dev / optimized / prod / prod-external)"
+    echo "    $0 unified-dev         - Start unified compose (dev profile)"
+    echo "    $0 unified-optimized   - Start unified compose (optimized profile)"
+    echo "    $0 unified-prod        - Start unified compose (prod profile)"
+    echo "    $0 unified-prod-external - Start unified compose (prod-external profile)"
+    echo "    $0 unified-down        - Stop unified compose (all profiles)"
+    echo "    $0 unified-logs        - Tail unified logs (active profile)"
+    echo ""
     echo "  General:"
     echo "    $0 health          - Check health of all services"
     echo "    $0 clean           - Clean up Docker resources"
@@ -145,6 +153,30 @@ case "${1:-up}" in
         docker compose down -v
         docker system prune -f
         echo "✅ Cleanup completed!"
+        ;;
+    "unified-dev")
+        echo "🚀 Starting unified stack (dev profile)..."
+        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile dev up
+        ;;
+    "unified-optimized")
+        echo "🚀 Starting unified stack (optimized profile)..."
+        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile optimized up -d
+        ;;
+    "unified-prod")
+        echo "🚀 Starting unified stack (prod profile)..."
+        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod up -d
+        ;;
+    "unified-prod-external")
+        echo "🚀 Starting unified stack (prod-external profile, external DB/IdP)..."
+        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod-external up -d
+        ;;
+    "unified-down")
+        echo "🛑 Stopping unified stack..."
+        docker compose -f docker-compose.unified.yml down
+        ;;
+    "unified-logs")
+        echo "📜 Showing logs for unified stack..."
+        docker compose -f docker-compose.unified.yml logs -f
         ;;
     "help"|"-h"|"--help")
         show_help

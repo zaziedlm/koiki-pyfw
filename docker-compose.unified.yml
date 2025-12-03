@@ -1,147 +1,242 @@
 # docker-compose.unified.yml
-# 本番/ステージング環境向け統一構成 (Dockerfile.unified使用)
-# 使用方法: docker-compose -f docker-compose.unified.yml up --build
+# Profiles: dev / optimized / prod / prod-external
+
+x-app-base: &app-base
+  env_file:
+    - ${ENV_FILE:-.env}
+  environment:
+    - UVICORN_WORKERS=${UVICORN_WORKERS:-4}
+    - ENVIRONMENT=production
+  ports:
+    - "8000:8000"
+  restart: unless-stopped
+  healthcheck:
+    test: [ "CMD", "curl", "-f", "http://localhost:8000/" ]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 5s
+  networks:
+    default:
+      aliases:
+        - app
+
+x-frontend-base: &frontend-base
+  env_file:
+    - ./frontend/.env.docker
+  environment:
+    - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://app:8000/api/v1}
+    - NEXT_PUBLIC_API_PREFIX=${NEXT_PUBLIC_API_PREFIX:-/api/v1}
+    - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://app:8000}
+    - NODE_ENV=production
+  ports:
+    - "3000:3000"
+  restart: unless-stopped
+  healthcheck:
+    test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health" ]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 30s
 
 services:
-  db:
-    image: postgres:15
-    container_name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_postgres_db
-    env_file:
-      - ${ENV_FILE:-.env}
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-koiki_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-koiki_password}
-      POSTGRES_DB: ${POSTGRES_DB:-koiki_todo_db}
-    ports:
-      - "${DB_PORT:-5432}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
-      interval: ${DB_HEALTHCHECK_INTERVAL:-10s}
-      timeout: ${DB_HEALTHCHECK_TIMEOUT:-5s}
-      retries: ${DB_HEALTHCHECK_RETRIES:-5}
-    restart: ${RESTART_POLICY:-unless-stopped}
-    command:
-      - "postgres"
-      - "-c"
-      - "max_connections=200"
-      - "-c"
-      - "shared_buffers=512MB"
-      - "-c"
-      - "effective_cache_size=1GB"
-
-  app:
+  # ------------------------
+  # Backend
+  # ------------------------
+  app-dev:
+    <<: *app-base
+    profiles: [ "dev" ]
+    container_name: koiki_app_dev
     build:
       context: .
       dockerfile: Dockerfile.unified
-      target: production
-      args:
-        INSTALL_SCOPE: main
-        POETRY_MAX_WORKERS: 4
-    image: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}-app:prod-unified
-    container_name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_fastapi_app
-    env_file:
-      - ${ENV_FILE:-.env}
-    environment:
-      - ENVIRONMENT=production
-      - UVICORN_WORKERS=${UVICORN_WORKERS:-4}
+      target: dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       db:
         condition: service_healthy
       keycloak:
         condition: service_started
-    ports:
-      - "${APP_PORT:-8000}:8000"
-    restart: ${RESTART_POLICY:-unless-stopped}
-    # 本番環境リソース制限
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '0.5'
-        reservations:
-          memory: 512M
-          cpus: '0.25'
-    # ログ設定
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    volumes:
+      - ./app:/app/app:cached
+      - ./libkoiki:/app/libkoiki:cached
+      - ./alembic:/app/alembic:cached
+      - ./ops:/app/ops:cached
 
-  frontend:
+  app-optimized:
+    <<: *app-base
+    profiles: [ "optimized" ]
+    container_name: koiki_app_opt
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+      target: optimized
+    depends_on:
+      db:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
+  app-prod:
+    <<: *app-base
+    profiles: [ "prod" ]
+    container_name: koiki_app_prod_unified
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+      target: production
+      args:
+        INSTALL_MAIN_ONLY: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
+  app-prod-external:
+    <<: *app-base
+    profiles: [ "prod-external" ]
+    container_name: koiki_app_prod_external_unified
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+      target: production
+      args:
+        INSTALL_MAIN_ONLY: "true"
+    # 外部DB/IdPに接続するため、ローカルdb/keycloakへは依存しない
+    depends_on: [ ]
+
+  # ------------------------
+  # Frontend
+  # ------------------------
+  frontend-dev:
+    <<: *frontend-base
+    profiles: [ "dev" ]
+    container_name: koiki_frontend_dev
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.unified
+      target: dev
+    command: npm run dev -- --turbopack --hostname 0.0.0.0 --port 3000
+    volumes:
+      - ./frontend/src:/app/src:cached
+      - ./frontend/public:/app/public:cached
+      - /app/node_modules
+    depends_on:
+      app-dev:
+        condition: service_started
+
+  frontend-optimized:
+    <<: *frontend-base
+    profiles: [ "optimized" ]
+    container_name: koiki_frontend_opt
     build:
       context: ./frontend
       dockerfile: Dockerfile.unified
       target: runner
-    image: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}-frontend:prod-unified
-    container_name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_nextjs_frontend
     depends_on:
-      - app
+      app-optimized:
+        condition: service_started
+
+  frontend-prod:
+    <<: *frontend-base
+    profiles: [ "prod" ]
+    container_name: koiki_frontend_prod_unified
     env_file:
-      - ./frontend/.env.docker
-    environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://app:8000/api/v1
-      - NEXT_PUBLIC_API_PREFIX=/api/v1
-      - NEXT_PUBLIC_API_URL=http://app:8000
-      - NODE_ENV=production
+      - ${ENV_FILE:-.env.production}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.unified
+      target: runner
+    depends_on:
+      app-prod:
+        condition: service_started
+
+  frontend-prod-external:
+    <<: *frontend-base
+    profiles: [ "prod-external" ]
+    container_name: koiki_frontend_prod_external_unified
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.unified
+      target: runner
+    depends_on:
+      app-prod-external:
+        condition: service_started
+
+  # ------------------------
+  # Data stores (dev/optimized/prod only)
+  # ------------------------
+  db:
+    profiles: [ "dev", "optimized", "prod" ]
+    image: postgres:15
+    container_name: osskk_postgres_unified
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ${ENV_FILE:-.env}
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-    restart: ${RESTART_POLICY:-unless-stopped}
-    # フロントエンド用リソース制限
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.25'
-    # ログ設定
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-koiki_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-koiki_password}
+      POSTGRES_DB: ${POSTGRES_DB:-koiki_todo_db}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=150"
+      - "-c"
+      - "shared_buffers=384MB"
 
   keycloak:
+    profiles: [ "dev", "optimized", "prod" ]
     image: quay.io/keycloak/keycloak:26.3.5
-    container_name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_keycloak
-    environment:
-      - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN:-admin}
-      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:-admin}
-      - KC_HEALTH_ENABLED=true
-      - KC_METRICS_ENABLED=true
-      - KC_LOG_LEVEL=${KEYCLOAK_LOG_LEVEL:-WARN}
+    container_name: osskk_keycloak_unified
+    env_file:
+      - ${ENV_FILE:-.env}
     volumes:
       - ./docker/keycloak/realm-koiki.json:/opt/keycloak/data/import/realm-koiki.json:ro
       - ./docker/keycloak/realm-saml.json:/opt/keycloak/data/import/realm-saml.json:ro
       - keycloak_data:/opt/keycloak/data
     ports:
-      - "${KEYCLOAK_HTTP_PORT:-8090}:8080"
-      - "${KEYCLOAK_MGMT_PORT:-9000}:9000"
+      - "8090:8080"
+      - "9000:9000"
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-koiki_todo_db}
+      KC_DB_USERNAME: ${POSTGRES_USER:-koiki_user}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-koiki_password}
+      KC_HTTP_ENABLED: true
+      KC_HOSTNAME_STRICT: false
+      KC_LOG_LEVEL: INFO
     command:
       - start-dev
       - --import-realm
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'" ]
       interval: 30s
       timeout: 10s
       retries: 10
       start_period: 60s
-    restart: ${RESTART_POLICY:-unless-stopped}
-    # Keycloak用リソース制限
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '0.5'
 
 volumes:
   postgres_data:
-    name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_postgres_data
   keycloak_data:
-    name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_keycloak_data
-
-networks:
-  default:
-    name: ${COMPOSE_PROJECT_NAME:-koiki-pyfw}_network
-    driver: bridge

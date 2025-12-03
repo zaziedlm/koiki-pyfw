@@ -38,8 +38,6 @@ print_info "Building dev target..."
 if time docker build \
     --file Dockerfile.unified \
     --target dev \
-    --build-arg INSTALL_SCOPE=dev \
-    --build-arg POETRY_MAX_WORKERS=10 \
     --tag koiki-pyfw-app:dev-unified \
     . ; then
     print_success "開発環境ビルド成功"
@@ -56,7 +54,7 @@ print_info "Building production target..."
 if time docker build \
     --file Dockerfile.unified \
     --target production \
-    --build-arg INSTALL_SCOPE=main \
+    --build-arg INSTALL_MAIN_ONLY=true \
     --build-arg POETRY_MAX_WORKERS=4 \
     --tag koiki-pyfw-app:prod-unified \
     . ; then
@@ -86,6 +84,7 @@ print_info "2回目のproduction targetビルド..."
 if time docker build \
     --file Dockerfile.unified \
     --target production \
+    --build-arg INSTALL_MAIN_ONLY=true \
     --tag koiki-pyfw-app:prod-unified-cache-test \
     . ; then
     print_success "キャッシュ効果確認成功（上記の時間を1回目と比較）"
@@ -101,6 +100,8 @@ echo "=========================================="
 print_success "全てのビルドが正常に完了しました"
 echo ""
 echo "次のステップ:"
-echo "  - docker-compose.dev.yml でdev targetを使用して起動確認"
-echo "  - docker-compose.optimized.yml でproduction targetを使用して起動確認"
+echo "  - docker compose -f docker-compose.unified.yml --profile dev up      # dev (reload/bind mount)"
+echo "  - docker compose -f docker-compose.unified.yml --profile optimized up -d  # optimized"
+echo "  - docker compose -f docker-compose.unified.yml --profile prod up -d      # prod (local DB/Keycloak)"
+echo "  - docker compose -f docker-compose.unified.yml --profile prod-external up -d  # prod external DB/IdP"
 echo ""

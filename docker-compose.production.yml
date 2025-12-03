@@ -93,6 +93,10 @@ services:
     container_name: osskk_keycloak_prod
     env_file:
       - .env.production
+    volumes:
+      - ./docker/keycloak/realm-koiki.json:/opt/keycloak/data/import/realm-koiki.json:ro
+      - ./docker/keycloak/realm-saml.json:/opt/keycloak/data/import/realm-saml.json:ro
+      - keycloak_data:/opt/keycloak/data
     ports:
       - "8080:8080"
     environment:

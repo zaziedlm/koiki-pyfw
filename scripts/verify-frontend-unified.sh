@@ -57,6 +57,8 @@ print_info "Building runner target..."
 if time docker build \
     --file Dockerfile.unified \
     --target runner \
+    --build-arg NODE_ENV=production \
+    --no-cache \
     --tag koiki-pyfw-frontend:runner-unified \
     . ; then
     print_success "本番環境ビルド成功"
@@ -85,6 +87,7 @@ print_info "2回目のrunner targetビルド..."
 if time docker build \
     --file Dockerfile.unified \
     --target runner \
+    --no-cache \
     --tag koiki-pyfw-frontend:runner-unified-cache-test \
     . ; then
     print_success "キャッシュ効果確認成功（上記の時間を1回目と比較）"
@@ -100,6 +103,8 @@ echo "=========================================="
 print_success "全てのビルドが正常に完了しました"
 echo ""
 echo "次のステップ:"
-echo "  - docker-compose.dev-unified.yml でdev targetを使用して起動確認"
-echo "  - docker-compose でrunner targetを使用して起動確認"
+echo "  - docker compose -f ../docker-compose.unified.yml --profile dev up      # dev (reload/bind mount)"
+echo "  - docker compose -f ../docker-compose.unified.yml --profile optimized up -d  # optimized"
+echo "  - docker compose -f ../docker-compose.unified.yml --profile prod up -d      # prod (local DB/Keycloak)"
+echo "  - docker compose -f ../docker-compose.unified.yml --profile prod-external up -d  # prod external DB/IdP"
 echo ""

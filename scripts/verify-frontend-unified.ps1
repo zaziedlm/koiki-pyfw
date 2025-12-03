@@ -55,6 +55,8 @@ try {
         docker build `
             --file Dockerfile.unified `
             --target runner `
+            --build-arg NODE_ENV=production `
+            --no-cache `
             --tag koiki-pyfw-frontend:runner-unified `
             .
     }
@@ -83,6 +85,7 @@ try {
         docker build `
             --file Dockerfile.unified `
             --target runner `
+            --no-cache `
             --tag koiki-pyfw-frontend:runner-unified-cache-test `
             .
     }
@@ -99,8 +102,10 @@ try {
     Print-Success "全てのビルドが正常に完了しました"
     Write-Host ""
     Write-Host "Next steps:" -ForegroundColor Yellow
-    Write-Host "  - Test dev target with: docker-compose.unified.dev.yml"
-    Write-Host "  - Test runner target with: docker-compose.unified.yml"
+    Write-Host "  - docker compose -f ../docker-compose.unified.yml --profile dev up        # dev (reload/bind mount)"
+    Write-Host "  - docker compose -f ../docker-compose.unified.yml --profile optimized up -d  # optimized"
+    Write-Host "  - docker compose -f ../docker-compose.unified.yml --profile prod up -d       # prod (local DB/Keycloak)"
+    Write-Host "  - docker compose -f ../docker-compose.unified.yml --profile prod-external up -d  # prod external DB/IdP"
     Write-Host ""
 
 } catch {

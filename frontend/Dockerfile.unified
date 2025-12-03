@@ -1,151 +1,63 @@
-# syntax=docker/dockerfile:1
-# Dockerfile.unified - 全環境対応統一マルチステージDockerfile for Next.js frontend
-# 対応環境: dev (開発), runner (統合テスト/ステージング/本番)
+# syntax=docker/dockerfile:1.7
+# Unified Dockerfile for frontend (Next.js)
 
-# ==============================================================================
-# Builder stage - ビルド環境
-# ==============================================================================
-FROM node:22-slim AS builder
+ARG NODE_VERSION=22-slim
 
-LABEL maintainer="koiki-team"
-LABEL dockerfile.version="unified-frontend-1.0"
+# ---------------------
+# Base: certs and tooling
+# ---------------------
+FROM node:${NODE_VERSION} AS base
 
-# BuildKit cache mount for apt packages
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates wget curl && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Add custom certificate and update CA bundle
 COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
 RUN update-ca-certificates
 
-# Environment variables for build
-ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
+ENV NODE_ENV=production \
+    NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
     SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
-    NEXT_TELEMETRY_DISABLED=1 \
-    NEXT_SHARP_TELEMETRY_DISABLED=1
+    NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
-# Install dependencies with npm cache mount (BuildKit optimization)
+# ---------------------
+# Deps: install all deps for build
+# ---------------------
+FROM base AS deps
 COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm \
     npm ci
 
-# Copy source and build application
+# ---------------------
+# Build: compile Next.js app (standalone output)
+# ---------------------
+FROM deps AS build
 COPY . .
 RUN npm run build
 
-# ==============================================================================
-# Development runtime stage - 開発環境
-# ==============================================================================
-FROM node:22-slim AS dev
-
-LABEL environment="development"
-
-# BuildKit cache mount for apt packages
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates wget curl && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Add custom certificate
-COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
-RUN update-ca-certificates
-
-# Environment variables
-ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
-    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
-    NEXT_TELEMETRY_DISABLED=1 \
-    PORT=3000 \
-    HOSTNAME=0.0.0.0
-
-WORKDIR /app
-
-# Create non-root user for development
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 --ingroup nodejs --home /home/nextjs --shell /bin/bash nextjs && \
-    mkdir -p /home/nextjs && \
-    chown -R nextjs:nodejs /home/nextjs
-
-ENV HOME=/home/nextjs \
-    NPM_CONFIG_CACHE=/home/nextjs/.npm
-
-# Copy all files from builder (includes devDependencies for hot reload)
-COPY --chown=nextjs:nodejs --from=builder /app /app
-
-# Switch to non-root user
-USER nextjs
-
-# Expose port
+# ---------------------
+# Dev stage (turbopack/next dev)
+# ---------------------
+FROM deps AS dev
+COPY . .
 EXPOSE 3000
-
-# Development command (hot reload enabled)
 CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]
 
-# ==============================================================================
-# Production runtime stage - 本番環境（最小ランタイム）
-# ==============================================================================
-FROM node:22-slim AS runner
-
-LABEL environment="production"
-
-# BuildKit cache mount for apt packages (runtime dependencies)
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates wget curl && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Add custom certificate
-COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
-RUN update-ca-certificates
-
-# Production environment variables
-ENV NODE_ENV=production \
-    NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
-    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
-    NEXT_TELEMETRY_DISABLED=1 \
-    NEXT_SHARP_TELEMETRY_DISABLED=1 \
-    PORT=3000 \
-    HOSTNAME=0.0.0.0
-
+# ---------------------
+# Runner (production server)
+# ---------------------
+FROM base AS runner
+ENV NODE_ENV=production
 WORKDIR /app
 
-# Create non-root runtime user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 --ingroup nodejs --home /home/nextjs --shell /bin/sh nextjs && \
-    mkdir -p /home/nextjs && \
-    chown -R nextjs:nodejs /home/nextjs
+# Copy standalone bundle and static assets
+COPY --from=build /app/public ./public
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./public/.next/static
 
-# Copy standalone output and static assets from builder (optimized for Next.js standalone mode)
-COPY --chown=nextjs:nodejs --from=builder /app/.next/standalone /app
-COPY --chown=nextjs:nodejs --from=builder /app/.next/static /app/.next/static
-COPY --chown=nextjs:nodejs --from=builder /app/public /app/public
-
-# Tighten security: permissions and remove unnecessary packages
-RUN chmod -R 750 /app && \
-    apt-get purge -y curl wget && \
-    apt-get autoremove -y && \
-    rm -rf /var/lib/apt/lists/*
-
-# Switch to non-root user
-USER nextjs
-
-# Expose port
 EXPOSE 3000
-
-# Health check (Node.js built-in http module)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))" || exit 1
-
-# Default API endpoint (can be overridden by environment variables)
-ENV NEXT_PUBLIC_API_URL=http://backend:8000 \
-    NEXT_PUBLIC_API_PREFIX=/api/v1 \
-    NEXT_PUBLIC_API_BASE_URL=http://backend:8000/api/v1
-
-# Start standalone server (Next.js standalone mode)
 CMD ["node", "server.js"]
