@@ -172,7 +172,8 @@ case "${1:-up}" in
         ;;
     "unified-down")
         echo "🛑 Stopping unified stack..."
-        docker compose -f docker-compose.unified.yml down
+        # Stop all unified profiles so containers created with any profile are removed
+        docker compose -f docker-compose.unified.yml --profile dev --profile optimized --profile prod --profile prod-external down
         ;;
     "unified-logs")
         echo "📜 Showing logs for unified stack..."
