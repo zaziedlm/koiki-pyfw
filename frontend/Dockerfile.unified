@@ -57,7 +57,9 @@ WORKDIR /app
 # Copy standalone bundle and static assets
 COPY --from=build /app/public ./public
 COPY --from=build /app/.next/standalone ./
-COPY --from=build /app/.next/static ./public/.next/static
+# Next.js runtime expects .next/static under the app root; also mirror to public for static asset fallback
+COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/.next/static ./public/_next/static
 
 EXPOSE 3000
 CMD ["node", "server.js"]
