@@ -55,9 +55,17 @@ function Show-Help {
     Write-Host ""
     Write-Host "  Unified (profiles: dev / optimized / prod / prod-external):"
     Write-Host "    .\start-docker.ps1 unified-dev            - Start unified stack (dev profile, foreground)"
+    Write-Host "    .\start-docker.ps1 unified-dev-build      - Build unified stack images (dev profile)"
+    Write-Host "    .\start-docker.ps1 unified-dev-down       - Stop unified stack (dev profile)"
     Write-Host "    .\start-docker.ps1 unified-optimized      - Start unified stack (optimized profile, detached)"
+    Write-Host "    .\start-docker.ps1 unified-optimized-build - Build unified stack images (optimized profile)"
+    Write-Host "    .\start-docker.ps1 unified-optimized-down - Stop unified stack (optimized profile)"
     Write-Host "    .\start-docker.ps1 unified-prod           - Start unified stack (prod profile, detached)"
+    Write-Host "    .\start-docker.ps1 unified-prod-build     - Build unified stack images (prod profile)"
+    Write-Host "    .\start-docker.ps1 unified-prod-down      - Stop unified stack (prod profile)"
     Write-Host "    .\start-docker.ps1 unified-prod-external  - Start unified stack (prod-external profile, detached)"
+    Write-Host "    .\start-docker.ps1 unified-prod-external-build - Build unified stack images (prod-external profile)"
+    Write-Host "    .\start-docker.ps1 unified-prod-external-down  - Stop unified stack (prod-external profile)"
     Write-Host "    .\start-docker.ps1 unified-down           - Stop unified stack"
     Write-Host "    .\start-docker.ps1 unified-logs           - Tail unified logs"
     Write-Host ""
@@ -207,20 +215,60 @@ switch ($Command.ToLower()) {
         $env:ENV_FILE = ".env"
         docker compose -f docker-compose.unified.yml --profile dev up
     }
+    "unified-dev-build" {
+        Write-Host "[INFO] Building unified stack images (dev profile)..."
+        $env:ENV_FILE = ".env"
+        docker compose -f docker-compose.unified.yml --profile dev build
+    }
+    "unified-dev-down" {
+        Write-Host "[INFO] Stopping unified stack (dev profile)..."
+        $env:ENV_FILE = ".env"
+        docker compose -f docker-compose.unified.yml --profile dev down
+    }
     "unified-optimized" {
         Write-Host "[INFO] Starting unified stack (optimized profile)..."
         $env:ENV_FILE = ".env"
         docker compose -f docker-compose.unified.yml --profile optimized up -d
+    }
+    "unified-optimized-build" {
+        Write-Host "[INFO] Building unified stack images (optimized profile)..."
+        $env:ENV_FILE = ".env"
+        docker compose -f docker-compose.unified.yml --profile optimized build
+    }
+    "unified-optimized-down" {
+        Write-Host "[INFO] Stopping unified stack (optimized profile)..."
+        $env:ENV_FILE = ".env"
+        docker compose -f docker-compose.unified.yml --profile optimized down
     }
     "unified-prod" {
         Write-Host "[INFO] Starting unified stack (prod profile)..."
         $env:ENV_FILE = ".env.production"
         docker compose -f docker-compose.unified.yml --profile prod up -d
     }
+    "unified-prod-build" {
+        Write-Host "[INFO] Building unified stack images (prod profile)..."
+        $env:ENV_FILE = ".env.production"
+        docker compose -f docker-compose.unified.yml --profile prod build
+    }
+    "unified-prod-down" {
+        Write-Host "[INFO] Stopping unified stack (prod profile)..."
+        $env:ENV_FILE = ".env.production"
+        docker compose -f docker-compose.unified.yml --profile prod down
+    }
     "unified-prod-external" {
         Write-Host "[INFO] Starting unified stack (prod-external profile, external DB/IdP)..."
         $env:ENV_FILE = ".env.production"
         docker compose -f docker-compose.unified.yml --profile prod-external up -d
+    }
+    "unified-prod-external-build" {
+        Write-Host "[INFO] Building unified stack images (prod-external profile)..."
+        $env:ENV_FILE = ".env.production"
+        docker compose -f docker-compose.unified.yml --profile prod-external build
+    }
+    "unified-prod-external-down" {
+        Write-Host "[INFO] Stopping unified stack (prod-external profile)..."
+        $env:ENV_FILE = ".env.production"
+        docker compose -f docker-compose.unified.yml --profile prod-external down
     }
     "unified-down" {
         Write-Host "[INFO] Stopping unified stack..."
