@@ -11,8 +11,8 @@
 cp .env.example .env
 # 必要に応じて.envファイルを編集
 
-# コンテナのビルドと起動
-docker-compose up --build -d
+# コンテナのビルドと起動（unified dev プロファイル）
+.\start-docker.ps1 unified-dev
 # この過程で以下が自動的に実行されます:
 # - データベース接続の確認（最大30回リトライ）
 # - alembic/versionsディレクトリの確認と作成
@@ -25,15 +25,15 @@ docker-compose logs -f app
 ## 2. 日常の開発作業
 
 ```bash
-# コンテナ起動（既にビルド済みの場合）
-docker-compose up -d
+# コンテナ起動（開発）
+.\start-docker.ps1 unified-dev
 # entrypoint.shによりマイグレーションが自動実行されます
 
 # コンテナ停止
-docker-compose down
+.\start-docker.ps1 unified-dev-down
 
 # ログ確認
-docker-compose logs -f app
+.\start-docker.ps1 unified-logs
 ```
 
 ## 3. アプリケーションコード修正後
@@ -44,9 +44,9 @@ docker-compose logs -f app
 # 特別な操作は必要ありません
 
 # 依存関係やDockerfile変更時は再ビルドが必要
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
+.\start-docker.ps1 unified-dev-down
+.\start-docker.ps1 unified-dev-build   # 必要なら --no-cache を追加
+.\start-docker.ps1 unified-dev
 ```
 
 ## 4. データモデル変更時（マイグレーション作成）
@@ -68,46 +68,47 @@ docker-compose logs -f app
 
 ```bash
 # 現在のマイグレーション状態確認
-docker-compose exec app alembic current
+docker compose -f docker-compose.unified.yml --profile dev exec app alembic current
 
 # マイグレーション履歴の確認
-docker-compose exec app alembic history
+docker compose -f docker-compose.unified.yml --profile dev exec app alembic history
 
 # 特定バージョンへのロールバック（必要時のみ）
-docker-compose exec app alembic downgrade <revision_id>
+docker compose -f docker-compose.unified.yml --profile dev exec app alembic downgrade <revision_id>
 ```
 
 ## 6. 環境のクリーンアップ
 
 ```bash
 # コンテナと関連リソースの停止・削除（データは保持）
-docker-compose down
+.\start-docker.ps1 unified-dev-down
 
 # データも含めた完全クリーンアップ
-docker-compose down -v
+docker compose -f docker-compose.unified.yml --profile dev down -v
 
 # 全ての環境を初期状態から再構築
-docker-compose up --build -d
+.\start-docker.ps1 unified-dev-build
+.\start-docker.ps1 unified-dev
 ```
 
 ## 7. トラブルシューティング
 
 ```bash
 # コンテナの状態確認
-docker-compose ps
+docker compose -f docker-compose.unified.yml --profile dev ps
 
 # entrypoint.shを含む詳細ログの確認
-docker-compose logs -f app
+docker compose -f docker-compose.unified.yml --profile dev logs -f app
 
 # データベース接続確認
-docker-compose exec db psql -U koiki_user -d koiki_todo_db
+docker compose -f docker-compose.unified.yml --profile dev exec db psql -U koiki_user -d koiki_todo_db
 
 # コンテナ内シェルアクセス
-docker-compose exec app bash
+docker compose -f docker-compose.unified.yml --profile dev exec app bash
 
 # 強制的な再ビルド
-docker-compose build --no-cache
-docker-compose up -d --force-recreate
+docker compose -f docker-compose.unified.yml --profile dev build --no-cache
+docker compose -f docker-compose.unified.yml --profile dev up -d --force-recreate
 ```
 
 ## 8. 本番環境デプロイ準備
@@ -115,13 +116,19 @@ docker-compose up -d --force-recreate
 ```bash
 # 本番用.envファイルの準備
 cp .env.example .env.production
-# 本番環境用の設定に編集
+# 本番環境用の設定に編集（外部DB/IdPを使う場合もここに記載）
 
-# 本番環境用イメージのビルド
-docker-compose -f docker-compose.production.yml build
+# 本番相当（内蔵DB/IdP）
+./start-docker.sh unified-prod-build
+./start-docker.sh unified-prod
 
-# イメージのプッシュ（レジストリがある場合）
-docker-compose -f docker-compose.production.yml push
+# 本番相当（外部DB/IdP）
+./start-docker.sh unified-prod-external-build
+./start-docker.sh unified-prod-external
+
+# レジストリへプッシュする場合は各サービスを tag/push する（例）
+# docker compose -f docker-compose.unified.yml --profile prod build
+# docker compose -f docker-compose.unified.yml --profile prod push
 ```
 
 ## 9. セキュリティ監査とテスト (2025-06-21 追加)
