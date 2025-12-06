@@ -4,25 +4,25 @@
 
 set -e
 
-echo "🚀 Starting KOIKI Framework with Docker Compose..."
+echo "[INFO] Starting KOIKI Framework with Docker Compose..."
 
 # Check if .env file exists
 if [ ! -f .env ]; then
-    echo "⚠️  No .env file found. Creating from .env.example..."
+    echo "[WARN] .env not found. Creating from .env.example..."
     if [ -f .env.example ]; then
         cp .env.example .env
-        echo "📝 Please edit .env file with your configuration"
+        echo "[INFO] Please edit .env with your configuration"
     else
-        echo "❌ No .env.example found. Please create .env file manually."
+        echo "[ERROR] .env.example not found. Please create .env file manually."
         exit 1
     fi
 fi
 
 # Check if frontend .env.local exists for local development
 if [ ! -f frontend/.env.local ]; then
-    echo "📝 Creating frontend environment configuration..."
+    echo "[INFO] Creating frontend .env.local from template..."
     cp frontend/.env.local.example frontend/.env.local
-    echo "✅ Frontend .env.local created from template"
+    echo "[INFO] Frontend .env.local created"
 fi
 
 # Function to show available commands
@@ -41,7 +41,7 @@ show_help() {
     echo "    $0 shell-backend   - Access backend container shell (production)"
     echo ""
     echo "  Development mode:"
-    echo "    $0 dev             - Start all services (development mode with hot reload)"
+    echo "    $0 dev             - Start all services (development with hot reload)"
     echo "    $0 build-dev       - Build all Docker images (development)"
     echo "    $0 down-dev        - Stop and remove all containers (development)"
     echo "    $0 logs-dev        - Show logs from all services (development)"
@@ -51,13 +51,21 @@ show_help() {
     echo "    $0 shell-frontend-dev  - Access frontend container shell (development)"
     echo "    $0 shell-backend-dev   - Access backend container shell (development)"
     echo ""
-    echo "  Unified (profiles: dev / optimized / prod / prod-external)"
-    echo "    $0 unified-dev         - Start unified compose (dev profile)"
-    echo "    $0 unified-optimized   - Start unified compose (optimized profile)"
-    echo "    $0 unified-prod        - Start unified compose (prod profile)"
-    echo "    $0 unified-prod-external - Start unified compose (prod-external profile)"
-    echo "    $0 unified-down        - Stop unified compose (all profiles)"
-    echo "    $0 unified-logs        - Tail unified logs (active profile)"
+    echo "  Unified (profiles: dev / optimized / prod / prod-external):"
+    echo "    $0 unified-dev            - Start unified stack (dev profile, foreground)"
+    echo "    $0 unified-dev-build      - Build unified stack images (dev profile)"
+    echo "    $0 unified-dev-down       - Stop unified stack (dev profile)"
+    echo "    $0 unified-optimized      - Start unified stack (optimized profile, detached)"
+    echo "    $0 unified-optimized-build - Build unified stack images (optimized profile)"
+    echo "    $0 unified-optimized-down - Stop unified stack (optimized profile)"
+    echo "    $0 unified-prod           - Start unified stack (prod profile, detached)"
+    echo "    $0 unified-prod-build     - Build unified stack images (prod profile)"
+    echo "    $0 unified-prod-down      - Stop unified stack (prod profile)"
+    echo "    $0 unified-prod-external  - Start unified stack (prod-external profile, detached)"
+    echo "    $0 unified-prod-external-build - Build unified stack images (prod-external profile)"
+    echo "    $0 unified-prod-external-down  - Stop unified stack (prod-external profile)"
+    echo "    $0 unified-down           - Stop unified stack"
+    echo "    $0 unified-logs           - Tail unified logs"
     echo ""
     echo "  General:"
     echo "    $0 health          - Check health of all services"
@@ -68,36 +76,36 @@ show_help() {
 # Parse command
 case "${1:-up}" in
     "up")
-        echo "🏗️  Starting services in production mode..."
+        echo "[INFO] Starting services in production mode..."
         docker compose up -d
-        echo "✅ Services started!"
-        echo "🌐 Frontend: http://localhost:3000"
-        echo "🔗 Backend API: http://localhost:8000"
-        echo "📊 API Docs: http://localhost:8000/docs"
+        echo "[INFO] Services started"
+        echo "[INFO] Frontend: http://localhost:3000"
+        echo "[INFO] Backend API: http://localhost:8000"
+        echo "[INFO] API Docs: http://localhost:8000/docs"
         ;;
     "dev")
-        echo "🛠️  Starting services in development mode..."
+        echo "[INFO] Starting services in development mode..."
         docker compose -f docker-compose.yml -f docker-compose.dev.yml up
         ;;
     "build")
-        echo "🏗️  Building Docker images (production)..."
+        echo "[INFO] Building Docker images (production)..."
         docker compose build
-        echo "✅ Build completed!"
+        echo "[INFO] Build completed"
         ;;
     "build-dev")
-        echo "🏗️  Building Docker images (development)..."
+        echo "[INFO] Building Docker images (development)..."
         docker compose -f docker-compose.yml -f docker-compose.dev.yml build
-        echo "✅ Development build completed!"
+        echo "[INFO] Development build completed"
         ;;
     "down")
-        echo "🛑 Stopping services (production)..."
+        echo "[INFO] Stopping services (production)..."
         docker compose down
-        echo "✅ Services stopped!"
+        echo "[INFO] Services stopped"
         ;;
     "down-dev")
-        echo "🛑 Stopping services (development)..."
+        echo "[INFO] Stopping services (development)..."
         docker compose -f docker-compose.yml -f docker-compose.dev.yml down
-        echo "✅ Services stopped!"
+        echo "[INFO] Services stopped"
         ;;
     "logs")
         docker compose logs -f
@@ -124,66 +132,98 @@ case "${1:-up}" in
         docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f db
         ;;
     "shell-frontend")
-        echo "🐚 Accessing frontend container (production)..."
+        echo "[INFO] Accessing frontend container (production)..."
         docker compose exec frontend sh
         ;;
     "shell-frontend-dev")
-        echo "🐚 Accessing frontend container (development)..."
+        echo "[INFO] Accessing frontend container (development)..."
         docker compose -f docker-compose.yml -f docker-compose.dev.yml exec frontend sh
         ;;
     "shell-backend")
-        echo "🐚 Accessing backend container (production)..."
+        echo "[INFO] Accessing backend container (production)..."
         docker compose exec app bash
         ;;
     "shell-backend-dev")
-        echo "🐚 Accessing backend container (development)..."
+        echo "[INFO] Accessing backend container (development)..."
         docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app bash
         ;;
     "health")
-        echo "🏥 Checking service health..."
+        echo "[INFO] Checking service health..."
         echo "Frontend health:"
-        curl -s http://localhost:3000/api/health | jq . || echo "❌ Frontend not responding"
+        curl -s http://localhost:3000/api/health | jq . || echo "[WARN] Frontend not responding"
         echo "Backend health:"
-        curl -s http://localhost:8000/api/health || echo "❌ Backend not responding"
+        curl -s http://localhost:8000/api/health || echo "[WARN] Backend not responding"
         echo "Database health:"
-        docker compose exec db pg_isready -U ${POSTGRES_USER:-koiki_user} -d ${POSTGRES_DB:-koiki_todo_db} || echo "❌ Database not responding"
+        docker compose exec db pg_isready -U ${POSTGRES_USER:-koiki_user} -d ${POSTGRES_DB:-koiki_todo_db} || echo "[WARN] Database not responding"
         ;;
     "clean")
-        echo "🧹 Cleaning up Docker resources..."
+        echo "[INFO] Cleaning up Docker resources..."
         docker compose down -v
         docker system prune -f
-        echo "✅ Cleanup completed!"
+        echo "[INFO] Cleanup completed"
         ;;
     "unified-dev")
-        echo "🚀 Starting unified stack (dev profile)..."
+        echo "[INFO] Starting unified stack (dev profile)..."
         ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile dev up
         ;;
+    "unified-dev-build")
+        echo "[INFO] Building unified stack images (dev profile)..."
+        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile dev build
+        ;;
+    "unified-dev-down")
+        echo "[INFO] Stopping unified stack (dev profile)..."
+        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile dev down
+        ;;
     "unified-optimized")
-        echo "🚀 Starting unified stack (optimized profile)..."
+        echo "[INFO] Starting unified stack (optimized profile)..."
         ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile optimized up -d
         ;;
+    "unified-optimized-build")
+        echo "[INFO] Building unified stack images (optimized profile)..."
+        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile optimized build
+        ;;
+    "unified-optimized-down")
+        echo "[INFO] Stopping unified stack (optimized profile)..."
+        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile optimized down
+        ;;
     "unified-prod")
-        echo "🚀 Starting unified stack (prod profile)..."
+        echo "[INFO] Starting unified stack (prod profile)..."
         ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod up -d
         ;;
+    "unified-prod-build")
+        echo "[INFO] Building unified stack images (prod profile)..."
+        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod build
+        ;;
+    "unified-prod-down")
+        echo "[INFO] Stopping unified stack (prod profile)..."
+        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod down
+        ;;
     "unified-prod-external")
-        echo "🚀 Starting unified stack (prod-external profile, external DB/IdP)..."
+        echo "[INFO] Starting unified stack (prod-external profile, external DB/IdP)..."
         ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod-external up -d
         ;;
+    "unified-prod-external-build")
+        echo "[INFO] Building unified stack images (prod-external profile)..."
+        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod-external build
+        ;;
+    "unified-prod-external-down")
+        echo "[INFO] Stopping unified stack (prod-external profile)..."
+        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod-external down
+        ;;
     "unified-down")
-        echo "🛑 Stopping unified stack..."
+        echo "[INFO] Stopping unified stack..."
         # Stop all unified profiles so containers created with any profile are removed
         docker compose -f docker-compose.unified.yml --profile dev --profile optimized --profile prod --profile prod-external down
         ;;
     "unified-logs")
-        echo "📜 Showing logs for unified stack..."
+        echo "[INFO] Showing logs for unified stack..."
         docker compose -f docker-compose.unified.yml logs -f
         ;;
     "help"|"-h"|"--help")
         show_help
         ;;
     *)
-        echo "❌ Unknown command: $1"
+        echo "[ERROR] Unknown command: $1"
         show_help
         exit 1
         ;;
