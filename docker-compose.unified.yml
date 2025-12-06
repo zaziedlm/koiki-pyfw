@@ -33,7 +33,7 @@ x-frontend-base: &frontend-base
     - "3000:3000"
   restart: unless-stopped
   healthcheck:
-    test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health" ]
+    test: [ "CMD", "curl", "-f", "http://127.0.0.1:3000/api/health" ]
     interval: 30s
     timeout: 10s
     retries: 3
@@ -216,19 +216,21 @@ services:
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-koiki_todo_db}
-      KC_DB_USERNAME: ${POSTGRES_USER:-koiki_user}
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-koiki_password}
+      # KC_DB: postgres
+      # KC_DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-koiki_todo_db}
+      # KC_DB_USERNAME: ${POSTGRES_USER:-koiki_user}
+      # KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-koiki_password}
       KC_HTTP_ENABLED: true
       KC_HOSTNAME_STRICT: false
       KC_LOG_LEVEL: INFO
+      KC_HEALTH_ENABLED: true
+      KC_HTTP_MANAGEMENT_PORT: 9000
     command:
       - start-dev
       - --import-realm
-    depends_on:
-      db:
-        condition: service_healthy
+    # depends_on:
+    #   db:
+    #     condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'" ]
