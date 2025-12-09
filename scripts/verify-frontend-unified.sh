@@ -38,34 +38,34 @@ echo "=========================================="
 echo "1. 開発環境ビルド (dev target)"
 echo "=========================================="
 print_info "Building dev target..."
-if time docker build \
+time docker build \
     --file Dockerfile.unified \
     --target dev \
     --tag koiki-pyfw-frontend:dev-unified \
-    . ; then
-    print_success "開発環境ビルド成功"
-else
+    .
+if [ $? -ne 0 ]; then
     print_error "開発環境ビルド失敗"
     exit 1
 fi
+print_success "開発環境ビルド成功"
 echo ""
 
 echo "=========================================="
 echo "2. 本番環境ビルド (runner target)"
 echo "=========================================="
 print_info "Building runner target..."
-if time docker build \
+time docker build \
     --file Dockerfile.unified \
     --target runner \
     --build-arg NODE_ENV=production \
     --no-cache \
     --tag koiki-pyfw-frontend:runner-unified \
-    . ; then
-    print_success "本番環境ビルド成功"
-else
+    .
+if [ $? -ne 0 ]; then
     print_error "本番環境ビルド失敗"
     exit 1
 fi
+print_success "本番環境ビルド成功"
 echo ""
 
 echo "=========================================="
@@ -84,17 +84,17 @@ echo "=========================================="
 echo "4. キャッシュ効果確認（2回目ビルド）"
 echo "=========================================="
 print_info "2回目のrunner targetビルド..."
-if time docker build \
+time docker build \
     --file Dockerfile.unified \
     --target runner \
     --no-cache \
     --tag koiki-pyfw-frontend:runner-unified-cache-test \
-    . ; then
-    print_success "キャッシュ効果確認成功（上記の時間を1回目と比較）"
-else
+    .
+if [ $? -ne 0 ]; then
     print_error "2回目ビルド失敗"
     exit 1
 fi
+print_success "キャッシュ効果確認成功（上記の時間を1回目と比較）"
 echo ""
 
 echo "=========================================="

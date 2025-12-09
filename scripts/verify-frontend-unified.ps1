@@ -41,6 +41,10 @@ try {
             --target dev `
             --tag koiki-pyfw-frontend:dev-unified `
             .
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "dev target build failed with exit code $LASTEXITCODE"
+        }
     }
 
     Print-Success "開発環境ビルド成功 (所要時間: $($devBuildTime.TotalSeconds)秒)"
@@ -59,6 +63,10 @@ try {
             --no-cache `
             --tag koiki-pyfw-frontend:runner-unified `
             .
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "runner target build failed with exit code $LASTEXITCODE"
+        }
     }
 
     Print-Success "本番環境ビルド成功 (所要時間: $($runnerBuildTime.TotalSeconds)秒)"
@@ -88,6 +96,10 @@ try {
             --no-cache `
             --tag koiki-pyfw-frontend:runner-unified-cache-test `
             .
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "runner target (cache test) build failed with exit code $LASTEXITCODE"
+        }
     }
 
     Print-Success "キャッシュ効果確認成功"
