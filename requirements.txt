@@ -1,3 +1,4 @@
+-e ./libkoiki
 aiosqlite==0.21.0
 alembic==1.16.2
 annotated-types==0.7.0
