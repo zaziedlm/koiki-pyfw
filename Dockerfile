@@ -1,5 +1,5 @@
 # Dockerfile
-FROM python:3.11.7-slim
+FROM python:3.14.2-slim
 
 # Poetry 2.x: Optimized environment variables for performance and caching
 ENV POETRY_VERSION=2.1.0 \
