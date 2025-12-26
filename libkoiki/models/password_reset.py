@@ -1,5 +1,5 @@
 # src/models/password_reset.py
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
@@ -32,11 +32,12 @@ class PasswordResetModel(Base):
     @classmethod
     def create_token_expiry(cls, hours: int = 1) -> datetime:
         """トークンの有効期限を設定（デフォルト1時間）"""
-        return datetime.utcnow() + timedelta(hours=hours)
+        return datetime.now(timezone.utc) + timedelta(hours=hours)
 
     def is_expired(self) -> bool:
         """トークンが期限切れかどうかを確認"""
-        return datetime.utcnow() > self.expires_at
+        now = datetime.now(timezone.utc)
+        return now > self.expires_at
 
     def is_valid(self) -> bool:
         """トークンが有効かどうかを確認"""

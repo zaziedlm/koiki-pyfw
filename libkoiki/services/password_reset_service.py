@@ -1,6 +1,6 @@
 # src/services/password_reset_service.py
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 import secrets
 import string
@@ -40,7 +40,7 @@ class PasswordResetService:
         
         # 新しいトークンを生成
         token = self.generate_reset_token()
-        expires_at = datetime.utcnow() + timedelta(hours=expires_hours)
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_hours)
         
         # トークンをデータベースに保存
         reset_token = await self.password_reset_repository.create_reset_token(

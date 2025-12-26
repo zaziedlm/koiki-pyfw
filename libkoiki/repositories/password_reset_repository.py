@@ -1,7 +1,8 @@
 # src/repositories/password_reset_repository.py
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import and_, select
-from datetime import datetime, timedelta
+from sqlalchemy.orm import selectinload
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 import hashlib
 
@@ -50,11 +51,15 @@ class PasswordResetRepository:
         
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         
-        query = select(PasswordResetModel).where(
+        query = (
+            select(PasswordResetModel)
+            .options(selectinload(PasswordResetModel.user))
+            .where(
             and_(
                 PasswordResetModel.token_hash == token_hash,
                 PasswordResetModel.is_used == False,
-                PasswordResetModel.expires_at > datetime.utcnow()
+                PasswordResetModel.expires_at > datetime.now(timezone.utc)
+            )
             )
         )
         
@@ -72,7 +77,7 @@ class PasswordResetRepository:
         
         if token:
             token.is_used = True
-            token.used_at = datetime.utcnow()
+            token.used_at = datetime.now(timezone.utc)
             await self.session.commit()
 
     async def cleanup_expired_tokens(self, user_id: Optional[int] = None) -> int:
@@ -81,7 +86,7 @@ class PasswordResetRepository:
             raise RuntimeError("Database session not initialized")
         
         query = select(PasswordResetModel).where(
-            PasswordResetModel.expires_at < datetime.utcnow()
+            PasswordResetModel.expires_at < datetime.now(timezone.utc)
         )
         
         if user_id:
@@ -105,7 +110,7 @@ class PasswordResetRepository:
             and_(
                 PasswordResetModel.user_id == user_id,
                 PasswordResetModel.is_used == False,
-                PasswordResetModel.expires_at > datetime.utcnow()
+                PasswordResetModel.expires_at > datetime.now(timezone.utc)
             )
         )
         
