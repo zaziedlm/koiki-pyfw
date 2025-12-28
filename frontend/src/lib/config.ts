@@ -4,7 +4,7 @@ export const config = {
     url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
     prefix: process.env.NEXT_PUBLIC_API_PREFIX || '/api/v1',
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
-    
+
     // Frontend proxy configuration  
     proxyPrefix: '/api/backend',
   },
@@ -20,7 +20,7 @@ export const config = {
       enabled: process.env.NEXT_PUBLIC_COOKIE_AUTH_ENABLED === 'true',
       csrfProtection: true,
       sameSite: (process.env.NEXT_PUBLIC_COOKIE_SAMESITE as 'lax' | 'strict' | 'none') || 'lax',
-      secure: process.env.NEXT_PUBLIC_COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production',
+      secure: process.env.NEXT_PUBLIC_COOKIE_SECURE === 'true' || (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_COOKIE_SECURE !== 'false'),
     },
   },
   sso: {

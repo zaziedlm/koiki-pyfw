@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomBytes } from 'node:crypto';
+import { config } from './config';
 
 // CSRF トークン設定
 export const CSRF_CONFIG = {
@@ -34,8 +35,23 @@ export function validateCSRFToken(request: NextRequest): boolean {
   const cookieToken = request.cookies.get(CSRF_CONFIG.COOKIE_NAME)?.value;
   const headerToken = request.headers.get(CSRF_CONFIG.HEADER_NAME);
 
+  // デバッグ用ログ (開発環境またはエラー時)
+  const isValid = !!(cookieToken && headerToken && cookieToken === headerToken);
+
+  if (!isValid && process.env.NODE_ENV !== 'production') {
+    console.warn('[CSRF Validation Failed]', {
+      url: request.url,
+      method: request.method,
+      hasCookie: !!cookieToken,
+      hasHeader: !!headerToken,
+      match: cookieToken === headerToken,
+      cookieSample: cookieToken ? `${cookieToken.substring(0, 4)}...` : 'null',
+      headerSample: headerToken ? `${headerToken.substring(0, 4)}...` : 'null'
+    });
+  }
+
   // 両方のトークンが存在し、一致することを確認
-  return !!(cookieToken && headerToken && cookieToken === headerToken);
+  return isValid;
 }
 
 // CSRF エラーレスポンス
@@ -55,8 +71,8 @@ export function createCSRFErrorResponse(): NextResponse {
 export function setCSRFTokenCookie(response: NextResponse, token: string) {
   response.cookies.set(CSRF_CONFIG.COOKIE_NAME, token, {
     httpOnly: false, // JavaScriptから読み取り可能にする
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: config.auth.cookieAuth.secure,
+    sameSite: config.auth.cookieAuth.sameSite,
     maxAge: CSRF_CONFIG.MAX_AGE,
     path: '/',
   });
