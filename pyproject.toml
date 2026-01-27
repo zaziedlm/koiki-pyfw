@@ -116,6 +116,7 @@ pip-audit = ">=2.9.0,<3.0.0"
 bandit = ">=1.8.0,<1.9.0"
 
 # Poetry 2.x: Security group for enterprise auditing
+tzdata = "^2025.3"
 [tool.poetry.group.security]
 optional = true
 
