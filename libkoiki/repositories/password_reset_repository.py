@@ -134,7 +134,7 @@ class PasswordResetRepository:
         
         for token in active_tokens:
             token.is_used = True
-            token.used_at = datetime.utcnow()
+            token.used_at = datetime.now(timezone.utc)
         
         await self.session.commit()
         return len(active_tokens)

@@ -260,14 +260,14 @@ logger.info("libkoiki API router v1 included.", prefix=settings.API_PREFIX)
 @app.get("/health", tags=["Health Check"])
 async def health_check(request: Request):
     """システムヘルスチェック"""
-    from datetime import datetime
+    from datetime import datetime, timezone
 
     logger.debug("Health check endpoint called.")
     return {
         "status": "healthy",
         "service": "koiki-framework",
         "version": "0.6.1",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 

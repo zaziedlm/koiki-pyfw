@@ -51,10 +51,18 @@ def add_request_info(logger, method_name, event_dict):
 def add_timestamp(logger, method_name, event_dict):
     """タイムスタンプを追加する安全なプロセッサ"""
     import datetime
+    from zoneinfo import ZoneInfo
     if not isinstance(event_dict, dict):
         return event_dict
     try:
-        event_dict["timestamp"] = datetime.datetime.now().isoformat()
+        tz = datetime.timezone.utc
+        if settings.LOG_TIMEZONE != "UTC":
+            try:
+                tz = ZoneInfo(settings.LOG_TIMEZONE)
+            except Exception:
+                pass  # Fallback to UTC on error
+        
+        event_dict["timestamp"] = datetime.datetime.now(tz).isoformat()
     except (TypeError, AttributeError):
         pass
     return event_dict

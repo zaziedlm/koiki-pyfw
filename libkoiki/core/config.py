@@ -22,7 +22,8 @@ class Settings(BaseSettings):
 
     # ログ設定
     LOG_LEVEL: str = "INFO"  # デフォルトでINFOログレベルを設定
-    LOG_FORMAT: str = "json"  # "json" または "console"    # 環境設定
+    LOG_FORMAT: str = "json"  # "json" または "console"
+    LOG_TIMEZONE: str = "UTC"  # ログの日時タイムゾーン (例: "UTC", "Asia/Tokyo")
     APP_ENV: str = "development"  # "development", "testing", "production"
     DEBUG: bool = True  # デバッグモードの有効/無効
     
