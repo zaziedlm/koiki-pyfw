@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBackendApiUrl } from '@/lib/cookie-utils';
 
 export async function GET(request: NextRequest) {
   try {
     const accessToken = request.cookies.get('koiki_access_token')?.value;
-    
+
     if (!accessToken) {
       return NextResponse.json(
         { message: 'Access token not found', detail: 'Please login' },
@@ -12,10 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     // バックエンドAPIへプロキシ
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const apiPrefix = process.env.NEXT_PUBLIC_API_PREFIX || '/api/v1';
-    
-    const response = await fetch(`${backendUrl}${apiPrefix}/auth/me`, {
+    const response = await fetch(`${getBackendApiUrl()}/auth/me`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

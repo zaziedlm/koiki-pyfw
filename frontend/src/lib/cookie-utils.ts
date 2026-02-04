@@ -55,7 +55,13 @@ export function clearAuthCookies(response: NextResponse) {
 
 // バックエンドAPI URLを取得
 export function getBackendApiUrl(): string {
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  const apiPrefix = process.env.NEXT_PUBLIC_API_PREFIX || '/api/v1';
+  const backendUrl =
+    process.env.BACKEND_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'http://localhost:8000';
+  const apiPrefix =
+    process.env.BACKEND_API_PREFIX ||
+    process.env.NEXT_PUBLIC_API_PREFIX ||
+    '/api/v1';
   return `${backendUrl}${apiPrefix}`;
 }
