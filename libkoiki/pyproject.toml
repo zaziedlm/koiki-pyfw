@@ -47,6 +47,9 @@ dependencies = [
     
     # Rate Limiting & Security
     "slowapi>=0.1.8,<0.2.0",              # Current range (stable API)
+    
+    # Time Zone Support
+    "tzdata>=2024.2,<2026.0",             # IANA timezone database (required for zoneinfo on Windows/containers)
 ]
 
 [project.optional-dependencies]
