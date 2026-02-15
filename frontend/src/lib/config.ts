@@ -3,8 +3,12 @@ export const config = {
     // Backend API configuration
     url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
     prefix: process.env.NEXT_PUBLIC_API_PREFIX || '/api/v1',
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
+    // baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
 
+    // For AWS ECS,Flexible base URL construction to support different deployment scenarios
+    baseUrl: process.env.BACKEND_API_URL
+      ? `${process.env.BACKEND_API_URL}${process.env.BACKEND_API_PREFIX || '/api/v1'}`
+      : process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
     // Frontend proxy configuration  
     proxyPrefix: '/api/backend',
   },
