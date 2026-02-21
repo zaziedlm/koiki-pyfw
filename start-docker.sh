@@ -180,7 +180,7 @@ case "${1:-up}" in
         ;;
     "unified-optimized-build")
         echo "[INFO] Building unified stack images (optimized profile)..."
-        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile optimized build
+        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile optimized build --no-cache
         ;;
     "unified-optimized-down")
         echo "[INFO] Stopping unified stack (optimized profile)..."
@@ -192,7 +192,7 @@ case "${1:-up}" in
         ;;
     "unified-prod-build")
         echo "[INFO] Building unified stack images (prod profile)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod build
+        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod build --no-cache
         ;;
     "unified-prod-down")
         echo "[INFO] Stopping unified stack (prod profile)..."
@@ -204,7 +204,7 @@ case "${1:-up}" in
         ;;
     "unified-prod-external-build")
         echo "[INFO] Building unified stack images (prod-external profile)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod-external build
+        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod-external build --no-cache
         ;;
     "unified-prod-external-down")
         echo "[INFO] Stopping unified stack (prod-external profile)..."

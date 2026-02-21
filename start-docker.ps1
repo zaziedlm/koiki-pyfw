@@ -233,7 +233,7 @@ switch ($Command.ToLower()) {
     "unified-optimized-build" {
         Write-Host "[INFO] Building unified stack images (optimized profile)..."
         $env:ENV_FILE = ".env"
-        docker compose -f docker-compose.unified.yml --profile optimized build
+        docker compose -f docker-compose.unified.yml --profile optimized build --no-cache
     }
     "unified-optimized-down" {
         Write-Host "[INFO] Stopping unified stack (optimized profile)..."
@@ -248,7 +248,7 @@ switch ($Command.ToLower()) {
     "unified-prod-build" {
         Write-Host "[INFO] Building unified stack images (prod profile)..."
         $env:ENV_FILE = ".env.production"
-        docker compose -f docker-compose.unified.yml --profile prod build
+        docker compose -f docker-compose.unified.yml --profile prod build --no-cache
     }
     "unified-prod-down" {
         Write-Host "[INFO] Stopping unified stack (prod profile)..."
@@ -263,7 +263,7 @@ switch ($Command.ToLower()) {
     "unified-prod-external-build" {
         Write-Host "[INFO] Building unified stack images (prod-external profile)..."
         $env:ENV_FILE = ".env.production"
-        docker compose -f docker-compose.unified.yml --profile prod-external build
+        docker compose -f docker-compose.unified.yml --profile prod-external build --no-cache
     }
     "unified-prod-external-down" {
         Write-Host "[INFO] Stopping unified stack (prod-external profile)..."
