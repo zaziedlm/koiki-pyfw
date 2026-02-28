@@ -77,9 +77,9 @@ class SAMLService:
             logger.error("RelayState signing key is not configured for SAML flow")
             raise RuntimeError("SAML RelayState signing key is required")
 
-        self.relay_state_signing_key = (
-            self.saml_settings.SAML_RELAY_STATE_SIGNING_KEY.encode("utf-8")
-        )
+        master_key = self.saml_settings.SAML_RELAY_STATE_SIGNING_KEY.encode("utf-8")
+        self.relay_state_signing_key = self._derive_key(master_key, b"relay_state")
+        self.login_ticket_signing_key = self._derive_key(master_key, b"login_ticket")
         self.relay_state_ttl = timedelta(
             seconds=self.saml_settings.SAML_RELAY_STATE_TTL_SECONDS
         )
@@ -90,11 +90,37 @@ class SAMLService:
         # 証明書マネージャーの初期化（動的メタデータ取得/静的証明書に対応）
         self.cert_manager = SAMLCertificateManager(self.saml_settings)
 
+        # セキュリティ設定の起動時ログ（運用確認用）
+        security_cfg = self.saml_settings.get_saml_security_settings()
         logger.info(
             "SAMLService initialized",
             cert_strategy=self.cert_manager.strategy,
             metadata_enabled=bool(self.saml_settings.SAML_IDP_METADATA_URL),
         )
+        logger.info(
+            "SAML security settings",
+            wantMessagesSigned=security_cfg.get("wantMessagesSigned"),
+            wantAssertionsSigned=security_cfg.get("wantAssertionsSigned"),
+            authnRequestsSigned=security_cfg.get("authnRequestsSigned"),
+            signatureAlgorithm=security_cfg.get("signatureAlgorithm"),
+            hmac_key_separation="enabled",
+        )
+
+        # AuthnRequest署名の整合性チェック
+        if self.saml_settings.SAML_SIGN_REQUESTS:
+            if not (self.saml_settings.SAML_SP_X509_CERT
+                    and self.saml_settings.SAML_SP_PRIVATE_KEY):
+                logger.error(
+                    "SAML_SIGN_REQUESTS=true but SP certificate/private key "
+                    "not configured. AuthnRequest signing will fail."
+                )
+        elif (self.saml_settings.SAML_SP_X509_CERT
+              and self.saml_settings.SAML_SP_PRIVATE_KEY):
+            logger.warning(
+                "SP certificate and private key are configured but "
+                "SAML_SIGN_REQUESTS=false. Set SAML_SIGN_REQUESTS=true "
+                "to enable AuthnRequest signing."
+            )
 
     async def generate_authn_request(
         self,
@@ -1028,7 +1054,10 @@ class SAMLService:
         if user_info.session_index:
             payload["session_index"] = user_info.session_index
 
-        token, expires_at = self._create_signed_token(payload, self.login_ticket_ttl)
+        token, expires_at = self._create_signed_token(
+            payload, self.login_ticket_ttl,
+            signing_key=self.login_ticket_signing_key,
+        )
         return token, expires_at, ticket_id
 
     def build_login_redirect_url(
@@ -1106,7 +1135,8 @@ class SAMLService:
         """
 
         payload, expires_at = self._decode_signed_token(
-            login_ticket, purpose="login ticket"
+            login_ticket, purpose="login ticket",
+            signing_key=self.login_ticket_signing_key,
         )
         ticket_id = payload.get("ticket_id")
         if not ticket_id:
@@ -1204,12 +1234,17 @@ class SAMLService:
             _LOGIN_TICKET_CACHE[ticket_id] = expires_at
 
     @staticmethod
+    def _derive_key(master_key: bytes, purpose: bytes, length: int = 32) -> bytes:
+        """HKDF-like key derivation: 用途別にHMACキーを派生させる"""
+        return hmac.new(master_key, purpose, hashlib.sha256).digest()[:length]
+
+    @staticmethod
     def _urlsafe_b64decode(value: str) -> bytes:
         padding = "=" * (-len(value) % 4)
         return base64.urlsafe_b64decode(value + padding)
 
     def _create_signed_token(
-        self, payload: Dict[str, Any], ttl: timedelta
+        self, payload: Dict[str, Any], ttl: timedelta, signing_key: bytes = None
     ) -> Tuple[str, datetime]:
         issued_at = datetime.now(timezone.utc)
         expires_at = issued_at + ttl
@@ -1218,8 +1253,9 @@ class SAMLService:
         token_payload["exp"] = int(expires_at.timestamp())
 
         payload_bytes = json.dumps(token_payload, separators=(",", ":")).encode("utf-8")
+        key = signing_key or self.relay_state_signing_key
         signature = hmac.new(
-            self.relay_state_signing_key, payload_bytes, hashlib.sha256
+            key, payload_bytes, hashlib.sha256
         ).digest()
 
         payload_part = (
@@ -1230,7 +1266,7 @@ class SAMLService:
         return f"{payload_part}.{signature_part}", expires_at
 
     def _decode_signed_token(
-        self, token: str, *, purpose: str
+        self, token: str, *, purpose: str, signing_key: bytes = None
     ) -> Tuple[Dict[str, Any], datetime]:
         if not token:
             raise ValidationException(f"{purpose} token is required")
@@ -1247,8 +1283,9 @@ class SAMLService:
             logger.warning("Failed to decode token", purpose=purpose, error=str(exc))
             raise ValidationException(f"Invalid {purpose} token encoding") from exc
 
+        key = signing_key or self.relay_state_signing_key
         expected_signature = hmac.new(
-            self.relay_state_signing_key,
+            key,
             payload_bytes,
             hashlib.sha256,
         ).digest()

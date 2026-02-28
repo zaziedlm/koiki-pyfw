@@ -290,6 +290,7 @@ class SAMLSettings(BaseSettings):
             "logoutRequestSigned": self.SAML_SIGN_REQUESTS,
             "logoutResponseSigned": self.SAML_SIGN_REQUESTS,
             "signMetadata": False,
+            "wantMessagesSigned": self.SAML_SIGN_RESPONSES,
             "wantAssertionsSigned": self.SAML_SIGN_ASSERTIONS,
             "wantNameId": True,
             "wantAssertionsEncrypted": self.SAML_ENCRYPT_ASSERTIONS,
@@ -356,6 +357,10 @@ class SAMLSettings(BaseSettings):
         """
         必須設定値が設定されているかチェック
 
+        証明書はメタデータURL経由での動的取得もサポートするため、
+        SAML_IDP_X509_CERT と SAML_IDP_METADATA_URL のいずれかが
+        設定されていれば有効とする。
+
         Returns:
             全ての必須設定が設定されている場合 True
         """
@@ -363,7 +368,6 @@ class SAMLSettings(BaseSettings):
             "SAML_SP_ENTITY_ID",
             "SAML_IDP_ENTITY_ID",
             "SAML_IDP_SSO_URL",
-            "SAML_IDP_X509_CERT",
             "SAML_SP_ACS_URL",
             "SAML_RELAY_STATE_SIGNING_KEY",
         ]
@@ -371,6 +375,11 @@ class SAMLSettings(BaseSettings):
         for field in required_fields:
             if not getattr(self, field):
                 return False
+
+        # IdP証明書: 静的証明書またはメタデータURLのいずれかが必要
+        if not self.SAML_IDP_X509_CERT and not self.SAML_IDP_METADATA_URL:
+            return False
+
         return True
 
 

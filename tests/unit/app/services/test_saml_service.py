@@ -44,7 +44,7 @@ class TestSAMLService:
         }
         settings.get_saml_sp_settings.return_value = {"entityId": "test-sp"}
         settings.get_saml_idp_settings.return_value = {"entityId": "test-idp"}
-        settings.get_saml_security_settings.return_value = {"wantAssertionsSigned": True}
+        settings.get_saml_security_settings.return_value = {"wantMessagesSigned": True, "wantAssertionsSigned": True}
         settings.resolve_redirect_uri.side_effect = lambda uri=None: uri or "https://frontend.example.com/saml/callback"
 
         return settings
