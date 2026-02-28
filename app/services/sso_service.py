@@ -17,8 +17,9 @@ import string
 from urllib.parse import urlencode
 
 import structlog
-from jose import jwt, JWTError
-from jose.exceptions import JWKError
+import jwt
+from jwt import PyJWK
+from jwt.exceptions import InvalidTokenError, InvalidKeyError, PyJWKError
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,12 +29,6 @@ try:
     HTTPX_AVAILABLE = True
 except ImportError:
     HTTPX_AVAILABLE = False
-
-try:
-    from jwcrypto import jwk
-    JWCRYPTO_AVAILABLE = True
-except ImportError:
-    JWCRYPTO_AVAILABLE = False
 
 from libkoiki.services.user_service import UserService
 from libkoiki.services.auth_service import AuthService
@@ -97,8 +92,6 @@ class SSOService:
             logger.info("JWKS configured", jwks_uri=self.sso_settings.SSO_JWKS_URI)
         else:
             self.jwks_uri = None
-        if not JWCRYPTO_AVAILABLE:
-            logger.warning("jwcrypto not available; falling back to direct JWK usage")
         if self.sso_settings.SSO_SIGNATURE_VALIDATION and not HTTPX_AVAILABLE:
             logger.warning("httpx not available; cannot fetch JWKS when signature validation is enabled")
 
@@ -215,13 +208,13 @@ class SSOService:
 
             return user_info
 
-        except JWTError as e:
+        except InvalidTokenError as e:
             logger.error("JWT verification failed", error=str(e))
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid ID token",
             )
-        except JWKError as e:
+        except (InvalidKeyError, PyJWKError) as e:
             logger.error("JWKS key retrieval failed", error=str(e))
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -775,31 +768,18 @@ class SSOService:
                     detail="Unable to find matching JWK for token",
                 )
 
-            # できれば jwcrypto で PEM にして decode
-            key_for_decode = None
-            if JWCRYPTO_AVAILABLE:
-                try:
-                    jwk_obj = jwk.JWK(**key_dict)
-                    pem_bytes = jwk_obj.export_to_pem(public_key=True, private_key=False)
-                    key_for_decode = pem_bytes
-                except Exception as e:
-                    logger.warning("jwcrypto PEM export failed; will try direct JWK decode", error=str(e))
-                    key_for_decode = key_dict
-            else:
-                # jwcrypto 未インストール: python-jose に JWK を直接渡す（対応環境のみ）
-                key_for_decode = key_dict
+            # PyJWK で JWK dict から署名鍵を構築
+            signing_key = PyJWK.from_dict(key_dict)
 
             payload = jwt.decode(
                 id_token,
-                key=key_for_decode,
+                key=signing_key,
                 algorithms=[alg],
                 options={
                     "verify_signature": True,
                     "verify_exp": self.sso_settings.SSO_EXPIRY_VALIDATION,
                     "verify_aud": self.sso_settings.SSO_AUDIENCE_VALIDATION,
                     "verify_iss": self.sso_settings.SSO_ISSUER_VALIDATION,
-                    "verify_at_hash": False,
-                    "leeway": self.sso_settings.SSO_CLOCK_SKEW_SECONDS,
                 },
                 audience=(
                     self.sso_settings.SSO_CLIENT_ID
@@ -811,12 +791,13 @@ class SSOService:
                     if self.sso_settings.SSO_ISSUER_VALIDATION
                     else None
                 ),
+                leeway=self.sso_settings.SSO_CLOCK_SKEW_SECONDS,
             )
             return payload, alg
 
         except HTTPException:
             raise
-        except JWTError as e:
+        except InvalidTokenError as e:
             logger.error("JWT signature verification failed", error=str(e))
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

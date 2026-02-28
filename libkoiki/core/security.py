@@ -1,7 +1,8 @@
 # src/core/security.py
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, Union, Annotated # Annotated をインポート
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -102,7 +103,7 @@ async def get_user_from_token(
         user_id = int(token_data.sub) # IDを整数に変換
         logger.debug("Token decoded successfully", user_id=user_id)
 
-    except (JWTError, ValidationError) as e:
+    except (InvalidTokenError, ValidationError) as e:
         logger.warning(f"Token validation failed: {e}", token=token[:10]+"...") # トークンの一部だけログに
         raise credentials_exception
 
