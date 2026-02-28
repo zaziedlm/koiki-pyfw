@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from fastapi import Request
 
 from app.core.saml_config import SAMLSettings
 from app.schemas.saml import SAMLUserInfo
@@ -27,11 +28,24 @@ class TestSAMLService:
         settings.SAML_SP_ENTITY_ID = "https://app.example.com/saml/metadata"
         settings.SAML_IDP_ENTITY_ID = "https://idp.example.com"
         settings.SAML_IDP_SSO_URL = "https://idp.example.com/saml/sso"
+        settings.SAML_IDP_SLS_URL = ""
         settings.SAML_IDP_X509_CERT = "test-cert"
         settings.SAML_SP_ACS_URL = "https://app.example.com/saml/acs"
+        settings.SAML_SP_SLS_URL = ""
         settings.SAML_RELAY_STATE_SIGNING_KEY = "test-signing-key"
         settings.SAML_RELAY_STATE_TTL_SECONDS = 600
         settings.SAML_LOGIN_TICKET_TTL_SECONDS = 120
+        settings.SAML_SIGN_REQUESTS = False
+        settings.SAML_SIGNATURE_ALGORITHM = (
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+        )
+        settings.SAML_SP_X509_CERT = ""
+        settings.SAML_SP_PRIVATE_KEY = ""
+        settings.SAML_IDP_METADATA_URL = None
+        settings.SAML_METADATA_CACHE_TTL_SECONDS = 3600
+        settings.SAML_SKIP_SSL_VERIFY = True
+        settings.SAML_CERT_FETCH_STRATEGY = "static"
+        settings.SAML_METADATA_AUTO_REFRESH_ON_ERROR = True
         settings.SAML_DEFAULT_REDIRECT_URI = (
             "https://frontend.example.com/saml/callback"
         )
@@ -54,6 +68,9 @@ class TestSAMLService:
             "wantMessagesSigned": True,
             "wantAssertionsSigned": True,
         }
+        settings.get_cert_strategy.return_value = "static"
+        settings.should_use_metadata.return_value = False
+        settings.should_use_static_cert.return_value = True
         settings.resolve_redirect_uri.side_effect = lambda uri=None: (
             uri or "https://frontend.example.com/saml/callback"
         )
@@ -120,32 +137,35 @@ class TestSAMLService:
                     saml_settings=settings,
                 )
 
-    def test_generate_authn_request_library_unavailable(self, saml_service):
+    @pytest.mark.asyncio
+    async def test_generate_authn_request_library_unavailable(self, saml_service):
         """ライブラリ未導入時のAuthnRequest生成失敗テスト"""
         with patch("app.services.saml_service.PYTHON3_SAML_AVAILABLE", False):
             from fastapi import HTTPException
 
             with pytest.raises(HTTPException) as exc_info:
-                saml_service.generate_authn_request()
+                await saml_service.generate_authn_request()
 
             assert exc_info.value.status_code == 500
             assert "python3-saml is not available" in exc_info.value.detail
 
-    def test_generate_authn_request_invalid_settings(self, saml_service):
+    @pytest.mark.asyncio
+    async def test_generate_authn_request_invalid_settings(self, saml_service):
         """設定不正時のAuthnRequest生成失敗テスト"""
         saml_service.saml_settings.validate_required_settings.return_value = False
 
         from fastapi import HTTPException
 
         with pytest.raises(HTTPException) as exc_info:
-            saml_service.generate_authn_request()
+            await saml_service.generate_authn_request()
 
         assert exc_info.value.status_code == 500
         assert "SAML configuration is incomplete" in exc_info.value.detail
 
+    @pytest.mark.asyncio
     @patch("app.services.saml_service.OneLogin_Saml2_Settings")
     @patch("app.services.saml_service.OneLogin_Saml2_Auth")
-    def test_generate_authn_request_success(
+    async def test_generate_authn_request_success(
         self, mock_auth_class, mock_settings_class, saml_service
     ):
         """AuthnRequest生成成功テスト"""
@@ -161,8 +181,7 @@ class TestSAMLService:
         mock_auth_class.return_value = mock_auth
         mock_settings_class.return_value = Mock()
 
-        result = saml_service.generate_authn_request(
-            acs_url="https://app.example.com/saml/acs",
+        result = await saml_service.generate_authn_request(
             redirect_uri="https://frontend.example.com/saml/callback",
         )
 
@@ -185,7 +204,13 @@ class TestSAMLService:
         payload = {"nonce": "test-nonce", "req": "REQ123"}
         token, _ = saml_service._create_relay_state_token(payload)
         payload_part, _ = token.split(".")
-        invalid_token = f"{payload_part}.invalid-signature"
+        # 有効なbase64文字列で署名部分だけ差し替え（エンコーディングは通過させる）
+        import base64
+
+        fake_sig = (
+            base64.urlsafe_b64encode(b"wrong-signature-value").rstrip(b"=").decode()
+        )
+        invalid_token = f"{payload_part}.{fake_sig}"
 
         with pytest.raises(
             ValidationException, match="Invalid RelayState token signature"
@@ -212,6 +237,20 @@ class TestSAMLService:
 
         assert redirect_url.startswith(base_url)
         assert "saml_ticket=ticket123" in redirect_url
+
+    def test_build_login_redirect_url_with_relay_state(self, saml_service):
+        base_url = "https://frontend.example.com/saml/callback"
+        ticket = "ticket123"
+        relay_state = "relay-state-token"
+        redirect_url = saml_service.build_login_redirect_url(
+            base_url,
+            ticket,
+            relay_state,
+        )
+
+        assert redirect_url.startswith(base_url)
+        assert "saml_ticket=ticket123" in redirect_url
+        assert "relay_state=relay-state-token" in redirect_url
 
     @pytest.mark.asyncio
     async def test_create_internal_token_pair_success(self, saml_service):
@@ -265,10 +304,18 @@ class TestSAMLService:
         mock_user.is_active = True
 
         saml_service.user_service.get_user_by_id = AsyncMock(return_value=mock_user)
+        # auth_flow_repository のモック（DB排他ロック）
+        saml_service.auth_flow_repository = Mock()
+        saml_service.auth_flow_repository.consume_ticket_exclusive = AsyncMock(
+            return_value=None
+        )
 
         from fastapi import HTTPException
 
-        relay_payload = {"nonce": "relay-nonce"}
+        relay_payload = {"nonce": "relay-nonce", "req": "REQ123"}
+        # RelayStateトークンを生成
+        relay_state_token, _ = saml_service._create_relay_state_token(relay_payload)
+
         user_info = SAMLUserInfo(
             subject_id="user@example.com",
             email="user@example.com",
@@ -287,6 +334,7 @@ class TestSAMLService:
             expires_in,
         ) = await saml_service.exchange_login_ticket(
             login_ticket=login_ticket,
+            relay_state=relay_state_token,
             db=mock_db,
             device_info="test-device",
         )
@@ -299,6 +347,7 @@ class TestSAMLService:
         with pytest.raises(HTTPException) as exc_info:
             await saml_service.exchange_login_ticket(
                 login_ticket=login_ticket,
+                relay_state=relay_state_token,
                 db=mock_db,
                 device_info="test-device",
             )
@@ -350,29 +399,31 @@ class TestSAMLService:
         password2 = saml_service._generate_dummy_password()
         assert password != password2
 
-    def test_build_saml_config(self, saml_service):
+    @pytest.mark.asyncio
+    async def test_build_saml_config(self, saml_service):
         """SAML設定構築テスト"""
         acs_url = "https://app.example.com/saml/acs"
-        config = saml_service._build_saml_config(acs_url)
+        config = await saml_service._build_saml_config(acs_url)
 
         assert "sp" in config
         assert "idp" in config
         assert "security" in config
         assert config["sp"]["assertionConsumerService"]["url"] == acs_url
 
-    def test_create_fake_request(self, saml_service):
-        """疑似リクエスト作成テスト"""
-        # SAML Response無しの場合
-        request = saml_service._create_fake_request()
-        assert request["https"] == "on"
-        assert request["http_host"] == "localhost"
-        assert "post_data" in request
-        assert "get_data" in request
+    def test_build_request_data_for_generation(self, saml_service):
+        """AuthnRequest生成用リクエストデータ構築テスト"""
+        acs_url = "https://app.example.com/saml/acs"
+        request_data = saml_service._build_request_data_for_generation(acs_url)
+        assert request_data["https"] == "on"
+        assert request_data["http_host"] == "app.example.com"
+        assert "post_data" in request_data
+        assert "get_data" in request_data
 
-        # SAML Response有りの場合
-        saml_response = "test-saml-response"
-        request = saml_service._create_fake_request(saml_response=saml_response)
-        assert request["post_data"]["SAMLResponse"] == saml_response
+        # HTTP URLの場合
+        http_url = "http://localhost:8000/saml/acs"
+        request_data = saml_service._build_request_data_for_generation(http_url)
+        assert request_data["https"] == "off"
+        assert request_data["http_host"] == "localhost"
 
     @pytest.mark.asyncio
     async def test_verify_saml_response_library_unavailable(self, saml_service):
@@ -380,9 +431,12 @@ class TestSAMLService:
         with patch("app.services.saml_service.PYTHON3_SAML_AVAILABLE", False):
             from fastapi import HTTPException
 
+            mock_request = Mock(spec=Request)
             with pytest.raises(HTTPException) as exc_info:
                 await saml_service.verify_saml_response(
-                    saml_response="test-response", relay_state="test-relay-state"
+                    request=mock_request,
+                    saml_response="test-response",
+                    relay_state_payload={"nonce": "test", "req": "REQ1"},
                 )
 
             assert exc_info.value.status_code == 500
@@ -395,9 +449,12 @@ class TestSAMLService:
 
         from fastapi import HTTPException
 
+        mock_request = Mock(spec=Request)
         with pytest.raises(HTTPException) as exc_info:
             await saml_service.verify_saml_response(
-                saml_response="test-response", relay_state="test-relay-state"
+                request=mock_request,
+                saml_response="test-response",
+                relay_state_payload={"nonce": "test", "req": "REQ1"},
             )
 
         assert exc_info.value.status_code == 500
