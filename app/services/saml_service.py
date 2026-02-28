@@ -28,6 +28,7 @@ from app.core.saml_config import SAMLSettings, get_saml_settings
 from app.repositories.user_sso_repository import UserSSORepository
 from app.schemas.saml import SAMLLinkResponse, SAMLUserInfo, SAMLUserInfoResponse
 from app.services.saml_certificate_manager import SAMLCertificateManager
+from libkoiki.core.exceptions import ValidationException
 from libkoiki.core.security import check_password_complexity
 from libkoiki.models.user import UserModel
 from libkoiki.schemas.user import UserCreate
@@ -39,12 +40,6 @@ logger = structlog.get_logger(__name__)
 
 _LOGIN_TICKET_CACHE: Dict[str, datetime] = {}
 _LOGIN_TICKET_LOCK = asyncio.Lock()
-
-
-class ValidationException(Exception):
-    """SAML検証エラー専用例外"""
-
-    pass
 
 
 class SAMLService:
@@ -102,9 +97,12 @@ class SAMLService:
         self,
         *,
         redirect_uri: Optional[str] = None,
-        acs_url: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """AuthnRequestとRelayStateを生成し、IdPへリダイレクトするための情報を返す"""
+        """AuthnRequestとRelayStateを生成し、IdPへリダイレクトするための情報を返す
+
+        ACS URLはサーバー設定(SAML_SP_ACS_URL)から取得し、
+        外部入力は受け付けない（オープンリダイレクト防止）。
+        """
 
         if not PYTHON3_SAML_AVAILABLE:
             raise HTTPException(
@@ -119,7 +117,7 @@ class SAMLService:
                 detail="SAML configuration is incomplete",
             )
 
-        chosen_acs_url = acs_url or self.saml_settings.SAML_SP_ACS_URL
+        chosen_acs_url = self.saml_settings.SAML_SP_ACS_URL
         if not chosen_acs_url:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1063,10 +1061,15 @@ class SAMLService:
         self,
         *,
         login_ticket: str,
+        relay_state: str,
         db: AsyncSession,
         device_info: Optional[str] = None,
     ) -> Tuple[UserModel, str, str, int]:
-        """ログインチケットを内部トークンに交換"""
+        """ログインチケットを内部トークンに交換
+
+        relay_state の nonce とチケット内の relay_nonce を照合し、
+        ACS時の状態との整合性を検証する。
+        """
 
         payload, expires_at = self._decode_signed_token(
             login_ticket, purpose="login ticket"
@@ -1076,6 +1079,21 @@ class SAMLService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Login ticket missing identifier",
+            )
+
+        # relay_stateの署名検証とnonce照合
+        relay_payload = self._validate_relay_state_token(relay_state)
+        ticket_nonce = payload.get("relay_nonce")
+        relay_nonce = relay_payload.get("nonce")
+        if not ticket_nonce or not relay_nonce or ticket_nonce != relay_nonce:
+            logger.warning(
+                "relay_state nonce mismatch during ticket exchange",
+                ticket_nonce=ticket_nonce,
+                relay_nonce=relay_nonce,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="RelayState nonce mismatch: authentication flow integrity violation",
             )
 
         await self._register_ticket_use(ticket_id, expires_at)

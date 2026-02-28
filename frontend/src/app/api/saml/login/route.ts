@@ -45,13 +45,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!login_ticket) {
-      return NextResponse.json(
-        { detail: 'login_ticket is required' },
-        { status: 400 }
-      );
-    }
-
     // Forward request to backend SAML login endpoint
     const backendUrl = `${API_BASE_URL}/auth/saml/login`;
 
@@ -62,7 +55,7 @@ export async function POST(request: NextRequest) {
         // Forward cookies if any
         ...(request.headers.get('cookie') ? { Cookie: request.headers.get('cookie')! } : {}),
       },
-      body: JSON.stringify({ login_ticket }),
+      body: JSON.stringify({ login_ticket, relay_state }),
     });
 
     if (!response.ok) {

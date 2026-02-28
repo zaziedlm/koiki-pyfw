@@ -64,7 +64,6 @@ SAMLServiceDep = Annotated[SAMLService, Depends(get_saml_service)]
 async def saml_authorization_init(
     request: Request,
     saml_service: SAMLServiceDep,
-    acs_url: str = None,
     redirect_uri: str | None = None,
 ) -> SAMLAuthorizationInitResponse:
     """
@@ -73,10 +72,12 @@ async def saml_authorization_init(
     RelayStateを生成し、SAML認証リクエストに必要な情報を返す
 
     フロントエンドは返却値をもとにSAML IdPへリダイレクトする。
+
+    Note: ACS URLはサーバー設定(SAML_SP_ACS_URL)から取得し、
+    外部入力は受け付けない（オープンリダイレクト防止）。
     """
     try:
         context = await saml_service.generate_authn_request(
-            acs_url=acs_url,
             redirect_uri=redirect_uri,
         )
 
@@ -173,6 +174,7 @@ async def saml_metadata(
 
 @router.post("/saml/login", response_model=TokenWithRefresh)
 @limiter.limit("10/minute")
+@transactional
 @handle_auth_errors("saml_login")
 async def saml_login(
     request: Request,
@@ -202,6 +204,7 @@ async def saml_login(
             expires_in,
         ) = await saml_service.exchange_login_ticket(
             login_ticket=login_request.login_ticket,
+            relay_state=login_request.relay_state,
             db=db,
             device_info=device_info,
         )

@@ -38,11 +38,16 @@ class SAMLLoginTicketRequest(BaseModel):
     """SAMLログインチケット交換リクエスト"""
 
     login_ticket: str = Field(..., description="ACS処理で発行されたログインチケット")
+    relay_state: str = Field(
+        ...,
+        description="SAML認証開始時に発行された署名済みRelayStateトークン（nonce照合用）",
+    )
 
     class Config:
         json_schema_extra = {
             "example": {
-                "login_ticket": "ZXlKaGJHY2lPaUpTVXpJMU5pSjkuLi4"
+                "login_ticket": "ZXlKaGJHY2lPaUpTVXpJMU5pSjkuLi4",
+                "relay_state": "eyJub25jZSI6Ii4uLiIsInJlcSI6ImF1dGhuXzEyMyIsInRzIjoxNzMyMzA3MjAwfQ.abc"
             }
         }
 

@@ -22,25 +22,27 @@ def handle_auth_errors(endpoint_name: str = ""):
                 return await func(*args, **kwargs)
                 
             except ValidationException as e:
+                detail = getattr(e, "detail", None) or str(e)
                 logger.warning(
                     f"{endpoint_name} failed - validation error", 
-                    error=str(e),
+                    error=detail,
                     endpoint=endpoint_name
                 )
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=str(e)
+                    detail=detail,
                 )
                 
             except AuthenticationException as e:
+                detail = getattr(e, "detail", None) or str(e)
                 logger.warning(
                     f"{endpoint_name} failed - authentication error", 
-                    error=str(e),
+                    error=detail,
                     endpoint=endpoint_name
                 )
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=str(e),
+                    detail=detail,
                     headers={"WWW-Authenticate": "Bearer"},
                 )
                 
