@@ -46,6 +46,8 @@ function SamlCallbackContent() {
 
   useEffect(() => {
     const samlTicket = searchParams.get('saml_ticket');
+    const relayStateFromQuery =
+      searchParams.get('relay_state') || searchParams.get('RelayState');
 
     const finalize = async () => {
       if (!samlTicket) {
@@ -53,16 +55,20 @@ function SamlCallbackContent() {
       }
 
       const stored = loadSamlContext();
-      if (!stored) {
-        throw new Error('SAML login session has expired. Please retry.');
-      }
-
-      if (!stored.relayState) {
+      const relayState = stored?.relayState || relayStateFromQuery;
+      if (!relayState) {
         throw new Error('Missing RelayState. Please retry the SAML login.');
+      }
+      if (
+        stored?.relayState &&
+        relayStateFromQuery &&
+        stored.relayState !== relayStateFromQuery
+      ) {
+        throw new Error('RelayState mismatch detected. Please retry the SAML login.');
       }
 
       try {
-        if (stored.expiresAt) {
+        if (stored?.expiresAt) {
           const expiresAt = new Date(stored.expiresAt).getTime();
           if (!Number.isNaN(expiresAt) && Date.now() > expiresAt) {
             throw new Error('SAML authorization state has expired. Please retry.');
@@ -81,7 +87,7 @@ function SamlCallbackContent() {
           credentials: 'include',
           body: JSON.stringify({
             login_ticket: samlTicket,
-            relay_state: stored.relayState,
+            relay_state: relayState,
           }),
         });
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { setAccessTokenCookie, setRefreshTokenCookie } from '@/lib/cookie-utils';
 import { validateCSRFToken, createCSRFErrorResponse } from '@/lib/csrf-utils';
 
 const rawBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
@@ -73,23 +74,11 @@ export async function POST(request: NextRequest) {
 
     // Set authentication cookies (similar to OIDC flow)
     if (data.access_token) {
-      nextResponse.cookies.set('koiki_access_token', data.access_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: data.expires_in || 3600, // Use expires_in from response or default 1 hour
-        path: '/',
-      });
+      setAccessTokenCookie(nextResponse, data.access_token);
     }
 
     if (data.refresh_token) {
-      nextResponse.cookies.set('koiki_refresh_token', data.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        path: '/',
-      });
+      setRefreshTokenCookie(nextResponse, data.refresh_token);
     }
 
     // Forward any Set-Cookie headers from backend

@@ -135,6 +135,7 @@ async def saml_acs(
         redirect_with_ticket = saml_service.build_login_redirect_url(
             redirect_uri,
             login_ticket,
+            relay_state,
         )
 
         logger.info(

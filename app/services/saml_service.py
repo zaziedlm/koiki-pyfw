@@ -1072,13 +1072,19 @@ class SAMLService:
         return token, expires_at, ticket_id
 
     def build_login_redirect_url(
-        self, base_redirect_uri: str, login_ticket: str
+        self,
+        base_redirect_uri: str,
+        login_ticket: str,
+        relay_state: Optional[str] = None,
     ) -> str:
         """ログインチケットを付与したフロントエンド向けリダイレクトURLを生成"""
 
         parsed = urlparse(base_redirect_uri)
         query_items = dict(parse_qsl(parsed.query, keep_blank_values=True))
         query_items["saml_ticket"] = login_ticket
+        # Safari などで sessionStorage が欠落しても後段で relay_state を再利用できるよう付与
+        if relay_state:
+            query_items["relay_state"] = relay_state
         new_query = urlencode(query_items)
         return urlunparse(parsed._replace(query=new_query))
 
