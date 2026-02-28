@@ -12,7 +12,7 @@ setup(
         "alembic",
         "pydantic",
         "pydantic-settings",
-        "python-jose",
+        "PyJWT[crypto]",
         "passlib[bcrypt]",
         "httpx",
         "structlog",
