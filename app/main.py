@@ -56,8 +56,7 @@ from libkoiki.core.middleware import (  # AccessLogMiddlewareはオプション
     SecurityHeadersMiddleware,
 )
 from libkoiki.core.monitoring import setup_monitoring
-from libkoiki.db.session import connect_db, disconnect_db
-from libkoiki.db.session import AsyncSessionFactory
+from libkoiki.db.session import AsyncSessionFactory, connect_db, disconnect_db
 from libkoiki.events.handlers import (  # サンプルハンドラ
     EventHandler,
     user_created_handler,
@@ -72,7 +71,9 @@ setup_logging()
 logger = get_logger(__name__)
 
 # SAML認証フロークリーンアップ用
-from app.repositories.saml_auth_flow_repository import SamlAuthFlowRepository  # noqa: E402
+from app.repositories.saml_auth_flow_repository import (
+    SamlAuthFlowRepository,  # noqa: E402
+)
 
 _cleanup_task: Optional[asyncio.Task] = None
 
@@ -91,9 +92,7 @@ async def _periodic_saml_flow_cleanup() -> None:
                 count = await repo.cleanup_expired_flows(session)
                 await session.commit()
                 if count > 0:
-                    logger.info(
-                        "Periodic SAML flow cleanup completed", cleaned=count
-                    )
+                    logger.info("Periodic SAML flow cleanup completed", cleaned=count)
         except asyncio.CancelledError:
             logger.info("SAML flow cleanup task cancelled")
             break
@@ -213,9 +212,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     )
 
     yield  # アプリケーション実行
-    logger.info(
-        "Application shutdown sequence initiated."
-    )
+    logger.info("Application shutdown sequence initiated.")
 
     # --- SAML認証フロークリーンアップ停止 ---
     if _cleanup_task and not _cleanup_task.done():
