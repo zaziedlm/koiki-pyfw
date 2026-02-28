@@ -18,6 +18,7 @@ from libkoiki.models.user import UserModel
 
 # アプリ内の SSO 関連モデル
 from .kkbiz import BusinessClock
+from .saml_auth_flow import SamlAuthFlow
 from .user_sso import UserSSO
 
 # UserModel に SSO のリレーションを追加

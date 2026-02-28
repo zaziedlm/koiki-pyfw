@@ -5,21 +5,28 @@ SAML認証関連のPydanticスキーマ定義
 SAML 2.0 認証フローで使用するリクエスト・レスポンス・ユーザー情報のスキーマを定義
 OIDCのスキーマパターンに合わせて設計
 """
-from datetime import datetime
-from typing import Optional, Dict, Any
 
-from pydantic import BaseModel, Field, AnyHttpUrl
+from datetime import datetime
+from typing import Any, Dict, Optional
+
+from pydantic import AnyHttpUrl, BaseModel, Field
 
 
 class SAMLAuthorizationInitResponse(BaseModel):
     """SAML認可リクエスト開始時に必要な情報"""
 
     sso_url: AnyHttpUrl = Field(..., description="SAML IdP SSOエンドポイント")
-    saml_request: str = Field(..., description="Base64エンコードされたSAML AuthnRequest")
-    relay_state: str = Field(..., description="署名済みRelayState（セッション状態トークン）")
+    saml_request: str = Field(
+        ..., description="Base64エンコードされたSAML AuthnRequest"
+    )
+    relay_state: str = Field(
+        ..., description="署名済みRelayState（セッション状態トークン）"
+    )
     expires_at: datetime = Field(..., description="RelayStateの有効期限")
     sso_binding: str = Field(default="HTTP-Redirect", description="SAML Binding方式")
-    redirect_url: str = Field(..., description="RelayStateを付与済みのIdPリダイレクトURL")
+    redirect_url: str = Field(
+        ..., description="RelayStateを付与済みのIdPリダイレクトURL"
+    )
 
     class Config:
         json_schema_extra = {
@@ -29,7 +36,7 @@ class SAMLAuthorizationInitResponse(BaseModel):
                 "relay_state": "eyJub25jZSI6Ii4uLiIsInJlcSI6ImF1dGhuXzEyMyIsInRzIjoxNzMyMzA3MjAwfQ.abc",
                 "expires_at": "2024-11-01T12:00:00Z",
                 "sso_binding": "HTTP-Redirect",
-                "redirect_url": "https://idp.example.com/saml/sso?SAMLRequest=...&RelayState=eyJub25jZSI6Ii4uLiJ9.abc"
+                "redirect_url": "https://idp.example.com/saml/sso?SAMLRequest=...&RelayState=eyJub25jZSI6Ii4uLiJ9.abc",
             }
         }
 
@@ -47,7 +54,7 @@ class SAMLLoginTicketRequest(BaseModel):
         json_schema_extra = {
             "example": {
                 "login_ticket": "ZXlKaGJHY2lPaUpTVXpJMU5pSjkuLi4",
-                "relay_state": "eyJub25jZSI6Ii4uLiIsInJlcSI6ImF1dGhuXzEyMyIsInRzIjoxNzMyMzA3MjAwfQ.abc"
+                "relay_state": "eyJub25jZSI6Ii4uLiIsInJlcSI6ImF1dGhuXzEyMyIsInRzIjoxNzMyMzA3MjAwfQ.abc",
             }
         }
 
@@ -61,7 +68,9 @@ class SAMLUserInfo(BaseModel):
 
     subject_id: str = Field(..., description="SAML NameID - ユーザーの一意識別子")
     email: str = Field(..., description="メールアドレス")
-    email_verified: bool = Field(default=True, description="メール検証済みフラグ（SAMLでは通常IdP側で検証済み）")
+    email_verified: bool = Field(
+        default=True, description="メール検証済みフラグ（SAMLでは通常IdP側で検証済み）"
+    )
     name: Optional[str] = Field(None, description="表示名")
     given_name: Optional[str] = Field(None, description="名")
     family_name: Optional[str] = Field(None, description="姓")
@@ -84,10 +93,7 @@ class SAMLUserInfo(BaseModel):
                 "picture": None,
                 "locale": "ja-JP",
                 "session_index": "s2session1234567890",
-                "attributes": {
-                    "department": "Engineering",
-                    "employee_id": "EMP001"
-                }
+                "attributes": {"department": "Engineering", "employee_id": "EMP001"},
             }
         }
 
@@ -112,7 +118,7 @@ class SAMLLinkResponse(BaseModel):
                 "user_id": 123,
                 "saml_subject_id": "user@example.com",
                 "is_new_user": False,
-                "linked_at": "2024-11-01T12:00:00Z"
+                "linked_at": "2024-11-01T12:00:00Z",
             }
         }
 
@@ -138,11 +144,11 @@ class SAMLUserInfoResponse(BaseModel):
                     "email_verified": True,
                     "name": "田中 太郎",
                     "given_name": "太郎",
-                    "family_name": "田中"
+                    "family_name": "田中",
                 },
                 "saml_provider": "saml",
                 "linked_at": "2024-10-01T10:00:00Z",
-                "last_login": "2024-11-01T12:00:00Z"
+                "last_login": "2024-11-01T12:00:00Z",
             }
         }
 
@@ -156,7 +162,9 @@ class SAMLHealthCheckResponse(BaseModel):
 
     status: str = Field(..., description="SAML サービス状態")
     saml_configured: bool = Field(..., description="SAML設定完了フラグ")
-    idp_metadata_accessible: bool = Field(..., description="IdPメタデータアクセス可能フラグ")
+    idp_metadata_accessible: bool = Field(
+        ..., description="IdPメタデータアクセス可能フラグ"
+    )
     required_settings_valid: bool = Field(..., description="必須設定有効フラグ")
     message: str = Field(..., description="詳細メッセージ")
 
@@ -167,7 +175,7 @@ class SAMLHealthCheckResponse(BaseModel):
                 "saml_configured": True,
                 "idp_metadata_accessible": True,
                 "required_settings_valid": True,
-                "message": "SAML service is properly configured and IdP is accessible"
+                "message": "SAML service is properly configured and IdP is accessible",
             }
         }
 
@@ -186,8 +194,8 @@ class SAMLMetadataResponse(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "metadata_xml": "<?xml version=\"1.0\"?><md:EntityDescriptor xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\"...",
+                "metadata_xml": '<?xml version="1.0"?><md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"...',
                 "entity_id": "https://app.example.com/saml/metadata",
-                "generated_at": "2024-11-01T12:00:00Z"
+                "generated_at": "2024-11-01T12:00:00Z",
             }
         }

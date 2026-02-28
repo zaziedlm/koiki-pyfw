@@ -25,6 +25,7 @@ except ImportError:
     PYTHON3_SAML_AVAILABLE = False
 
 from app.core.saml_config import SAMLSettings, get_saml_settings
+from app.repositories.saml_auth_flow_repository import SamlAuthFlowRepository
 from app.repositories.user_sso_repository import UserSSORepository
 from app.schemas.saml import SAMLLinkResponse, SAMLUserInfo, SAMLUserInfoResponse
 from app.services.saml_certificate_manager import SAMLCertificateManager
@@ -38,6 +39,7 @@ from libkoiki.services.user_service import UserService
 logger = structlog.get_logger(__name__)
 
 
+# Legacy in-memory cache (kept as fallback, DB is primary)
 _LOGIN_TICKET_CACHE: Dict[str, datetime] = {}
 _LOGIN_TICKET_LOCK = asyncio.Lock()
 
@@ -64,6 +66,7 @@ class SAMLService:
         self.auth_service = auth_service
         self.saml_settings = saml_settings or get_saml_settings()
         self.user_sso_repository = UserSSORepository()
+        self.auth_flow_repository = SamlAuthFlowRepository()
 
         if not PYTHON3_SAML_AVAILABLE:
             logger.warning(
@@ -97,6 +100,7 @@ class SAMLService:
         self,
         *,
         redirect_uri: Optional[str] = None,
+        db: Optional[AsyncSession] = None,
     ) -> Dict[str, Any]:
         """AuthnRequestとRelayStateを生成し、IdPへリダイレクトするための情報を返す
 
@@ -150,6 +154,17 @@ class SAMLService:
             redirect_with_state = self._append_relay_state_param(
                 redirect_url, relay_state
             )
+
+            # DB にフローレコードを作成（Phase 2: 分散状態管理）
+            if db is not None:
+                await self.auth_flow_repository.create_flow(
+                    db,
+                    request_id=request_id,
+                    relay_nonce=relay_payload["nonce"],
+                    sso_provider="saml",
+                    redirect_uri=resolved_redirect,
+                    relay_expires_at=expires_at,
+                )
 
             logger.info(
                 "Generated SAML authorization context",
@@ -1054,7 +1069,25 @@ class SAMLService:
             user_info=user_info,
         )
 
-        # チケット使用済み管理のためにticket_idを返却側でも利用
+        # Phase 2: DBフローレコードをacs_verifiedに更新
+        relay_nonce = relay_payload.get("nonce")
+        if relay_nonce:
+            flow = await self.auth_flow_repository.update_to_acs_verified(
+                db,
+                relay_nonce=relay_nonce,
+                user_id=user.id,
+                subject_id=user_info.subject_id,
+                session_index=user_info.session_index,
+                ticket_id=ticket_id,
+                login_ticket_expires_at=expires_at,
+            )
+            if not flow:
+                logger.warning(
+                    "No matching auth flow for ACS; "
+                    "continuing with token-only verification",
+                    relay_nonce=relay_nonce[:8] + "...",
+                )
+
         return redirect_uri, login_ticket, expires_at, user_info, user
 
     async def exchange_login_ticket(
@@ -1069,6 +1102,7 @@ class SAMLService:
 
         relay_state の nonce とチケット内の relay_nonce を照合し、
         ACS時の状態との整合性を検証する。
+        DB排他ロックによりチケット二重使用を防止（複数コンテナ対応）。
         """
 
         payload, expires_at = self._decode_signed_token(
@@ -1096,7 +1130,30 @@ class SAMLService:
                 detail="RelayState nonce mismatch: authentication flow integrity violation",
             )
 
-        await self._register_ticket_use(ticket_id, expires_at)
+        # Phase 2: DB排他ロックによるチケット消費（複数コンテナ安全）
+        flow = await self.auth_flow_repository.consume_ticket_exclusive(
+            db, ticket_id
+        )
+        if flow:
+            # DB照合成功: nonce の整合性も確認
+            if flow.relay_nonce != relay_nonce:
+                logger.warning(
+                    "DB relay_nonce mismatch during ticket exchange",
+                    db_nonce=flow.relay_nonce[:8] + "...",
+                    token_nonce=relay_nonce[:8] + "..." if relay_nonce else None,
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="RelayState nonce mismatch: DB flow integrity violation",
+                )
+        else:
+            # DBにフローが無い場合: インメモリフォールバック
+            # （移行期間中の後方互換性 — Phase 2 導入前に開始されたフロー対応）
+            logger.info(
+                "No DB flow found for ticket; falling back to in-memory check",
+                ticket_id=ticket_id[:12] + "...",
+            )
+            await self._register_ticket_use(ticket_id, expires_at)
 
         user_id = payload.get("user_id")
         if not user_id:

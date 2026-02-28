@@ -61,9 +61,11 @@ SAMLServiceDep = Annotated[SAMLService, Depends(get_saml_service)]
 
 @router.get("/saml/authorization", response_model=SAMLAuthorizationInitResponse)
 @limiter.limit("30/minute")
+@transactional
 async def saml_authorization_init(
     request: Request,
     saml_service: SAMLServiceDep,
+    db: DBSessionDep,
     redirect_uri: str | None = None,
 ) -> SAMLAuthorizationInitResponse:
     """
@@ -79,6 +81,7 @@ async def saml_authorization_init(
     try:
         context = await saml_service.generate_authn_request(
             redirect_uri=redirect_uri,
+            db=db,
         )
 
         return SAMLAuthorizationInitResponse(
