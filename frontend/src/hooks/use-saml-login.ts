@@ -4,6 +4,13 @@ import { useState } from 'react';
 import { config } from '@/lib/config';
 import { saveSamlContext } from '@/lib/saml-storage';
 
+/**
+ * IdP リダイレクト前に RelayState の残り有効時間をチェックする最小閾値（秒）。
+ * この秒数未満しか残っていない場合、IdP でのログイン中に期限切れになる可能性が
+ * 高いため、リダイレクトを中止してエラーを返す。
+ */
+const MIN_REMAINING_SECONDS = 30;
+
 interface SamlAuthorizationResponse {
   sso_url: string;
   saml_request: string;
@@ -49,6 +56,19 @@ export function useSamlLogin() {
       }
 
       const context = (await response.json()) as SamlAuthorizationResponse;
+
+      // ── 4-C: IdP リダイレクト前に RelayState 有効期限を事前チェック ──
+      if (context.expires_at) {
+        const expiresMs = new Date(context.expires_at).getTime();
+        if (!Number.isNaN(expiresMs)) {
+          const remainingSec = (expiresMs - Date.now()) / 1000;
+          if (remainingSec < MIN_REMAINING_SECONDS) {
+            throw new Error(
+              `SAML authorization state will expire too soon (${Math.round(remainingSec)}s remaining). Please retry.`,
+            );
+          }
+        }
+      }
 
       // Save SAML context to sessionStorage
       saveSamlContext({
