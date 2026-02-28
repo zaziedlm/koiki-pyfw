@@ -1,0 +1,18 @@
+連携テスト時に HENNGE と認識合わせして設定する項目は、主にこれです（対象: [.env.saml.example](/Users/kataoka/Documents/vscproj/koiki-pyfw/.env.saml.example)）。
+
+| 区分 | `.env` 項目 | 連携元 | 目的 |
+|---|---|---|---|
+| SP情報（こちら→HENNGE） | `SAML_SP_ENTITY_ID` | あなた側 | SP識別子（Audience/Issuer整合） |
+| SP情報（こちら→HENNGE） | `SAML_SP_ACS_URL` | あなた側 | SAMLResponse受信先 |
+| SP情報（こちら→HENNGE） | `SAML_SP_SLS_URL` | あなた側 | SLO受信先（使う場合） |
+| IdP情報（HENNGE→こちら） | `SAML_IDP_ENTITY_ID` | HENNGE | IdP識別子 |
+| IdP情報（HENNGE→こちら） | `SAML_IDP_SSO_URL` | HENNGE | 認証リクエスト送信先 |
+| IdP情報（HENNGE→こちら） | `SAML_IDP_SLS_URL` | HENNGE | SLO送信先（使う場合） |
+| 証明書連携（HENNGE→こちら） | `SAML_IDP_METADATA_URL` | HENNGE | メタデータ取得先 |
+| 証明書連携（HENNGE→こちら） | `SAML_IDP_X509_CERT` | HENNGE | 署名検証用証明書（静的/フォールバック） |
+| 属性整合（双方） | `SAML_NAME_ID_FORMAT` | 双方 | NameID形式の一致 |
+| 属性整合（双方） | `SAML_ATTRIBUTE_MAPPING` | 双方 | email/name等の属性名対応 |
+| 署名要件（双方） | `SAML_SIGN_REQUESTS` `SAML_SIGN_RESPONSES` `SAML_SIGN_ASSERTIONS` `SAML_ENCRYPT_ASSERTIONS` | 双方 | 署名・暗号化ポリシー整合 |
+
+補足です。`SAML_SIGN_REQUESTS=true` にする場合は、`SAML_SP_X509_CERT`（公開鍵をHENNGEへ共有）と `SAML_SP_PRIVATE_KEY`（自社保管）も必要です。  
+またこの実装は、`SAML_IDP_METADATA_URL` からは主に証明書を取得し、IdP URLは自動反映しないため、`SAML_IDP_ENTITY_ID`/`SAML_IDP_SSO_URL`/`SAML_IDP_SLS_URL` も必ず個別に受領して設定してください。
