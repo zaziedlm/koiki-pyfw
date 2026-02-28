@@ -108,14 +108,18 @@ class SAMLService:
 
         # AuthnRequest署名の整合性チェック
         if self.saml_settings.SAML_SIGN_REQUESTS:
-            if not (self.saml_settings.SAML_SP_X509_CERT
-                    and self.saml_settings.SAML_SP_PRIVATE_KEY):
+            if not (
+                self.saml_settings.SAML_SP_X509_CERT
+                and self.saml_settings.SAML_SP_PRIVATE_KEY
+            ):
                 logger.error(
                     "SAML_SIGN_REQUESTS=true but SP certificate/private key "
                     "not configured. AuthnRequest signing will fail."
                 )
-        elif (self.saml_settings.SAML_SP_X509_CERT
-              and self.saml_settings.SAML_SP_PRIVATE_KEY):
+        elif (
+            self.saml_settings.SAML_SP_X509_CERT
+            and self.saml_settings.SAML_SP_PRIVATE_KEY
+        ):
             logger.warning(
                 "SP certificate and private key are configured but "
                 "SAML_SIGN_REQUESTS=false. Set SAML_SIGN_REQUESTS=true "
@@ -1055,7 +1059,8 @@ class SAMLService:
             payload["session_index"] = user_info.session_index
 
         token, expires_at = self._create_signed_token(
-            payload, self.login_ticket_ttl,
+            payload,
+            self.login_ticket_ttl,
             signing_key=self.login_ticket_signing_key,
         )
         return token, expires_at, ticket_id
@@ -1135,7 +1140,8 @@ class SAMLService:
         """
 
         payload, expires_at = self._decode_signed_token(
-            login_ticket, purpose="login ticket",
+            login_ticket,
+            purpose="login ticket",
             signing_key=self.login_ticket_signing_key,
         )
         ticket_id = payload.get("ticket_id")
@@ -1161,9 +1167,7 @@ class SAMLService:
             )
 
         # Phase 2: DB排他ロックによるチケット消費（複数コンテナ安全）
-        flow = await self.auth_flow_repository.consume_ticket_exclusive(
-            db, ticket_id
-        )
+        flow = await self.auth_flow_repository.consume_ticket_exclusive(db, ticket_id)
         if flow:
             # DB照合成功: nonce の整合性も確認
             if flow.relay_nonce != relay_nonce:
@@ -1254,9 +1258,7 @@ class SAMLService:
 
         payload_bytes = json.dumps(token_payload, separators=(",", ":")).encode("utf-8")
         key = signing_key or self.relay_state_signing_key
-        signature = hmac.new(
-            key, payload_bytes, hashlib.sha256
-        ).digest()
+        signature = hmac.new(key, payload_bytes, hashlib.sha256).digest()
 
         payload_part = (
             base64.urlsafe_b64encode(payload_bytes).decode("ascii").rstrip("=")

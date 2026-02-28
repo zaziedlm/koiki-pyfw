@@ -9,6 +9,7 @@ Create Date: 2026-02-28 00:00:00.000000
 from typing import Sequence, Union
 
 import sqlalchemy as sa
+
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -122,9 +123,7 @@ def upgrade() -> None:
     # インデックス
     op.create_index("ix_saml_auth_flow_status", "saml_auth_flow", ["status"])
     op.create_index("ix_saml_auth_flow_ticket_id", "saml_auth_flow", ["ticket_id"])
-    op.create_index(
-        "ix_saml_auth_flow_relay_nonce", "saml_auth_flow", ["relay_nonce"]
-    )
+    op.create_index("ix_saml_auth_flow_relay_nonce", "saml_auth_flow", ["relay_nonce"])
     op.create_index("ix_saml_auth_flow_user_id", "saml_auth_flow", ["user_id"])
     op.create_index(
         "ix_saml_auth_flow_status_expires",
@@ -142,7 +141,5 @@ def downgrade() -> None:
     op.drop_constraint(
         "uq_saml_auth_flow_relay_nonce", "saml_auth_flow", type_="unique"
     )
-    op.drop_constraint(
-        "uq_saml_auth_flow_ticket_id", "saml_auth_flow", type_="unique"
-    )
+    op.drop_constraint("uq_saml_auth_flow_ticket_id", "saml_auth_flow", type_="unique")
     op.drop_table("saml_auth_flow")

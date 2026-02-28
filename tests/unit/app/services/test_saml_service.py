@@ -5,13 +5,15 @@ SAMLServiceクラスの基本的なユニットテスト
 SAML認証フローの主要機能をテスト
 OIDCのテストパターンに合わせて設計
 """
-import pytest
-from unittest.mock import Mock, patch, AsyncMock
-from datetime import datetime, timezone
 
-from app.services.saml_service import SAMLService, ValidationException
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+
 from app.core.saml_config import SAMLSettings
 from app.schemas.saml import SAMLUserInfo
+from app.services.saml_service import SAMLService, ValidationException
 from libkoiki.models.user import UserModel
 
 
@@ -30,8 +32,12 @@ class TestSAMLService:
         settings.SAML_RELAY_STATE_SIGNING_KEY = "test-signing-key"
         settings.SAML_RELAY_STATE_TTL_SECONDS = 600
         settings.SAML_LOGIN_TICKET_TTL_SECONDS = 120
-        settings.SAML_DEFAULT_REDIRECT_URI = "https://frontend.example.com/saml/callback"
-        settings.SAML_ALLOWED_REDIRECT_URIS = "https://frontend.example.com/saml/callback"
+        settings.SAML_DEFAULT_REDIRECT_URI = (
+            "https://frontend.example.com/saml/callback"
+        )
+        settings.SAML_ALLOWED_REDIRECT_URIS = (
+            "https://frontend.example.com/saml/callback"
+        )
         settings.SAML_AUTO_CREATE_USERS = True
         settings.SAML_DEFAULT_PROVIDER = "saml"
 
@@ -44,8 +50,13 @@ class TestSAMLService:
         }
         settings.get_saml_sp_settings.return_value = {"entityId": "test-sp"}
         settings.get_saml_idp_settings.return_value = {"entityId": "test-idp"}
-        settings.get_saml_security_settings.return_value = {"wantMessagesSigned": True, "wantAssertionsSigned": True}
-        settings.resolve_redirect_uri.side_effect = lambda uri=None: uri or "https://frontend.example.com/saml/callback"
+        settings.get_saml_security_settings.return_value = {
+            "wantMessagesSigned": True,
+            "wantAssertionsSigned": True,
+        }
+        settings.resolve_redirect_uri.side_effect = lambda uri=None: (
+            uri or "https://frontend.example.com/saml/callback"
+        )
 
         return settings
 
@@ -58,13 +69,15 @@ class TestSAMLService:
     def mock_auth_service(self):
         """モック認証サービス"""
         service = Mock()
-        service.create_token_pair = AsyncMock(return_value=("access_token", "refresh_token", 3600))
+        service.create_token_pair = AsyncMock(
+            return_value=("access_token", "refresh_token", 3600)
+        )
         return service
 
     @pytest.fixture
     def saml_service(self, mock_user_service, mock_auth_service, mock_saml_settings):
         """SAMLServiceインスタンス"""
-        with patch('app.services.saml_service.PYTHON3_SAML_AVAILABLE', True):
+        with patch("app.services.saml_service.PYTHON3_SAML_AVAILABLE", True):
             service = SAMLService(
                 user_service=mock_user_service,
                 auth_service=mock_auth_service,
@@ -73,12 +86,15 @@ class TestSAMLService:
             # リポジトリもモック化
             service.user_sso_repository = Mock()
             from app.services import saml_service as saml_module
+
             saml_module._LOGIN_TICKET_CACHE.clear()
             return service
 
-    def test_init_success(self, mock_user_service, mock_auth_service, mock_saml_settings):
+    def test_init_success(
+        self, mock_user_service, mock_auth_service, mock_saml_settings
+    ):
         """SAMLService初期化成功テスト"""
-        with patch('app.services.saml_service.PYTHON3_SAML_AVAILABLE', True):
+        with patch("app.services.saml_service.PYTHON3_SAML_AVAILABLE", True):
             service = SAMLService(
                 user_service=mock_user_service,
                 auth_service=mock_auth_service,
@@ -94,8 +110,10 @@ class TestSAMLService:
         settings = Mock(spec=SAMLSettings)
         settings.SAML_RELAY_STATE_SIGNING_KEY = ""
 
-        with patch('app.services.saml_service.PYTHON3_SAML_AVAILABLE', True):
-            with pytest.raises(RuntimeError, match="SAML RelayState signing key is required"):
+        with patch("app.services.saml_service.PYTHON3_SAML_AVAILABLE", True):
+            with pytest.raises(
+                RuntimeError, match="SAML RelayState signing key is required"
+            ):
                 SAMLService(
                     user_service=mock_user_service,
                     auth_service=mock_auth_service,
@@ -104,7 +122,7 @@ class TestSAMLService:
 
     def test_generate_authn_request_library_unavailable(self, saml_service):
         """ライブラリ未導入時のAuthnRequest生成失敗テスト"""
-        with patch('app.services.saml_service.PYTHON3_SAML_AVAILABLE', False):
+        with patch("app.services.saml_service.PYTHON3_SAML_AVAILABLE", False):
             from fastapi import HTTPException
 
             with pytest.raises(HTTPException) as exc_info:
@@ -125,15 +143,21 @@ class TestSAMLService:
         assert exc_info.value.status_code == 500
         assert "SAML configuration is incomplete" in exc_info.value.detail
 
-    @patch('app.services.saml_service.OneLogin_Saml2_Settings')
-    @patch('app.services.saml_service.OneLogin_Saml2_Auth')
-    def test_generate_authn_request_success(self, mock_auth_class, mock_settings_class, saml_service):
+    @patch("app.services.saml_service.OneLogin_Saml2_Settings")
+    @patch("app.services.saml_service.OneLogin_Saml2_Auth")
+    def test_generate_authn_request_success(
+        self, mock_auth_class, mock_settings_class, saml_service
+    ):
         """AuthnRequest生成成功テスト"""
         # OneLogin_Saml2_Authのモック設定
         mock_auth = Mock()
-        mock_auth.login.return_value = "https://idp.example.com/saml/sso?SAMLRequest=..."
+        mock_auth.login.return_value = (
+            "https://idp.example.com/saml/sso?SAMLRequest=..."
+        )
         mock_auth.get_last_request_id.return_value = "REQ123"
-        mock_auth.get_last_request_xml.return_value = "<samlp:AuthnRequest>...</samlp:AuthnRequest>"
+        mock_auth.get_last_request_xml.return_value = (
+            "<samlp:AuthnRequest>...</samlp:AuthnRequest>"
+        )
         mock_auth_class.return_value = mock_auth
         mock_settings_class.return_value = Mock()
 
@@ -151,7 +175,9 @@ class TestSAMLService:
 
     def test_validate_relay_state_token_invalid_format(self, saml_service):
         """RelayStateトークン形式不正テスト"""
-        with pytest.raises(ValidationException, match="Invalid RelayState token format"):
+        with pytest.raises(
+            ValidationException, match="Invalid RelayState token format"
+        ):
             saml_service._validate_relay_state_token("invalid-token")
 
     def test_validate_relay_state_token_invalid_signature(self, saml_service):
@@ -161,12 +187,18 @@ class TestSAMLService:
         payload_part, _ = token.split(".")
         invalid_token = f"{payload_part}.invalid-signature"
 
-        with pytest.raises(ValidationException, match="Invalid RelayState token signature"):
+        with pytest.raises(
+            ValidationException, match="Invalid RelayState token signature"
+        ):
             saml_service._validate_relay_state_token(invalid_token)
 
     def test_create_relay_state_token_and_validate(self, saml_service):
         """RelayStateトークン作成と検証のラウンドトリップテスト"""
-        payload = {"nonce": "test-nonce", "req": "REQ123", "return_to": "https://frontend.example.com/saml/callback"}
+        payload = {
+            "nonce": "test-nonce",
+            "req": "REQ123",
+            "return_to": "https://frontend.example.com/saml/callback",
+        }
         token, expires_at = saml_service._create_relay_state_token(payload)
 
         validated_payload = saml_service._validate_relay_state_token(token)
@@ -188,10 +220,12 @@ class TestSAMLService:
         mock_user.id = 123
         mock_db = Mock()
 
-        access_token, refresh_token, expires_in = await saml_service.create_internal_token_pair(
-            user=mock_user,
-            db=mock_db,
-            device_info="test-device"
+        (
+            access_token,
+            refresh_token,
+            expires_in,
+        ) = await saml_service.create_internal_token_pair(
+            user=mock_user, db=mock_db, device_info="test-device"
         )
 
         assert access_token == "access_token"
@@ -200,9 +234,7 @@ class TestSAMLService:
 
         # AuthServiceのcreate_token_pairが呼ばれたことを確認
         saml_service.auth_service.create_token_pair.assert_called_once_with(
-            user=mock_user,
-            db=mock_db,
-            device_info="test-device"
+            user=mock_user, db=mock_db, device_info="test-device"
         )
 
     @pytest.mark.asyncio
@@ -213,15 +245,14 @@ class TestSAMLService:
         mock_db = Mock()
 
         # AuthServiceでエラーが発生するようにモック
-        saml_service.auth_service.create_token_pair.side_effect = Exception("Token creation failed")
+        saml_service.auth_service.create_token_pair.side_effect = Exception(
+            "Token creation failed"
+        )
 
         from fastapi import HTTPException
 
         with pytest.raises(HTTPException) as exc_info:
-            await saml_service.create_internal_token_pair(
-                user=mock_user,
-                db=mock_db
-            )
+            await saml_service.create_internal_token_pair(user=mock_user, db=mock_db)
 
         assert exc_info.value.status_code == 500
         assert "Token generation failed" in exc_info.value.detail
@@ -249,7 +280,12 @@ class TestSAMLService:
             user_info=user_info,
         )
 
-        user, access_token, refresh_token, expires_in = await saml_service.exchange_login_ticket(
+        (
+            user,
+            access_token,
+            refresh_token,
+            expires_in,
+        ) = await saml_service.exchange_login_ticket(
             login_ticket=login_ticket,
             db=mock_db,
             device_info="test-device",
@@ -276,11 +312,14 @@ class TestSAMLService:
             "email": ["user@example.com"],
             "name": ["Test User"],
             "empty": [],
-            "multiple": ["value1", "value2"]
+            "multiple": ["value1", "value2"],
         }
 
         # 正常な属性抽出
-        assert saml_service._extract_attribute_value(attributes, "email") == "user@example.com"
+        assert (
+            saml_service._extract_attribute_value(attributes, "email")
+            == "user@example.com"
+        )
         assert saml_service._extract_attribute_value(attributes, "name") == "Test User"
 
         # 複数値の場合は最初の値
@@ -288,11 +327,17 @@ class TestSAMLService:
 
         # 存在しない属性
         assert saml_service._extract_attribute_value(attributes, "nonexistent") is None
-        assert saml_service._extract_attribute_value(attributes, "nonexistent", "default") == "default"
+        assert (
+            saml_service._extract_attribute_value(attributes, "nonexistent", "default")
+            == "default"
+        )
 
         # 空の属性
         assert saml_service._extract_attribute_value(attributes, "empty") is None
-        assert saml_service._extract_attribute_value(attributes, "empty", "default") == "default"
+        assert (
+            saml_service._extract_attribute_value(attributes, "empty", "default")
+            == "default"
+        )
 
     def test_generate_dummy_password(self, saml_service):
         """ダミーパスワード生成テスト"""
@@ -332,13 +377,12 @@ class TestSAMLService:
     @pytest.mark.asyncio
     async def test_verify_saml_response_library_unavailable(self, saml_service):
         """ライブラリ未導入時のSAML Response検証失敗テスト"""
-        with patch('app.services.saml_service.PYTHON3_SAML_AVAILABLE', False):
+        with patch("app.services.saml_service.PYTHON3_SAML_AVAILABLE", False):
             from fastapi import HTTPException
 
             with pytest.raises(HTTPException) as exc_info:
                 await saml_service.verify_saml_response(
-                    saml_response="test-response",
-                    relay_state="test-relay-state"
+                    saml_response="test-response", relay_state="test-relay-state"
                 )
 
             assert exc_info.value.status_code == 500
@@ -353,8 +397,7 @@ class TestSAMLService:
 
         with pytest.raises(HTTPException) as exc_info:
             await saml_service.verify_saml_response(
-                saml_response="test-response",
-                relay_state="test-relay-state"
+                saml_response="test-response", relay_state="test-relay-state"
             )
 
         assert exc_info.value.status_code == 500
