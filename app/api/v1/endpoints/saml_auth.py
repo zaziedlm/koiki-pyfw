@@ -340,6 +340,8 @@ async def get_saml_user_info(
 
 @router.post("/saml/logout", response_class=RedirectResponse)
 @limiter.limit("30/minute")
+@transactional
+@handle_auth_errors("saml_logout")
 async def saml_logout(
     request: Request,
     current_user: ActiveUserDep,
@@ -363,6 +365,8 @@ async def saml_logout(
 
 @router.api_route("/saml/sls", methods=["GET", "POST"], response_class=RedirectResponse)
 @limiter.limit("60/minute")
+@transactional
+@handle_auth_errors("saml_sls")
 async def saml_single_logout_service(
     request: Request,
     saml_service: SAMLServiceDep,

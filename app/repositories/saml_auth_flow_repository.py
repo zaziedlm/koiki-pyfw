@@ -156,6 +156,38 @@ class SamlAuthFlowRepository:
         )
         return flow
 
+    async def get_latest_session_index(
+        self,
+        db: AsyncSession,
+        user_id: int,
+    ) -> Optional[str]:
+        """ユーザーの最新session_indexを取得
+
+        ticket_consumedフローから最新のsession_indexを返す。
+        SLO LogoutRequest生成時にIdPへ送信するために使用。
+        """
+        stmt = (
+            select(SamlAuthFlow.session_index)
+            .where(
+                SamlAuthFlow.user_id == user_id,
+                SamlAuthFlow.session_index.isnot(None),
+                SamlAuthFlow.status == "ticket_consumed",
+            )
+            .order_by(SamlAuthFlow.updated_at.desc())
+            .limit(1)
+        )
+        result = await db.execute(stmt)
+        session_index = result.scalar_one_or_none()
+        if session_index:
+            logger.debug(
+                "Found session_index for user",
+                user_id=user_id,
+                session_index=session_index[:16] + "...",
+            )
+        else:
+            logger.debug("No session_index found for user", user_id=user_id)
+        return session_index
+
     async def cleanup_expired_flows(
         self,
         db: AsyncSession,

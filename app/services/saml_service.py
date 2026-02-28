@@ -346,6 +346,11 @@ class SAMLService:
 
         primary_link = sso_links[0]
 
+        # DBからIdPセッションインデックスを取得（SLO対象セッション特定用）
+        session_index = await self.auth_flow_repository.get_latest_session_index(
+            db, user.id
+        )
+
         try:
             saml_config = await self._build_saml_config(
                 self.saml_settings.SAML_SP_ACS_URL
@@ -359,7 +364,7 @@ class SAMLService:
             logout_return = self.saml_settings.resolve_redirect_uri(redirect_uri)
             logout_url = auth.logout(
                 name_id=primary_link.sso_subject_id,
-                session_index=None,
+                session_index=session_index,
                 return_to=logout_return,
             )
 
@@ -373,6 +378,7 @@ class SAMLService:
             logger.info(
                 "Generated SAML logout URL",
                 user_id=user.id,
+                session_index_present=session_index is not None,
                 redirect=logout_url,
             )
 
