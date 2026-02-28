@@ -94,8 +94,15 @@ SAML_IDP_ENTITY_ID=http://localhost:8090/realms/koiki-saml
 SAML_IDP_SSO_URL=http://localhost:8090/realms/koiki-saml/protocol/saml
 SAML_IDP_SLS_URL=http://localhost:8090/realms/koiki-saml/protocol/saml
 
-# セキュリティ
+# セキュリティ（HKDF鍵派生）
+# このマスターキーから HKDF で2つの独立した署名鍵を派生します:
+#   - "relay_state" 用: RelayState の HMAC 署名
+#   - "login_ticket" 用: ログインチケットの HMAC 署名
+# 鍵分離により、一方が漏洩しても他方には影響しません
 SAML_RELAY_STATE_SIGNING_KEY=<強力なランダム文字列>
+
+# チケットTTL（デフォルト: 120秒）
+SAML_LOGIN_TICKET_TTL_SECONDS=120
 
 # リダイレクト設定
 SAML_DEFAULT_REDIRECT_URI=http://localhost:3000/auth/saml/callback
@@ -386,8 +393,25 @@ SAML_SKIP_SSL_VERIFY=false
 
 ---
 
+## DB状態管理関連設定
+
+Phase 2 で導入された DB ベースの認証フロー管理に関する設定です。
+
+| 環境変数 | デフォルト | 説明 |
+|---|---|---|
+| `DATABASE_URL` | （必須） | PostgreSQL接続先。`saml_auth_flow` テーブルを使用 |
+| `SAML_LOGIN_TICKET_TTL_SECONDS` | `120` | ログインチケットの有効期限（秒） |
+| `SAML_RELAY_STATE_TTL_SECONDS` | `600` | RelayState の有効期限（秒） |
+
+- チケット交換時に `SELECT FOR UPDATE` による行ロックで、分散環境でも二重消費を防止
+- 期限切れフローは 5 分間隔のバックグラウンドタスクで自動クリーンアップ
+- マイグレーション: `alembic upgrade head` で `saml_auth_flow` テーブルを作成
+
+---
+
 ## 参考ドキュメント
 
-- [saml-integration-complete.md](./saml-integration-complete.md) - 統合完了ガイド
+- [SAML_SETUP.md](./SAML_SETUP.md) - SAML認証設定ガイド（メインドキュメント）
 - [saml-certificate-strategies.md](./saml-certificate-strategies.md) - 証明書戦略詳細
-- [saml-dynamic-metadata.md](./saml-dynamic-metadata.md) - 動的メタデータ取得
+- [saml-security-review.md](./saml-security-review.md) - セキュリティレビューと対応状況
+- [saml-dynamic-certificate-test.md](./saml-dynamic-certificate-test.md) - 動的証明書テスト手順

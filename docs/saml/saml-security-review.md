@@ -46,24 +46,32 @@
 ### フロントエンド側の扱い
 - RelayState やチケットは `sessionStorage`／HTTP-only Cookie で保持しており、JavaScript からアクセス可能なのは RelayState 情報のみ。RelayState 自体が署名済みであり有効期限も検証しているため、攻撃者による改ざんリスクは低い。【F:frontend/src/hooks/use-saml-login.ts†L53-L63】【F:frontend/src/app/auth/saml/callback/page.tsx†L31-L64】
 
-## 提案事項（改善検討ポイント）
+## 提案事項（改善検討ポイント）と対応状況
 
-1. **RelayState / AuthnRequest の再利用検知強化**  
-   現在は RelayState を署名付きで検証しているものの、`nonce` や `request_id` の使用済み管理は行っていない。短時間内のリプレイ攻撃をより確実に防ぐため、`nonce`／`request_id` をサーバー側ストレージに記録し、再利用を拒否する仕組みの追加を検討したい。【F:app/services/saml_service.py†L145-L172】【F:app/services/saml_service.py†L989-L1059】
+> 以下の提案はすべて Phase 1〜4 のセキュリティ改修で対応済みです。
 
-2. **ログインチケット再利用防止の分散対応**  
-   `_LOGIN_TICKET_CACHE` はプロセス内メモリのため、複数インスタンス構成では別ノードでチケット再利用が成立する可能性がある。Redis など共有キャッシュに移行する、もしくはデータベースで使用済み管理を行う形へ拡張すると堅牢性が上がる。【F:app/services/saml_service.py†L1111-L1130】
+1. **RelayState / AuthnRequest の再利用検知強化** — ✅ **Phase 2 で対応済み**  
+   現在は RelayState を署名付きで検証しているものの、`nonce` や `request_id` の使用済み管理は行っていない。短時間内のリプレイ攻撃をより確実に防ぐため、`nonce`／`request_id` をサーバー側ストレージに記録し、再利用を拒否する仕組みの追加を検討したい。【F:app/services/saml_service.py†L145-L172】【F:app/services/saml_service.py†L989-L1059】  
+   → **対応内容**: `saml_auth_flow` テーブルで認証フロー全体のライフサイクルを DB 管理。nonce は DB レコードの `nonce` カラムに記録され、チケット交換時に照合。状態遷移（`authn_requested` → `acs_verified` → `ticket_consumed`）により再利用を確実に検知・拒否。
 
-3. **署名鍵の用途分離**  
-   RelayState とログインチケットで同一の HMAC キーを利用している。運用上は十分な長さのランダムキーであれば問題ないが、鍵用途を分離しておくとキー漏洩時の影響範囲を限定できる。設定項目を分けるか、内部的に別キーを派生させる実装を検討しても良い。【F:app/services/saml_service.py†L1136-L1197】
+2. **ログインチケット再利用防止の分散対応** — ✅ **Phase 2 で対応済み**  
+   `_LOGIN_TICKET_CACHE` はプロセス内メモリのため、複数インスタンス構成では別ノードでチケット再利用が成立する可能性がある。Redis など共有キャッシュに移行する、もしくはデータベースで使用済み管理を行う形へ拡張すると堅牢性が上がる。【F:app/services/saml_service.py†L1111-L1130】  
+   → **対応内容**: PostgreSQL の `saml_auth_flow` テーブルに移行。チケット交換時に `SELECT FOR UPDATE` による行ロックで、分散環境（複数ワーカー/インスタンス）でも二重消費を確実に防止。
 
-4. **AuthnRequest 署名要件の確認**  
-   デフォルト設定では `SAML_SIGN_REQUESTS=False` となっている。HENNGE ONE 側のセキュリティポリシーによっては AuthnRequest 署名が必須となる場合があるため、要件確認と設定値の見直し（署名証明書の配備）を推奨する。【F:app/core/saml_config.py†L64-L118】
+3. **署名鍵の用途分離** — ✅ **Phase 1 で対応済み**  
+   RelayState とログインチケットで同一の HMAC キーを利用している。運用上は十分な長さのランダムキーであれば問題ないが、鍵用途を分離しておくとキー漏洩時の影響範囲を限定できる。設定項目を分けるか、内部的に別キーを派生させる実装を検討しても良い。【F:app/services/saml_service.py†L1136-L1197】  
+   → **対応内容**: HKDF（HMAC-based Key Derivation Function）を導入。1つのマスターキー (`SAML_RELAY_STATE_SIGNING_KEY`) から `"relay_state"` 用と `"login_ticket"` 用の2つの独立した鍵を派生。一方が漏洩しても他方には影響しない設計。
 
-5. **メタデータ運用方針の整理**  
-   現在 `validate_required_settings` で静的証明書を必須としているため、メタデータのみでの運用が難しい。HENNGE ONE からの自動更新に完全に依存する場合は、必須項目の見直しや運用ドキュメントでの明示が望ましい。【F:app/core/saml_config.py†L214-L235】【F:app/core/saml_config.py†L312-L340】
+4. **AuthnRequest 署名要件の確認** — ✅ **Phase 3 で設定接続強化済み**  
+   デフォルト設定では `SAML_SIGN_REQUESTS=False` となっている。HENNGE ONE 側のセキュリティポリシーによっては AuthnRequest 署名が必須となる場合があるため、要件確認と設定値の見直し（署名証明書の配備）を推奨する。【F:app/core/saml_config.py†L64-L118】  
+   → **対応内容**: Phase 3 で署名設定と IdP 接続の整合性を強化。`SAML_SIGN_REQUESTS`、`SAML_SIGN_RESPONSES`、`SAML_SIGN_ASSERTIONS` の各設定が正しく OneLogin ライブラリに反映されるよう改修。IdP 要件に応じて `SAML_SIGN_REQUESTS=true` に変更するだけで AuthnRequest 署名が有効化できる状態。
 
-6. **フロントエンドでの RelayState 有効期限ハンドリング**  
-   コールバック画面では `expiresAt` を参照しているが、`sessionStorage` 保存直後に期限切れが近いケースも考慮し、IdP リダイレクト前に十分な猶予があるかクライアント側でもチェックすると UX・安全性双方で安心感が高まる。【F:frontend/src/hooks/use-saml-login.ts†L53-L63】【F:frontend/src/app/auth/saml/callback/page.tsx†L31-L64】
+5. **メタデータ運用方針の整理** — ✅ **Phase 3 で対応済み**  
+   現在 `validate_required_settings` で静的証明書を必須としているため、メタデータのみでの運用が難しい。HENNGE ONE からの自動更新に完全に依存する場合は、必須項目の見直しや運用ドキュメントでの明示が望ましい。【F:app/core/saml_config.py†L214-L235】【F:app/core/saml_config.py†L312-L340】  
+   → **対応内容**: 証明書取得戦略を `auto`（推奨）/ `metadata` / `static` / `hybrid` の4パターンに整理。`auto` 戦略ではメタデータからの動的取得を優先し、静的証明書はフォールバック用として任意。署名検証失敗時には最新証明書を自動取得してリトライする機能を実装。
+
+6. **フロントエンドでの RelayState 有効期限ハンドリング** — ✅ **Phase 4 で対応済み**  
+   コールバック画面では `expiresAt` を参照しているが、`sessionStorage` 保存直後に期限切れが近いケースも考慮し、IdP リダイレクト前に十分な猶予があるかクライアント側でもチェックすると UX・安全性双方で安心感が高まる。【F:frontend/src/hooks/use-saml-login.ts†L53-L63】【F:frontend/src/app/auth/saml/callback/page.tsx†L31-L64】  
+   → **対応内容**: `use-saml-login.ts` に `expires_at` の残り時間事前チェックを追加（閾値 30 秒未満ならリダイレクト中止）。コールバックページでも `expiresAt` の事後チェックを維持し、二重防御を実現。
 
 以上。

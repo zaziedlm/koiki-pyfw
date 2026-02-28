@@ -106,7 +106,10 @@ grep SAML_CERT_FETCH_STRATEGY .env
 grep SAML_IDP_METADATA_URL .env
 
 # メタデータ接続確認
-docker exec osskk_fastapi_app curl -s http://keycloak:8080/realms/koiki-saml/protocol/saml/descriptor | head -10
+# unified環境の場合
+docker exec koiki_app_prod_unified curl -s http://keycloak:8080/realms/koiki-saml/protocol/saml/descriptor | head -10
+# dev環境の場合
+# docker exec osskk_fastapi_app curl -s http://keycloak:8080/realms/koiki-saml/protocol/saml/descriptor | head -10
 
 # コンテナ起動確認
 docker-compose ps
@@ -116,7 +119,10 @@ docker-compose ps
 
 ```bash
 # ターミナル1: SAML関連ログを監視
-docker-compose logs -f app | grep -E "SAML|metadata|Certificate|Signature"
+# unified環境の場合
+docker logs -f koiki_app_prod_unified 2>&1 | grep -E "SAML|metadata|Certificate|Signature"
+# dev環境の場合
+# docker-compose logs -f app | grep -E "SAML|metadata|Certificate|Signature"
 ```
 
 ### 3. SAML認証テスト
@@ -207,7 +213,10 @@ Failed to fetch metadata from IdP: All connection attempts failed
 **確認:**
 ```bash
 # コンテナ内から接続確認
-docker exec osskk_fastapi_app curl http://keycloak:8080/realms/koiki-saml/protocol/saml/descriptor
+# unified環境の場合
+docker exec koiki_app_prod_unified curl http://keycloak:8080/realms/koiki-saml/protocol/saml/descriptor
+# dev環境の場合
+# docker exec osskk_fastapi_app curl http://keycloak:8080/realms/koiki-saml/protocol/saml/descriptor
 
 # ネットワーク確認
 docker-compose ps
@@ -229,7 +238,7 @@ curl -s http://localhost:8090/realms/koiki-saml/protocol/saml/descriptor | \
   grep -o '<ds:X509Certificate>[^<]*' | sed 's/<ds:X509Certificate>//'
 
 # メタデータURLが正しいか確認
-docker exec osskk_fastapi_app env | grep SAML_IDP_METADATA_URL
+docker exec koiki_app_prod_unified env | grep SAML_IDP_METADATA_URL
 ```
 
 ### 静的証明書にフォールバックし続ける
@@ -305,5 +314,5 @@ docker-compose restart app
 ## 参考資料
 
 - [saml-certificate-strategies.md](./saml-certificate-strategies.md) - 証明書戦略の詳細
-- [saml-integration-complete.md](./saml-integration-complete.md) - 統合完了ガイド
 - [saml-env-config-guide.md](./saml-env-config-guide.md) - 環境変数設定ガイド
+- [SAML_SETUP.md](./SAML_SETUP.md) - SAML認証設定ガイド

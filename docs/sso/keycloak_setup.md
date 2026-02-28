@@ -69,3 +69,10 @@ SSO_STATE_SIGNING_KEY=your_state_token_secret
 - 別のクライアントやユーザーを作成する場合は、Keycloak 管理コンソール上で調整し、`realm-koiki.json` を再エクスポートしてリポジトリへ反映してください。
 - 認可エンドポイントへのアクセスを HTTPS 化したい場合は、Keycloak の front-channel をリバースプロキシ経由で公開するか、Keycloak に TLS 証明書を設定してください。
 - 本番向けには `start-dev` モードではなくデータベース永続化モードを利用し、管理者アカウント/クライアントシークレットを安全に管理してください。
+
+## SAML Realm について
+Keycloak には OIDC 用の `koiki` realm に加えて、**SAML 認証用の `koiki-saml` realm** も同時にインポートされます（`docker/keycloak/realm-saml.json`）。
+
+- **Admin Console**: http://localhost:8090 → `koiki-saml` realm を選択
+- **テストユーザー**: `saml-user` / `Passw0rd!` 等
+- **SAML 設定ガイド**: [docs/saml/SAML_SETUP.md](../saml/SAML_SETUP.md) を参照
