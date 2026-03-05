@@ -38,8 +38,9 @@ from libkoiki.core.security import check_password_complexity
 from libkoiki.core.exceptions import ValidationException
 
 from app.core.sso_config import SSOSettings, get_sso_settings
+from app.repositories.sso_link_repository import SSOLinkRepository
+from app.repositories.sso_link_repository_factory import create_sso_link_repository
 from app.schemas.sso import SSOUserInfo, SSOLinkResponse
-from app.repositories.user_sso_repository import UserSSORepository
 
 logger = structlog.get_logger(__name__)
 
@@ -64,11 +65,12 @@ class SSOService:
         user_service: UserService,
         auth_service: AuthService,
         sso_settings: SSOSettings = None,
+        sso_link_repository: Optional[SSOLinkRepository] = None,
     ):
         self.user_service = user_service
         self.auth_service = auth_service
         self.sso_settings = sso_settings or get_sso_settings()
-        self.user_sso_repository = UserSSORepository()
+        self.user_sso_repository = sso_link_repository or create_sso_link_repository()
 
         self.allowed_algorithms = self.sso_settings.get_allowed_algorithms()
         if not self.allowed_algorithms:

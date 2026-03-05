@@ -26,7 +26,8 @@ except ImportError:
 
 from app.core.saml_config import SAMLSettings, get_saml_settings
 from app.repositories.saml_auth_flow_repository import SamlAuthFlowRepository
-from app.repositories.user_sso_repository import UserSSORepository
+from app.repositories.sso_link_repository import SSOLinkRepository
+from app.repositories.sso_link_repository_factory import create_sso_link_repository
 from app.schemas.saml import SAMLLinkResponse, SAMLUserInfo, SAMLUserInfoResponse
 from app.services.saml_certificate_manager import SAMLCertificateManager
 from libkoiki.core.exceptions import ValidationException
@@ -61,11 +62,12 @@ class SAMLService:
         user_service: UserService,
         auth_service: AuthService,
         saml_settings: SAMLSettings = None,
+        sso_link_repository: Optional[SSOLinkRepository] = None,
     ):
         self.user_service = user_service
         self.auth_service = auth_service
         self.saml_settings = saml_settings or get_saml_settings()
-        self.user_sso_repository = UserSSORepository()
+        self.user_sso_repository = sso_link_repository or create_sso_link_repository()
         self.auth_flow_repository = SamlAuthFlowRepository()
 
         if not PYTHON3_SAML_AVAILABLE:
