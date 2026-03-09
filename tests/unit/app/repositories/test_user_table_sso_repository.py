@@ -3,7 +3,7 @@ from typing import AsyncGenerator
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import insert
+from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.repositories.sso_link_repository_factory import create_sso_link_repository
@@ -104,6 +104,14 @@ async def test_create_and_update_sso_link_on_user_table(seeded_session: AsyncSes
     assert updated.sso_email == "one-updated@example.com"
     assert updated.sso_display_name == "User One Updated"
 
+    row = (
+        await seeded_session.execute(
+            select(_USER_TABLE).where(_USER_TABLE.c.user_id == 1)
+        )
+    ).first()
+    assert row is not None
+    assert row._mapping["updated_by"] == "sso-system"
+
 
 @pytest.mark.asyncio
 async def test_create_sso_link_rejects_subject_conflict(seeded_session: AsyncSession):
@@ -142,6 +150,16 @@ async def test_create_sso_link_inserts_user_row_when_missing(async_session: Asyn
     assert created.sso_provider == "saml"
     assert created.sso_email == "new@example.com"
     assert created.sso_display_name == "New User"
+
+    row = (
+        await async_session.execute(
+            select(_USER_TABLE).where(_USER_TABLE.c.user_id == 777)
+        )
+    ).first()
+    assert row is not None
+    assert row._mapping["role_id"] == 5
+    assert row._mapping["created_by"] == "sso-system"
+    assert row._mapping["updated_by"] == "sso-system"
 
 
 @pytest.mark.asyncio

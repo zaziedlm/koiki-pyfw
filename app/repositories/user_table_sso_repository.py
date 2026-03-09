@@ -26,6 +26,9 @@ from app.repositories.sso_link_repository import SSOLinkRecord
 
 logger = structlog.get_logger(__name__)
 
+DEFAULT_ROLE_ID = 5
+DEFAULT_SSO_AUDIT_USER = "sso-system"
+
 
 _USER_TABLE = Table(
     "user",
@@ -33,11 +36,14 @@ _USER_TABLE = Table(
     Column("user_id", Integer),
     Column("user_name", String),
     Column("user_email", String),
+    Column("role_id", Integer),
     Column("user_sso_provider", String),
     Column("user_sso_subject", String),
     Column("user_is_active", Boolean),
     Column("created_at", DateTime(timezone=True)),
     Column("updated_at", DateTime(timezone=True)),
+    Column("created_by", String),
+    Column("updated_by", String),
     Column("is_deleted", Boolean),
     quote=True,
 )
@@ -184,6 +190,7 @@ class UserTableSSORepository:
             "user_sso_provider": sso_provider,
             "user_sso_subject": sso_subject_id,
             "updated_at": now,  # last_sso_login 代用
+            "updated_by": DEFAULT_SSO_AUDIT_USER,
         }
         if sso_email is not None:
             values["user_email"] = sso_email
@@ -203,11 +210,14 @@ class UserTableSSORepository:
                 "user_id": user_id,
                 "user_name": sso_display_name,
                 "user_email": sso_email,
+                "role_id": DEFAULT_ROLE_ID,
                 "user_sso_provider": sso_provider,
                 "user_sso_subject": sso_subject_id,
                 "user_is_active": True,
                 "created_at": now,
                 "updated_at": now,
+                "created_by": DEFAULT_SSO_AUDIT_USER,
+                "updated_by": DEFAULT_SSO_AUDIT_USER,
                 "is_deleted": False,
             }
             await self.db.execute(insert(_USER_TABLE).values(**insert_values))
@@ -226,7 +236,10 @@ class UserTableSSORepository:
         if not current:
             return None
 
-        values = {"updated_at": datetime.now(timezone.utc)}
+        values = {
+            "updated_at": datetime.now(timezone.utc),
+            "updated_by": DEFAULT_SSO_AUDIT_USER,
+        }
         if sso_email is not None:
             values["user_email"] = sso_email
         if sso_display_name is not None:
