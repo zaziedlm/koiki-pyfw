@@ -155,13 +155,21 @@ if (-not $ready) {
     throw "PostgreSQL did not become ready in time."
 }
 
-Write-Host "[INFO] Running Alembic migrations inside app container..."
-docker compose exec -T app alembic upgrade head
-Assert-LastExitCode -StepName "alembic upgrade head"
+Write-Host "[INFO] Waiting for migration state created by app container startup..."
+$migrationReady = $false
+for ($i = 0; $i -lt 90; $i++) {
+    docker compose exec -T db psql -v ON_ERROR_STOP=1 -U $postgresUser -d $postgresDb -c "SELECT version_num FROM alembic_version;" | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        $migrationReady = $true
+        break
+    }
+    Start-Sleep -Seconds 2
+}
+if (-not $migrationReady) {
+    throw "Alembic migration state did not become ready in time."
+}
 
-Write-Host "[INFO] Verifying migration state (alembic_version)..."
-docker compose exec -T db psql -v ON_ERROR_STOP=1 -U $postgresUser -d $postgresDb -c "SELECT version_num FROM alembic_version;"
-Assert-LastExitCode -StepName "verify alembic_version"
+Write-Host "[INFO] Verified migration state (alembic_version)."
 
 Write-Host "[INFO] Creating temporary \"user\" table for user_table backend..."
 Get-Content "scripts/sql/create_user_table_for_sso.sql" -Raw `

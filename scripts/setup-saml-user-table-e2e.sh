@@ -99,11 +99,18 @@ for i in $(seq 1 90); do
   fi
 done
 
-echo "[INFO] Running Alembic migrations inside app container..."
-docker compose exec -T app alembic upgrade head
-
-echo "[INFO] Verifying migration state (alembic_version)..."
-docker compose exec -T db psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER_VALUE" -d "$POSTGRES_DB_VALUE" -c "SELECT version_num FROM alembic_version;"
+echo "[INFO] Waiting for migration state created by app container startup..."
+for i in $(seq 1 90); do
+  if docker compose exec -T db psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER_VALUE" -d "$POSTGRES_DB_VALUE" -c "SELECT version_num FROM alembic_version;" >/dev/null 2>&1; then
+    echo "[INFO] Verified migration state (alembic_version)."
+    break
+  fi
+  sleep 2
+  if [ "$i" -eq 90 ]; then
+    echo "[ERROR] Alembic migration state did not become ready in time."
+    exit 1
+  fi
+done
 
 echo "[INFO] Creating temporary \"user\" table for user_table backend..."
 docker compose exec -T db psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER_VALUE" -d "$POSTGRES_DB_VALUE" < scripts/sql/create_user_table_for_sso.sql
