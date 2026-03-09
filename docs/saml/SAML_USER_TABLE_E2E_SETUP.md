@@ -28,9 +28,8 @@ bash ./scripts/setup-saml-user-table-e2e.sh
 1. `SSO_LINK_BACKEND=user_table` を `.env` に設定
 2. `docker compose down -v --remove-orphans`（ボリューム初期化）
 3. `db/keycloak/app/frontend` 起動
-4. `alembic upgrade head`
-5. `alembic_version` の存在確認（migration適用確認）
-6. 暫定 `"user"` テーブル作成（`scripts/sql/create_user_table_for_sso.sql`）
+4. `app` コンテナ起動時に実行された migration の結果として `alembic_version` を確認
+5. 暫定 `"user"` テーブル作成（`scripts/sql/create_user_table_for_sso.sql`）
 
 ## 2. 手動セットアップ（必要な場合）
 
@@ -42,10 +41,13 @@ docker compose down -v --remove-orphans
 docker compose up -d --build db keycloak app frontend
 ```
 
-3. マイグレーション
+3. マイグレーション確認
+
+`app` コンテナの entrypoint が起動時に `alembic upgrade head` を実行します。  
+手動で再度 `alembic upgrade head` を叩かず、結果だけ確認します。
 
 ```bash
-docker compose exec -T app alembic upgrade head
+docker compose exec -T db psql -U koiki_user -d koiki_todo_db -c "SELECT version_num FROM alembic_version;"
 ```
 
 4. 暫定 `user` テーブル作成
@@ -71,6 +73,28 @@ docker compose exec -T db psql -U koiki_user -d koiki_todo_db < scripts/sql/crea
 - バックエンドログで `Using custom user-table repository backend` が出る
 - `user` テーブルの `user_sso_provider`, `user_sso_subject`, `updated_at` が更新される
 - 既存の `users` テーブル認証トークン発行フローは継続して利用される
+
+## 4.1. 確認観点
+
+この手順で確認する観点は以下です。
+
+1. 初回 SAML ログイン
+- `users` テーブルにフレームワークユーザーが新規作成される
+- `user` テーブルに 1 行だけ新規作成される
+- 固定値は以下のとおり入る
+
+```text
+role_id=5
+created_by=sso-system
+updated_by=sso-system
+```
+
+2. 同一ユーザーでの 2 回目 SAML ログイン
+- `user` テーブルの行数は `1` のまま増えない
+- `created_at` は初回ログイン時刻のまま変わらない
+- `updated_at` は 2 回目ログイン時刻に更新される
+- `updated_by=sso-system` が維持される
+- アプリログ上でも `INSERT INTO "user"` ではなく `UPDATE "user"` が実行される
 
 ## 5. 後片付け
 

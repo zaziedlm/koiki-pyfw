@@ -266,13 +266,13 @@ SAML_IDP_METADATA_URL=http://keycloak:8080/realms/koiki-saml/protocol/saml/descr
 docker-compose restart app
 ```
 
-## テスト結果の記録
+## 確認記録
 
-### テスト実行日時
+### 確認日時
 <!-- 記入してください -->
 
-### テスト結果
-<!-- ✅ 成功 / ❌ 失敗 / ⚠️ 部分的成功 -->
+### 確認状況
+<!-- ✅ 確認済み / ❌ 未解決 / ⚠️ 要再確認 -->
 
 ### 観測されたログ
 ```
