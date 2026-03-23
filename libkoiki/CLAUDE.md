@@ -4,10 +4,10 @@ This directory contains reusable framework code.
 
 Read first:
 
-- `../docs/agent/boundaries.md`
-- `../docs/agent/architecture.md`
-- `../docs/agent/libkoiki.md`
-- `../docs/agent/testing.md`
+- @../docs/agent/boundaries.md
+- @../docs/agent/architecture.md
+- @../docs/agent/libkoiki.md
+- @../docs/agent/testing.md
 
 Working rules:
 
