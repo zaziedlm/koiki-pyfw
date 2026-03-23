@@ -1,0 +1,4 @@
+interface:
+  display_name: "KOIKI Project Overview"
+  short_description: "Route work to the right KOIKI layer."
+  default_prompt: "Use $koiki-project-overview to classify this KOIKI task and identify the right code area first."
