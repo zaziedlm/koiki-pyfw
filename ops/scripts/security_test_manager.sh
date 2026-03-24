@@ -5,6 +5,14 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
+compose() {
+    docker compose "$@"
+}
+
 # 色付きメッセージ関数
 print_header() {
     echo -e "\033[36m$1\033[0m"
@@ -56,7 +64,11 @@ setup_security() {
     
     # Docker環境起動
     print_info "Docker環境起動中..."
-    docker-compose up -d
+    if ! compose up -d --build --force-recreate app db keycloak; then
+        print_warning "通常起動に失敗しました。既存コンテナを掃除して再試行します..."
+        compose down --remove-orphans
+        compose up -d --build app db keycloak
+    fi
     
     # 少し待機
     print_info "アプリケーション起動待機中（5秒）..."
@@ -64,7 +76,7 @@ setup_security() {
     
     # セキュリティデータ初期化
     print_info "セキュリティデータ初期化中..."
-    if docker-compose exec app python ops/scripts/setup_security.py; then
+    if compose exec app python ops/scripts/setup_security.py; then
         print_success "セキュリティ環境セットアップ完了！"
     else
         print_error "セキュリティデータ初期化に失敗しました"
@@ -76,7 +88,7 @@ setup_security() {
 run_test() {
     print_info "🧪 セキュリティAPIテスト実行..."
     
-    if docker-compose exec app python ops/tests/test_security_api.py; then
+    if compose exec app python ops/tests/test_security_api.py; then
         print_success "セキュリティAPIテスト完了！"
     else
         print_warning "テストで問題が発生しました（詳細は上記ログ参照）"
@@ -99,7 +111,7 @@ run_full_test() {
 # 環境クリーンアップ
 clean_environment() {
     print_info "🧹 環境クリーンアップ..."
-    docker-compose down
+    compose down
     print_success "クリーンアップ完了"
 }
 
@@ -116,15 +128,15 @@ reset_environment() {
         exit 0
     fi
     
-    docker-compose down -v
+    compose down -v
     print_info "コンテナ再ビルド中..."
-    docker-compose up --build -d
+    compose up --build -d
     
     print_info "アプリケーション起動待機中（10秒）..."
     sleep 10
     
     print_info "セキュリティデータ再初期化中..."
-    docker-compose exec app python ops/scripts/setup_security.py
+    compose exec app python ops/scripts/setup_security.py
     
     print_success "完全リセット完了！"
 }
@@ -133,7 +145,7 @@ reset_environment() {
 show_logs() {
     print_info "📋 アプリケーションログを表示中..."
     print_info "（Ctrl+C で終了）"
-    docker-compose logs -f app
+    compose logs -f app
 }
 
 # データベース内容確認
@@ -142,7 +154,7 @@ check_database() {
     
     echo ""
     print_header "権限一覧:"
-    docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "
+    compose exec -T db psql -U koiki_user -d koiki_todo_db -c "
         SELECT name, resource, action, description 
         FROM permissions 
         ORDER BY resource, action;
@@ -150,7 +162,7 @@ check_database() {
     
     echo ""
     print_header "ロール一覧:"
-    docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "
+    compose exec -T db psql -U koiki_user -d koiki_todo_db -c "
         SELECT r.name as role_name, r.description, 
                COUNT(rp.permission_id) as permission_count
         FROM roles r 
@@ -161,7 +173,7 @@ check_database() {
     
     echo ""
     print_header "ユーザーロール割り当て:"
-    docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "
+    compose exec -T db psql -U koiki_user -d koiki_todo_db -c "
         SELECT u.email, u.username, r.name as role_name
         FROM users u 
         JOIN user_roles ur ON u.id = ur.user_id 
