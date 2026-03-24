@@ -1,0 +1,106 @@
+{
+  "passed": false,
+  "summary": {
+    "total_cases": 9,
+    "evaluated_cases": 9,
+    "passed_cases": 0,
+    "failed_cases": 9,
+    "missing_cases": [],
+    "extra_cases": []
+  },
+  "cases": [
+    {
+      "id": "ambiguous-layer-routing",
+      "passed": false,
+      "missing_expected": [
+        "koiki-project-overview"
+      ],
+      "forbidden_selected": [],
+      "observed_skills": [],
+      "notes": ""
+    },
+    {
+      "id": "app-business-feature",
+      "passed": false,
+      "missing_expected": [
+        "koiki-app-feature-work"
+      ],
+      "forbidden_selected": [],
+      "observed_skills": [],
+      "notes": ""
+    },
+    {
+      "id": "reusable-framework-capability",
+      "passed": false,
+      "missing_expected": [
+        "koiki-libkoiki-feature-work"
+      ],
+      "forbidden_selected": [],
+      "observed_skills": [],
+      "notes": ""
+    },
+    {
+      "id": "auth-security-change",
+      "passed": false,
+      "missing_expected": [
+        "koiki-auth-security"
+      ],
+      "forbidden_selected": [],
+      "observed_skills": [],
+      "notes": ""
+    },
+    {
+      "id": "app-sso-change",
+      "passed": false,
+      "missing_expected": [
+        "koiki-app-feature-work",
+        "koiki-auth-security"
+      ],
+      "forbidden_selected": [],
+      "observed_skills": [],
+      "notes": ""
+    },
+    {
+      "id": "framework-auth-change",
+      "passed": false,
+      "missing_expected": [
+        "koiki-auth-security",
+        "koiki-libkoiki-feature-work"
+      ],
+      "forbidden_selected": [],
+      "observed_skills": [],
+      "notes": ""
+    },
+    {
+      "id": "test-scope-question",
+      "passed": false,
+      "missing_expected": [
+        "koiki-testing"
+      ],
+      "forbidden_selected": [],
+      "observed_skills": [],
+      "notes": ""
+    },
+    {
+      "id": "ci-test-coverage-scope",
+      "passed": false,
+      "missing_expected": [
+        "koiki-project-overview",
+        "koiki-testing"
+      ],
+      "forbidden_selected": [],
+      "observed_skills": [],
+      "notes": ""
+    },
+    {
+      "id": "frontend-only-change",
+      "passed": false,
+      "missing_expected": [
+        "koiki-project-overview"
+      ],
+      "forbidden_selected": [],
+      "observed_skills": [],
+      "notes": ""
+    }
+  ]
+}
