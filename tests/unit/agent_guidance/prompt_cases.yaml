@@ -1,0 +1,95 @@
+skills:
+  - koiki-project-overview
+  - koiki-app-feature-work
+  - koiki-libkoiki-feature-work
+  - koiki-auth-security
+  - koiki-testing
+
+cases:
+  - id: ambiguous-layer-routing
+    prompt: "ユーザー管理の変更が必要ですが、libkoiki 側に置くべきか app 側に置くべきかまだ判断できません。最初に調査してください。"
+    expected_skills:
+      - koiki-project-overview
+    required_first_skill: koiki-project-overview
+    forbidden_skills:
+      - koiki-app-feature-work
+      - koiki-libkoiki-feature-work
+    rationale: "変更レイヤが曖昧な依頼は最初に project overview で分類する。"
+
+  - id: app-business-feature
+    prompt: "app の Todo API に承認フロー依存の業務ルールを追加してください。既存の libkoiki 共通機能は再利用したいです。"
+    expected_skills:
+      - koiki-app-feature-work
+    required_first_skill: koiki-app-feature-work
+    forbidden_skills:
+      - koiki-project-overview
+      - koiki-libkoiki-feature-work
+    rationale: "業務固有の backend 変更は app feature work が第一候補。"
+
+  - id: reusable-framework-capability
+    prompt: "複数アプリで使える共通監査ロギング基盤を libkoiki に追加してください。app 固有の判断は入れないでください。"
+    expected_skills:
+      - koiki-libkoiki-feature-work
+    required_first_skill: koiki-libkoiki-feature-work
+    forbidden_skills:
+      - koiki-project-overview
+      - koiki-app-feature-work
+    rationale: "再利用される共通基盤は libkoiki 側で扱う。"
+
+  - id: auth-security-change
+    prompt: "JWT リフレッシュトークンの失効処理と RBAC の境界を見直したいです。セキュリティ回帰が怖いので確認してください。"
+    expected_skills:
+      - koiki-auth-security
+    required_first_skill: koiki-auth-security
+    forbidden_skills:
+      - koiki-project-overview
+      - koiki-app-feature-work
+      - koiki-libkoiki-feature-work
+    rationale: "auth, token, RBAC を含む依頼は auth security を必ず起動対象にする。"
+
+  - id: app-sso-change
+    prompt: "app の SAML SSO ログインフローを修正してください。必要なら app 層と libkoiki 層の両方を見てください。"
+    expected_skills:
+      - koiki-auth-security
+      - koiki-app-feature-work
+    required_first_skill: koiki-auth-security
+    forbidden_skills: []
+    rationale: "SSO/SAML は auth security を含みつつ、app 固有実装なら app feature も必要。"
+
+  - id: framework-auth-change
+    prompt: "libkoiki のログイン試行制限とセキュリティ監査ログを強化してください。複数プロジェクトで再利用します。"
+    expected_skills:
+      - koiki-auth-security
+      - koiki-libkoiki-feature-work
+    required_first_skill: koiki-auth-security
+    forbidden_skills: []
+    rationale: "framework 層の security 変更は auth security と libkoiki feature の組み合わせ。"
+
+  - id: test-scope-question
+    prompt: "この修正に unit test と integration test のどちらを追加すべきか判断して、そのまま必要なテストを書いてください。"
+    expected_skills:
+      - koiki-testing
+    required_first_skill: koiki-testing
+    forbidden_skills: []
+    rationale: "テスト層の選定や追加が主目的なら testing を優先する。"
+
+  - id: ci-test-coverage-scope
+    prompt: "CI でどのテストパスを回すべきか見直したいです。fixture と workflow の現状を踏まえて提案してください。"
+    expected_skills:
+      - koiki-testing
+      - koiki-project-overview
+    required_first_skill: koiki-testing
+    forbidden_skills: []
+    rationale: "CI とテストスコープの判断は testing 主導で、全体整理が要るなら project overview も併用。"
+
+  - id: frontend-only-change
+    prompt: "frontend のタブ UI を調整してください。backend の変更は想定していません。"
+    expected_skills:
+      - koiki-project-overview
+    required_first_skill: koiki-project-overview
+    forbidden_skills:
+      - koiki-app-feature-work
+      - koiki-libkoiki-feature-work
+      - koiki-auth-security
+      - koiki-testing
+    rationale: "現行 skill 集合に frontend 専用 skill はないため、まず overview で分類する。"

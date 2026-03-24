@@ -13,11 +13,6 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from app.main import app
-from libkoiki.core.config import Settings
-from libkoiki.db.base import Base
-from libkoiki.db.session import get_db
-
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -30,6 +25,8 @@ def event_loop():
 @pytest.fixture(scope="session")
 def test_settings():
     """テスト用設定"""
+    from libkoiki.core.config import Settings
+
     return Settings(
         APP_ENV="testing",
         DATABASE_URL="postgresql+asyncpg://koiki_user:koiki_password@localhost:5432/koiki_todo_db",
@@ -70,6 +67,8 @@ async def test_db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
 @pytest.fixture
 def test_client(test_db_session):
     """テスト用FastAPIクライアント"""
+    from app.main import app
+    from libkoiki.db.session import get_db
     
     async def override_get_db():
         yield test_db_session
