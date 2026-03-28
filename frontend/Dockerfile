@@ -5,7 +5,7 @@
 # ---------------------
 FROM node:22-slim AS builder
 
-# Add custom CA certificate and trust for build-time network access
+# Add corporate CA certificate and trust for build-time network access
 COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
 RUN apt-get update && \
   apt-get install -y --no-install-recommends ca-certificates wget curl && \
@@ -13,7 +13,7 @@ RUN apt-get update && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Ensure Node and system tools use the updated CA bundle
-ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt \
   SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
   NEXT_TELEMETRY_DISABLED=1
 
@@ -34,7 +34,7 @@ RUN npm run build
 # ---------------------
 FROM node:22-slim AS runner
 
-# Add CA cert and minimal tools (wget is required by docker-compose healthcheck)
+# Add corporate CA certificate and minimal tools (wget is required by docker-compose healthcheck)
 COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
 RUN apt-get update && \
   apt-get install -y --no-install-recommends ca-certificates wget curl && \
@@ -42,7 +42,7 @@ RUN apt-get update && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Environment
-ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt \
   SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
   NEXT_TELEMETRY_DISABLED=1 \
   PORT=3000 \

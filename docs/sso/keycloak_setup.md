@@ -4,6 +4,7 @@
 - Keycloak 公式イメージ (v25.0.2) を docker-compose に追加しました。
 - `start-dev --import-realm` モードで起動し、リポジトリ同梱の `realm-koiki.json` を読み込むことで、最小限の Realm / Client / ユーザーが自動作成されます。
 - 生成済みのクライアント (`koiki-backend`) とテストユーザー (`sso-user@example.com`) を用いて Authorization Code Flow + PKCE を通すことができます。
+- ローカル Keycloak を `HTTPS` 化する手順と、`unified-prod-build` / `unified-prod-external-build` の証明書方針は [keycloak_https_local_and_external_build.md](./keycloak_https_local_and_external_build.md) を参照してください。
 
 ## 起動手順
 1. `.env` に Keycloak 接続情報を設定するか、`.env.example` をコピーして値を調整します。

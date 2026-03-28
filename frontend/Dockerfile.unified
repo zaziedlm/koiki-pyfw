@@ -8,17 +8,23 @@ ARG NODE_VERSION=22-slim
 # ---------------------
 FROM node:${NODE_VERSION} AS base
 
+ARG INCLUDE_LOCAL_IDP_CA=false
+
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates wget curl && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
-RUN update-ca-certificates
+COPY docker/certs/ /tmp/build-certs/
+RUN cp /tmp/build-certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt && \
+    if [ "${INCLUDE_LOCAL_IDP_CA}" = "true" ] && [ -f /tmp/build-certs/mkcert-rootCA.pem ]; then \
+      cp /tmp/build-certs/mkcert-rootCA.pem /usr/local/share/ca-certificates/mkcert-rootCA.crt; \
+    fi && \
+    update-ca-certificates
 
 ENV NODE_ENV=production \
-    NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
+    NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt \
     SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
     NEXT_TELEMETRY_DISABLED=1
 

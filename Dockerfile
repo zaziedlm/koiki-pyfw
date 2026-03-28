@@ -5,7 +5,7 @@
 # ---------------------
 FROM python:3.11-slim AS base
 
-# Add custom certificate and ensure CA bundle is installed/updated
+# Add corporate CA certificate and ensure CA bundle is installed/updated
 COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates curl && \
@@ -91,7 +91,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload
 # ---------------------
 FROM python:3.11-slim AS production
 
-# Add custom certificate
+# Add corporate CA certificate
 COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates curl && \

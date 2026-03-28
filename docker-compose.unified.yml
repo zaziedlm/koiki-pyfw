@@ -51,6 +51,8 @@ services:
       context: .
       dockerfile: Dockerfile.unified
       target: dev
+      args:
+        INCLUDE_LOCAL_IDP_CA: "true"
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       db:
@@ -71,6 +73,8 @@ services:
       context: .
       dockerfile: Dockerfile.unified
       target: optimized
+      args:
+        INCLUDE_LOCAL_IDP_CA: "true"
     depends_on:
       db:
         condition: service_healthy
@@ -89,6 +93,7 @@ services:
       target: production
       args:
         INSTALL_MAIN_ONLY: "true"
+        INCLUDE_LOCAL_IDP_CA: "true"
     depends_on:
       db:
         condition: service_healthy
@@ -107,6 +112,7 @@ services:
       target: production
       args:
         INSTALL_MAIN_ONLY: "true"
+        INCLUDE_LOCAL_IDP_CA: "false"
     # 外部DB/IdPに接続するため、ローカルdb/keycloakへは依存しない
     depends_on: [ ]
 
@@ -121,6 +127,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.unified
       target: dev
+      args:
+        INCLUDE_LOCAL_IDP_CA: "true"
     command: npm run dev -- --turbopack --hostname 0.0.0.0 --port 3000
     volumes:
       - ./frontend/src:/app/src:cached
@@ -138,6 +146,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.unified
       target: runner
+      args:
+        INCLUDE_LOCAL_IDP_CA: "true"
     depends_on:
       app-optimized:
         condition: service_started
@@ -152,6 +162,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.unified
       target: runner
+      args:
+        INCLUDE_LOCAL_IDP_CA: "true"
     depends_on:
       app-prod:
         condition: service_started
@@ -166,6 +178,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.unified
       target: runner
+      args:
+        INCLUDE_LOCAL_IDP_CA: "false"
     depends_on:
       app-prod-external:
         condition: service_started
@@ -210,8 +224,10 @@ services:
       - ./docker/keycloak/realm-koiki.json:/opt/keycloak/data/import/realm-koiki.json:ro
       - ./docker/keycloak/realm-saml.json:/opt/keycloak/data/import/realm-saml.json:ro
       - keycloak_data:/opt/keycloak/data
+      - ./docker/keycloak/certs/server.crt:/opt/keycloak/conf/server.crt:ro  # ★追加
+      - ./docker/keycloak/certs/server.key:/opt/keycloak/conf/server.key:ro  # ★追加
     ports:
-      - "8090:8080"
+      - "8443:8443"   # ★ 8090:8080 から変更
       - "9000:9000"
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
@@ -220,20 +236,23 @@ services:
       # KC_DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-koiki_todo_db}
       # KC_DB_USERNAME: ${POSTGRES_USER:-koiki_user}
       # KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-koiki_password}
-      KC_HTTP_ENABLED: true
-      KC_HOSTNAME_STRICT: false
+      KC_HTTP_ENABLED: "false"  # ★ true → false
+      KC_HOSTNAME: https://localhost:8443    # ★ 非標準HTTPSポートを明示
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/server.crt         # ★ 追加
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/server.key     # ★ 追加
       KC_LOG_LEVEL: INFO
       KC_HEALTH_ENABLED: true
       KC_HTTP_MANAGEMENT_PORT: 9000
     command:
-      - start-dev
+      - start          # ★ start-dev → start
       - --import-realm
     # depends_on:
     #   db:
     #     condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'" ]
+      test: [ "CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/9000 && exec 3<&- && exec 3>&-'" ]  # HTTPS management port listen check
       interval: 30s
       timeout: 10s
       retries: 10

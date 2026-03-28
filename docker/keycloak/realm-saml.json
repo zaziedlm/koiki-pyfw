@@ -11,7 +11,7 @@
   "displayName": "KOIKI SAML Realm",
   "displayNameHtml": "<strong>KOIKI SAML Realm</strong>",
   "attributes": {
-    "frontendUrl": "http://localhost:8090"
+    "frontendUrl": "https://localhost:8443"
   },
   "clients": [
     {
