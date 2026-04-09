@@ -36,6 +36,7 @@ from libkoiki.models.user import UserModel
 from libkoiki.schemas.user import UserCreate
 from libkoiki.core.security import check_password_complexity
 from libkoiki.core.exceptions import ValidationException
+from libkoiki.core.logging import get_error_type_name
 
 from app.core.sso_config import SSOSettings, get_sso_settings
 from app.repositories.sso_link_repository import SSOLinkRepository
@@ -91,7 +92,7 @@ class SSOService:
         # JWKS設定の初期化
         if self.sso_settings.SSO_JWKS_URI:
             self.jwks_uri = self.sso_settings.SSO_JWKS_URI
-            logger.info("JWKS configured", jwks_uri=self.sso_settings.SSO_JWKS_URI)
+            logger.info("JWKS configured")
         else:
             self.jwks_uri = None
         if self.sso_settings.SSO_SIGNATURE_VALIDATION and not HTTPX_AVAILABLE:
@@ -185,7 +186,7 @@ class SSOService:
             # ドメイン制限チェック
             email = payload["email"]
             if not self.sso_settings.is_domain_allowed(email):
-                logger.warning("Email domain not allowed", email=email)
+                logger.warning("Email domain not allowed")
                 raise ValidationException("Email domain not allowed")
 
             # SSOUserInfo構築
@@ -203,27 +204,25 @@ class SSOService:
 
             logger.info(
                 "ID token verification successful",
-                sub=user_info.sub,
-                email=user_info.email,
                 email_verified=user_info.email_verified,
             )
 
             return user_info
 
         except InvalidTokenError as e:
-            logger.error("JWT verification failed", error=str(e))
+            logger.error("JWT verification failed", error_type=get_error_type_name(e))
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid ID token",
             )
         except (InvalidKeyError, PyJWKError) as e:
-            logger.error("JWKS key retrieval failed", error=str(e))
+            logger.error("JWKS key retrieval failed", error_type=get_error_type_name(e))
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token signature verification failed",
             )
         except ValidationException as e:
-            logger.error("Token validation failed", error=str(e))
+            logger.error("Token validation failed", error_type=get_error_type_name(e))
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(e),
@@ -231,7 +230,10 @@ class SSOService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Unexpected error during token verification", error=str(e))
+            logger.error(
+                "Unexpected error during token verification",
+                error_type=get_error_type_name(e),
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Token verification failed",
@@ -295,7 +297,7 @@ class SSOService:
         except Exception as exc:
             logger.error(
                 "Authorization code exchange failed",
-                error=str(exc),
+                error_type=get_error_type_name(exc),
                 token_endpoint=self.token_endpoint,
             )
             raise HTTPException(
@@ -329,7 +331,10 @@ class SSOService:
         try:
             token_payload = response.json()
         except ValueError as exc:
-            logger.error("Token endpoint returned invalid JSON", error=str(exc))
+            logger.error(
+                "Token endpoint returned invalid JSON",
+                error_type=get_error_type_name(exc),
+            )
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="Invalid response from SSO provider",
@@ -385,8 +390,6 @@ class SSOService:
 
         logger.info(
             "Generated authorization context",
-            redirect_uri=validated_redirect_uri,
-            nonce=nonce,
         )
 
         return {
@@ -426,7 +429,7 @@ class SSOService:
         Raises:
             HTTPException: 認証失敗時
         """
-        logger.info("Starting SSO user authentication", email=user_info.email, sub=user_info.sub)
+        logger.info("Starting SSO user authentication")
 
         try:
             # リポジトリセッション設定
@@ -485,7 +488,7 @@ class SSOService:
                     
                 elif self.sso_settings.SSO_AUTO_CREATE_USERS:
                     # 3. 自動ユーザー作成
-                    logger.info("Creating new user from SSO", email=user_info.email)
+                    logger.info("Creating new user from SSO")
                     
                     # UserCreateスキーマを構築
                     dummy_password = self._generate_dummy_password()
@@ -512,7 +515,7 @@ class SSOService:
                     
                 else:
                     # ユーザー自動作成が無効
-                    logger.warning("User auto-creation disabled", email=user_info.email)
+                    logger.warning("User auto-creation disabled")
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
                         detail="User not found and auto-creation is disabled"
@@ -547,7 +550,10 @@ class SSOService:
         except HTTPException:
             raise  # HTTP例外は再発生
         except Exception as e:
-            logger.error("Unexpected error during SSO user authentication", error=str(e))
+            logger.error(
+                "Unexpected error during SSO user authentication",
+                error_type=get_error_type_name(e),
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="SSO authentication failed"
@@ -585,7 +591,11 @@ class SSOService:
             return access_token, refresh_token, expires_in
 
         except Exception as e:
-            logger.error("Failed to create internal token pair", user_id=user.id, error=str(e))
+            logger.error(
+                "Failed to create internal token pair",
+                user_id=user.id,
+                error_type=get_error_type_name(e),
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Token generation failed"
@@ -605,7 +615,10 @@ class SSOService:
             payload_bytes = self._urlsafe_b64decode(payload_part)
             signature_bytes = self._urlsafe_b64decode(signature_part)
         except Exception as exc:
-            logger.warning("Failed to decode state token", error=str(exc))
+            logger.warning(
+                "Failed to decode state token",
+                error_type=get_error_type_name(exc),
+            )
             raise ValidationException("Invalid state token encoding") from exc
 
         expected_signature = hmac.new(
@@ -690,7 +703,7 @@ class SSOService:
             )
 
         if not self.sso_settings.is_redirect_uri_allowed(redirect_uri):
-            logger.warning("Redirect URI not allowed", redirect_uri=redirect_uri)
+            logger.warning("Redirect URI not allowed")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="redirect_uri is not allowed",
@@ -733,7 +746,7 @@ class SSOService:
                 resp.raise_for_status()
                 jwks = resp.json()
         except Exception as e:
-            logger.error("Failed to fetch JWKS", error=str(e), jwks_uri=self.jwks_uri)
+            logger.error("Failed to fetch JWKS", error_type=get_error_type_name(e))
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Failed to retrieve JWKS for signature verification",
@@ -800,13 +813,19 @@ class SSOService:
         except HTTPException:
             raise
         except InvalidTokenError as e:
-            logger.error("JWT signature verification failed", error=str(e))
+            logger.error(
+                "JWT signature verification failed",
+                error_type=get_error_type_name(e),
+            )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token signature verification failed",
             )
         except Exception as e:
-            logger.error("Unexpected error during JWKS verification", error=str(e))
+            logger.error(
+                "Unexpected error during JWKS verification",
+                error_type=get_error_type_name(e),
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="JWKS verification error",

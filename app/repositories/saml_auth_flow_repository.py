@@ -45,8 +45,6 @@ class SamlAuthFlowRepository:
         logger.info(
             "SAML auth flow created",
             flow_id=flow.id,
-            request_id=request_id,
-            relay_nonce=relay_nonce[:8] + "...",
         )
         return flow
 
@@ -81,7 +79,6 @@ class SamlAuthFlowRepository:
         if not flow:
             logger.warning(
                 "SAML auth flow not found for relay_nonce",
-                relay_nonce=relay_nonce[:8] + "...",
             )
             return None
 
@@ -104,7 +101,6 @@ class SamlAuthFlowRepository:
         logger.info(
             "SAML auth flow ACS verified",
             flow_id=flow.id,
-            ticket_id=ticket_id[:12] + "...",
         )
         return flow
 
@@ -134,7 +130,6 @@ class SamlAuthFlowRepository:
         if not flow:
             logger.warning(
                 "SAML auth flow not found for ticket",
-                ticket_id=ticket_id[:12] + "...",
             )
             return None
 
@@ -143,7 +138,6 @@ class SamlAuthFlowRepository:
                 "SAML ticket already consumed or invalid status",
                 flow_id=flow.id,
                 current_status=flow.status,
-                ticket_id=ticket_id[:12] + "...",
             )
             return None
 
@@ -152,7 +146,6 @@ class SamlAuthFlowRepository:
         logger.info(
             "SAML ticket consumed via DB exclusive lock",
             flow_id=flow.id,
-            ticket_id=ticket_id[:12] + "...",
         )
         return flow
 
@@ -182,7 +175,7 @@ class SamlAuthFlowRepository:
             logger.debug(
                 "Found session_index for user",
                 user_id=user_id,
-                session_index=session_index[:16] + "...",
+                session_index_present=True,
             )
         else:
             logger.debug("No session_index found for user", user_id=user_id)

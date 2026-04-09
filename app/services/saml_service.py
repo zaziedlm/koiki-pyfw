@@ -31,6 +31,7 @@ from app.repositories.sso_link_repository_factory import create_sso_link_reposit
 from app.schemas.saml import SAMLLinkResponse, SAMLUserInfo, SAMLUserInfoResponse
 from app.services.saml_certificate_manager import SAMLCertificateManager
 from libkoiki.core.exceptions import ValidationException
+from libkoiki.core.logging import get_error_type_name
 from libkoiki.core.security import check_password_complexity
 from libkoiki.models.user import UserModel
 from libkoiki.schemas.user import UserCreate
@@ -201,8 +202,6 @@ class SAMLService:
             logger.info(
                 "Generated SAML authorization context",
                 acs_url=chosen_acs_url,
-                request_id=request_id,
-                redirect_uri=resolved_redirect,
             )
 
             return {
@@ -217,7 +216,10 @@ class SAMLService:
             }
 
         except Exception as exc:
-            logger.error("Failed to generate SAML AuthnRequest", error=str(exc))
+            logger.error(
+                "Failed to generate SAML AuthnRequest",
+                error_type=get_error_type_name(exc),
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="SAML authorization request generation failed",
@@ -261,7 +263,10 @@ class SAMLService:
         except HTTPException:
             raise
         except Exception as exc:
-            logger.error("Failed to generate SAML metadata", error=str(exc))
+            logger.error(
+                "Failed to generate SAML metadata",
+                error_type=get_error_type_name(exc),
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="SAML metadata generation failed",
@@ -307,7 +312,6 @@ class SAMLService:
         logger.info(
             "SAML user info response built",
             user_id=user.id,
-            saml_subject_id=user_info.subject_id,
         )
 
         return response
@@ -381,7 +385,6 @@ class SAMLService:
                 "Generated SAML logout URL",
                 user_id=user.id,
                 session_index_present=session_index is not None,
-                redirect=logout_url,
             )
 
             return logout_url
@@ -389,7 +392,10 @@ class SAMLService:
         except HTTPException:
             raise
         except Exception as exc:
-            logger.error("Failed to initiate SAML logout", error=str(exc))
+            logger.error(
+                "Failed to initiate SAML logout",
+                error_type=get_error_type_name(exc),
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="SAML logout initiation failed",
@@ -411,7 +417,6 @@ class SAMLService:
 
         logger.info(
             "Starting SAML Response verification",
-            request_id=relay_state_payload.get("req"),
         )
 
         if not PYTHON3_SAML_AVAILABLE:
@@ -506,7 +511,7 @@ class SAMLService:
                 except Exception as retry_exc:
                     logger.error(
                         "Failed to refresh certificate and retry",
-                        error=str(retry_exc),
+                        error_type=get_error_type_name(retry_exc),
                     )
                     raise ValidationException(
                         f"SAML signature validation failed even after certificate refresh: {retry_exc}"
@@ -533,7 +538,7 @@ class SAMLService:
                 raise ValidationException("Missing email attribute in SAML Response")
 
             if not self.saml_settings.is_domain_allowed(email):
-                logger.warning("Email domain not allowed", email=email)
+                logger.warning("Email domain not allowed")
                 raise ValidationException("Email domain not allowed")
 
             user_info = SAMLUserInfo(
@@ -560,15 +565,15 @@ class SAMLService:
 
             logger.info(
                 "SAML Response verification successful",
-                subject_id=user_info.subject_id,
-                email=user_info.email,
-                session_index=user_info.session_index,
             )
 
             return user_info
 
         except ValidationException as exc:
-            logger.error("SAML validation failed", error=str(exc))
+            logger.error(
+                "SAML validation failed",
+                error_type=get_error_type_name(exc),
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(exc),
@@ -576,7 +581,10 @@ class SAMLService:
         except HTTPException:
             raise
         except Exception as exc:
-            logger.error("Unexpected error during SAML verification", error=str(exc))
+            logger.error(
+                "Unexpected error during SAML verification",
+                error_type=get_error_type_name(exc),
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="SAML verification failed",
@@ -629,8 +637,6 @@ class SAMLService:
 
             logger.info(
                 "SAML logout processed",
-                name_id=name_id,
-                redirect=final_redirect,
             )
 
             return final_redirect
@@ -638,7 +644,10 @@ class SAMLService:
         except HTTPException:
             raise
         except Exception as exc:
-            logger.error("Unexpected error during SAML logout", error=str(exc))
+            logger.error(
+                "Unexpected error during SAML logout",
+                error_type=get_error_type_name(exc),
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="SAML logout processing failed",
@@ -668,8 +677,6 @@ class SAMLService:
         """
         logger.info(
             "Starting SAML user authentication",
-            email=user_info.email,
-            subject_id=user_info.subject_id,
         )
 
         try:
@@ -729,7 +736,7 @@ class SAMLService:
 
                 elif self.saml_settings.SAML_AUTO_CREATE_USERS:
                     # 3. 自動ユーザー作成
-                    logger.info("Creating new user from SAML", email=user_info.email)
+                    logger.info("Creating new user from SAML")
 
                     # UserCreateスキーマを構築
                     dummy_password = self._generate_dummy_password()
@@ -758,7 +765,7 @@ class SAMLService:
 
                 else:
                     # ユーザー自動作成が無効
-                    logger.warning("User auto-creation disabled", email=user_info.email)
+                    logger.warning("User auto-creation disabled")
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
                         detail="User not found and auto-creation is disabled",
@@ -794,7 +801,8 @@ class SAMLService:
             raise  # HTTP例外は再発生
         except Exception as e:
             logger.error(
-                "Unexpected error during SAML user authentication", error=str(e)
+                "Unexpected error during SAML user authentication",
+                error_type=get_error_type_name(e),
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -833,7 +841,9 @@ class SAMLService:
 
         except Exception as e:
             logger.error(
-                "Failed to create internal token pair", user_id=user.id, error=str(e)
+                "Failed to create internal token pair",
+                user_id=user.id,
+                error_type=get_error_type_name(e),
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -855,7 +865,7 @@ class SAMLService:
         )
 
         if not sso_link:
-            logger.warning("No SSO link found during logout cleanup", name_id=name_id)
+            logger.warning("No SSO link found during logout cleanup")
             return
 
         user = await self.user_service.get_user_by_id(sso_link.user_id, db)
@@ -863,7 +873,6 @@ class SAMLService:
             logger.warning(
                 "User not found during logout cleanup",
                 user_id=sso_link.user_id,
-                name_id=name_id,
             )
             return
 
@@ -874,7 +883,7 @@ class SAMLService:
             logger.error(
                 "Failed to revoke user tokens during logout cleanup",
                 user_id=user.id,
-                error=str(exc),
+                error_type=get_error_type_name(exc),
             )
 
     async def _build_saml_config(
@@ -1133,7 +1142,6 @@ class SAMLService:
                 logger.warning(
                     "No matching auth flow for ACS; "
                     "continuing with token-only verification",
-                    relay_nonce=relay_nonce[:8] + "...",
                 )
 
         return redirect_uri, login_ticket, expires_at, user_info, user
@@ -1170,11 +1178,7 @@ class SAMLService:
         ticket_nonce = payload.get("relay_nonce")
         relay_nonce = relay_payload.get("nonce")
         if not ticket_nonce or not relay_nonce or ticket_nonce != relay_nonce:
-            logger.warning(
-                "relay_state nonce mismatch during ticket exchange",
-                ticket_nonce=ticket_nonce,
-                relay_nonce=relay_nonce,
-            )
+            logger.warning("relay_state nonce mismatch during ticket exchange")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="RelayState nonce mismatch: authentication flow integrity violation",
@@ -1185,11 +1189,7 @@ class SAMLService:
         if flow:
             # DB照合成功: nonce の整合性も確認
             if flow.relay_nonce != relay_nonce:
-                logger.warning(
-                    "DB relay_nonce mismatch during ticket exchange",
-                    db_nonce=flow.relay_nonce[:8] + "...",
-                    token_nonce=relay_nonce[:8] + "..." if relay_nonce else None,
-                )
+                logger.warning("DB relay_nonce mismatch during ticket exchange")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="RelayState nonce mismatch: DB flow integrity violation",
@@ -1199,7 +1199,6 @@ class SAMLService:
             # （移行期間中の後方互換性 — Phase 2 導入前に開始されたフロー対応）
             logger.info(
                 "No DB flow found for ticket; falling back to in-memory check",
-                ticket_id=ticket_id[:12] + "...",
             )
             await self._register_ticket_use(ticket_id, expires_at)
 
@@ -1296,7 +1295,11 @@ class SAMLService:
             payload_bytes = self._urlsafe_b64decode(payload_part)
             signature_bytes = self._urlsafe_b64decode(signature_part)
         except Exception as exc:
-            logger.warning("Failed to decode token", purpose=purpose, error=str(exc))
+            logger.warning(
+                "Failed to decode token",
+                purpose=purpose,
+                error_type=get_error_type_name(exc),
+            )
             raise ValidationException(f"Invalid {purpose} token encoding") from exc
 
         key = signing_key or self.relay_state_signing_key

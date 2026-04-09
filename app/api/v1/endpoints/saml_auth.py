@@ -31,6 +31,7 @@ from libkoiki.api.dependencies import (
     UserServiceDep,
 )
 from libkoiki.core.auth_decorators import handle_auth_errors
+from libkoiki.core.logging import get_error_type_name
 from libkoiki.core.rate_limiter import limiter
 from libkoiki.core.security import extract_device_info
 from libkoiki.core.security_logger import security_logger
@@ -96,7 +97,10 @@ async def saml_authorization_init(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error("Unexpected error during SAML authorization init", error=str(e))
+        logger.error(
+            "Unexpected error during SAML authorization init",
+            error_type=get_error_type_name(e),
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="SAML authorization initialization failed",
@@ -140,10 +144,7 @@ async def saml_acs(
 
         logger.info(
             "SAML ACS processed successfully",
-            redirect_uri=redirect_uri,
-            subject_id=user_info.subject_id,
             user_id=user.id,
-            ticket_expires=str(ticket_expires),
         )
 
         return RedirectResponse(
@@ -153,7 +154,10 @@ async def saml_acs(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error("SAML ACS processing failed", error=str(e))
+        logger.error(
+            "SAML ACS processing failed",
+            error_type=get_error_type_name(e),
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="SAML ACS processing failed",
@@ -198,7 +202,7 @@ async def saml_login(
     ip_address = request.client.host if request.client else "unknown"
     device_info = extract_device_info(request)
 
-    logger.info("SAML login attempt", ip_address=ip_address, device_info=device_info)
+    logger.info("SAML login attempt")
 
     try:
         (
@@ -229,8 +233,6 @@ async def saml_login(
         logger.info(
             "SAML login successful",
             user_id=user.id,
-            email=user.email,
-            ip_address=ip_address,
         )
 
         return TokenWithRefresh(
@@ -261,7 +263,6 @@ async def saml_login(
             "SAML login failed",
             error=e.detail,
             status_code=e.status_code,
-            ip_address=ip_address,
         )
         raise
 
@@ -283,7 +284,8 @@ async def saml_login(
         )
 
         logger.error(
-            "Unexpected error during SAML login", error=str(e), ip_address=ip_address
+            "Unexpected error during SAML login",
+            error_type=get_error_type_name(e),
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -322,7 +324,6 @@ async def get_saml_user_info(
         logger.info(
             "SAML user info retrieved",
             user_id=current_user.id,
-            saml_subject_id=response.user_info.subject_id,
         )
 
         return response
@@ -331,7 +332,9 @@ async def get_saml_user_info(
         raise
     except Exception as e:
         logger.error(
-            "Failed to retrieve SAML user info", user_id=current_user.id, error=str(e)
+            "Failed to retrieve SAML user info",
+            user_id=current_user.id,
+            error_type=get_error_type_name(e),
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -359,7 +362,7 @@ async def saml_logout(
         redirect_uri=redirect_uri,
     )
 
-    logger.info("SAML logout initiated", user_id=current_user.id, redirect=logout_url)
+    logger.info("SAML logout initiated", user_id=current_user.id)
 
     return RedirectResponse(url=logout_url, status_code=status.HTTP_303_SEE_OTHER)
 
@@ -386,7 +389,7 @@ async def saml_single_logout_service(
         post_data=post_data,
     )
 
-    logger.info("SAML SLS completed", redirect=redirect_target)
+    logger.info("SAML SLS completed")
 
     return RedirectResponse(url=redirect_target, status_code=status.HTTP_303_SEE_OTHER)
 
@@ -452,7 +455,10 @@ async def saml_health_check(
         return response
 
     except Exception as e:
-        logger.error("SAML health check failed", error=str(e))
+        logger.error(
+            "SAML health check failed",
+            error_type=get_error_type_name(e),
+        )
         return SAMLHealthCheckResponse(
             status="error",
             saml_configured=False,

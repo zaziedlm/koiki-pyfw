@@ -9,6 +9,8 @@ from urllib.parse import urlparse
 import httpx
 import structlog
 
+from libkoiki.core.logging import get_error_type_name
+
 logger = structlog.get_logger(__name__)
 
 
@@ -113,7 +115,10 @@ class SAMLMetadataLoader:
             try:
                 ET.fromstring(metadata_xml)
             except ET.ParseError as e:
-                logger.error("Invalid XML in SAML metadata", error=str(e))
+                logger.error(
+                    "Invalid XML in SAML metadata",
+                    error_type=get_error_type_name(e),
+                )
                 raise ValueError(f"Invalid SAML metadata XML: {e}")
 
             # キャッシュ更新
@@ -283,5 +288,8 @@ class SAMLMetadataLoader:
             return True, None
 
         except Exception as e:
-            logger.error("SAML metadata validation failed", error=str(e))
+            logger.error(
+                "SAML metadata validation failed",
+                error_type=get_error_type_name(e),
+            )
             return False, str(e)

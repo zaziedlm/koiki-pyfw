@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.user_sso import UserSSO
+from libkoiki.core.logging import get_log_field_names
 from libkoiki.models.user import UserModel
 from libkoiki.repositories.base import BaseRepository
 
@@ -49,7 +50,6 @@ class UserSSORepository(BaseRepository[UserSSO, BaseModel, BaseModel]):
         """
         logger.debug(
             "Searching SSO link by subject_id",
-            sso_subject_id=sso_subject_id,
             sso_provider=sso_provider,
         )
 
@@ -140,8 +140,14 @@ class UserSSORepository(BaseRepository[UserSSO, BaseModel, BaseModel]):
         logger.info(
             "Creating SSO link",
             user_id=user_id,
-            sso_subject_id=sso_subject_id,
             sso_provider=sso_provider,
+            provided_fields=get_log_field_names(
+                {
+                    "sso_subject_id": sso_subject_id,
+                    "sso_email": sso_email,
+                    "sso_display_name": sso_display_name,
+                }
+            ),
         )
 
         user_sso = UserSSO(

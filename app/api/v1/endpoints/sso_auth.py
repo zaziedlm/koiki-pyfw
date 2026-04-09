@@ -24,6 +24,7 @@ from libkoiki.api.dependencies import (
     UserServiceDep,
 )
 from libkoiki.core.auth_decorators import handle_auth_errors
+from libkoiki.core.logging import get_error_type_name
 from libkoiki.core.rate_limiter import limiter
 from libkoiki.core.security import extract_device_info
 from libkoiki.core.security_logger import security_logger
@@ -122,7 +123,7 @@ async def sso_login(
     ip_address = request.client.host if request.client else "unknown"
     device_info = extract_device_info(request)
 
-    logger.info("SSO login attempt", ip_address=ip_address, device_info=device_info)
+    logger.info("SSO login attempt")
 
     try:
         # 1. state / nonce の整合性を事前に検証
@@ -155,9 +156,6 @@ async def sso_login(
 
         logger.info(
             "ID token verification successful",
-            email=user_info.email,
-            sub=user_info.sub,
-            ip_address=ip_address,
         )
 
         # 4. SSO ユーザー情報を基にローカルユーザーを認証・取得
@@ -166,9 +164,7 @@ async def sso_login(
         logger.info(
             "SSO user authentication successful",
             user_id=user.id,
-            email=user.email,
             is_new_user=sso_response.is_new_user,
-            ip_address=ip_address,
         )
 
         # 5. 内部認証トークンペアを発行
@@ -196,8 +192,6 @@ async def sso_login(
         logger.info(
             "SSO login successful",
             user_id=user.id,
-            email=user.email,
-            ip_address=ip_address,
         )
 
         return TokenWithRefresh(
@@ -228,7 +222,6 @@ async def sso_login(
             "SSO login failed",
             error=e.detail,
             status_code=e.status_code,
-            ip_address=ip_address,
         )
         raise
 
@@ -250,7 +243,8 @@ async def sso_login(
         )
 
         logger.error(
-            "Unexpected error during SSO login", error=str(e), ip_address=ip_address
+            "Unexpected error during SSO login",
+            error_type=get_error_type_name(e),
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -340,7 +334,10 @@ async def sso_health_check(
             else:
                 logger.warning("httpx not available; skipping JWKS reachability test")
         except Exception as e:
-            logger.warning("JWKS endpoint health check failed", error=str(e))
+            logger.warning(
+                "JWKS endpoint health check failed",
+                error_type=get_error_type_name(e),
+            )
             jwks_accessible = False
 
     health_status["jwks_accessible"] = jwks_accessible

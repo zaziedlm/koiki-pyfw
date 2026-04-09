@@ -12,6 +12,7 @@ import structlog
 
 from app.core.saml_config import SAMLSettings
 from app.services.saml_metadata_loader import SAMLMetadataLoader
+from libkoiki.core.logging import get_error_type_name
 
 logger = structlog.get_logger(__name__)
 
@@ -149,7 +150,7 @@ class SAMLCertificateManager:
         except Exception as e:
             logger.error(
                 "Failed to fetch certificate from metadata",
-                error=str(e),
+                error_type=get_error_type_name(e),
                 metadata_url=self.settings.SAML_IDP_METADATA_URL,
             )
             raise ValueError(f"Cannot fetch certificate from metadata: {e}")
@@ -183,7 +184,7 @@ class SAMLCertificateManager:
             except Exception as e:
                 logger.warning(
                     "Metadata fetch failed, falling back to static certificate",
-                    error=str(e),
+                    error_type=get_error_type_name(e),
                 )
 
         # フォールバック：静的証明書を使用
@@ -253,7 +254,7 @@ class SAMLCertificateManager:
             except Exception as e:
                 logger.warning(
                     "Failed to fetch complete metadata, using static config",
-                    error=str(e),
+                    error_type=get_error_type_name(e),
                 )
 
         # 静的設定から構築
