@@ -53,6 +53,7 @@ from libkoiki.core.logging import get_logger, setup_logging
 from libkoiki.core.middleware import (  # AccessLogMiddlewareはオプション
     AccessLogMiddleware,
     AuditLogMiddleware,
+    RequestContextLogMiddleware,
     SecurityHeadersMiddleware,
 )
 from libkoiki.core.monitoring import setup_monitoring
@@ -277,11 +278,16 @@ logger.info("Security headers middleware enabled.")
 app.add_middleware(AuditLogMiddleware)
 logger.info("Audit log middleware enabled.")
 
-# 4. オプション: アクセスログ (structlogでuvicornアクセスログを処理する場合は不要なことも)
+# 4. リクエストコンテキスト (request_id と基本情報)
+# FastAPI の middleware ラップ順の都合で、Audit / Access より後に追加して外側に置く。
+app.add_middleware(RequestContextLogMiddleware)
+logger.info("Request context log middleware enabled.")
+
+# 5. オプション: アクセスログ (structlogでuvicornアクセスログを処理する場合は不要なことも)
 # app.add_middleware(AccessLogMiddleware)
 # logger.info("Access log middleware enabled.")
 
-# 5. オプション: レートリミット (グローバル制限)
+# 6. オプション: レートリミット (グローバル制限)
 # エンドポイントごとの制限が主なら不要。ミドルウェアを使う場合はハンドラ登録より先に。
 # app.add_middleware(SlowAPIMiddleware)
 
