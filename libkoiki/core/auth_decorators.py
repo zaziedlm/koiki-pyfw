@@ -6,6 +6,7 @@ import structlog
 from fastapi import HTTPException, status
 
 from libkoiki.core.exceptions import AuthenticationException, ValidationException
+from libkoiki.core.logging import get_error_type_name
 
 logger = structlog.get_logger(__name__)
 
@@ -28,8 +29,8 @@ def handle_auth_errors(endpoint_name: str = ""):
                 detail = getattr(e, "detail", None) or str(e)
                 logger.warning(
                     f"{endpoint_name} failed - validation error",
-                    error=detail,
                     endpoint=endpoint_name,
+                    error_type=get_error_type_name(e),
                 )
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -40,8 +41,8 @@ def handle_auth_errors(endpoint_name: str = ""):
                 detail = getattr(e, "detail", None) or str(e)
                 logger.warning(
                     f"{endpoint_name} failed - authentication error",
-                    error=detail,
                     endpoint=endpoint_name,
+                    error_type=get_error_type_name(e),
                 )
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -56,8 +57,8 @@ def handle_auth_errors(endpoint_name: str = ""):
             except Exception as e:
                 logger.error(
                     f"{endpoint_name} failed - unexpected error",
-                    error=str(e),
                     endpoint=endpoint_name,
+                    error_type=get_error_type_name(e),
                     exc_info=True,
                 )
                 raise HTTPException(
@@ -96,7 +97,11 @@ def log_auth_event(event_type: str, **kwargs):
 
             except Exception as e:
                 # 失敗ログ
-                logger.warning(f"{event_type} failed", error=str(e), **kwargs)
+                logger.warning(
+                    f"{event_type} failed",
+                    error_type=get_error_type_name(e),
+                    **kwargs,
+                )
                 raise
 
         return wrapper

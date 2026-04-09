@@ -21,6 +21,10 @@ async_session_factory = None
 # AsyncSessionFactory の名前で async_session_factory をエクスポート
 AsyncSessionFactory = None
 
+
+def _exception_type_name(exc: Exception) -> str:
+    return type(exc).__name__
+
 def init_db_engine():
     """非同期SQLAlchemyエンジンとセッションファクトリを初期化"""
     global engine
@@ -67,8 +71,12 @@ def init_db_engine():
         return True
         
     except Exception as e:
-        logger.error(f"Failed to initialize database engine: {e}", exc_info=True)
-        raise RuntimeError(f"Database engine initialization failed: {e}")
+        logger.error(
+            "Failed to initialize database engine",
+            error_type=_exception_type_name(e),
+            exc_info=True,
+        )
+        raise RuntimeError("Database engine initialization failed") from e
 
 async def dispose_db_engine():
     """データベースエンジンを破棄"""
@@ -102,12 +110,26 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             #     await session.rollback()
             #     raise
         except SQLAlchemyError as db_exc: # データベース操作中の例外
-            logger.error(f"Database error occurred in session {id(session)}, rolling back.", exc_info=False, error=str(db_exc))
+            logger.error(
+                "Database error occurred in session, rolling back.",
+                session_id=id(session),
+                error_type=_exception_type_name(db_exc),
+                exc_info=False,
+            )
             try:
                 await session.rollback()
-                logger.info(f"Session {id(session)} rolled back due to SQLAlchemyError.")
+                logger.info(
+                    "Session rolled back due to SQLAlchemyError.",
+                    session_id=id(session),
+                )
             except Exception as rollback_exc:
-                 logger.error(f"Error during rollback for session {id(session)}", exc_info=True, original_error=str(db_exc))
+                 logger.error(
+                     "Error during rollback for session",
+                     session_id=id(session),
+                     error_type=_exception_type_name(rollback_exc),
+                     original_error_type=_exception_type_name(db_exc),
+                     exc_info=True,
+                 )
             raise # 元のDBエラーを再送出 -> グローバルハンドラで処理
         except HTTPException:
              # FastAPI の HTTPException (例: 404 Not Found) はそのまま送出
@@ -115,12 +137,26 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
              await session.rollback() # HTTPエラーでもDB操作はロールバックすべき
              raise
         except Exception as e: # その他の予期せぬ例外
-            logger.error(f"Unexpected error in session {id(session)}, rolling back.", exc_info=True)
+            logger.error(
+                "Unexpected error in session, rolling back.",
+                session_id=id(session),
+                error_type=_exception_type_name(e),
+                exc_info=True,
+            )
             try:
                 await session.rollback()
-                logger.warning(f"Session {id(session)} rolled back due to unexpected error.")
+                logger.warning(
+                    "Session rolled back due to unexpected error.",
+                    session_id=id(session),
+                )
             except Exception as rollback_exc:
-                 logger.error(f"Error during rollback after unexpected error in session {id(session)}", exc_info=True, original_error=str(e))
+                 logger.error(
+                     "Error during rollback after unexpected error in session",
+                     session_id=id(session),
+                     error_type=_exception_type_name(rollback_exc),
+                     original_error_type=_exception_type_name(e),
+                     exc_info=True,
+                 )
             raise # 元の例外を再送出 -> グローバルハンドラで処理
         finally:
             # セッションは `async with AsyncSessionFactory() as session:` で自動的に閉じられる
@@ -140,9 +176,13 @@ async def connect_db():
                 logger.info("Database connection successful.")
                 logger.info("PostgreSQL database connection verified.")
         except Exception as e:
-            logger.error(f"Database connection failed: {e}", exc_info=True)
+            logger.error(
+                "Database connection failed",
+                error_type=_exception_type_name(e),
+                exc_info=True,
+            )
             # 接続失敗時の処理 (リトライ or 終了)
-            raise RuntimeError(f"Database connection failed: {e}")
+            raise RuntimeError("Database connection failed") from e
     else:
         logger.error("Database engine is not initialized after init_db_engine call.")
         raise RuntimeError("Database engine initialization failed silently.")

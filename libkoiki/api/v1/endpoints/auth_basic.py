@@ -48,7 +48,7 @@ async def login_for_access_token(
     ip_address = request.client.host if request.client else "unknown"
     device_info = extract_device_info(request)
 
-    logger.info("Login attempt", email=email, ip_address=ip_address)
+    logger.info("Login attempt received")
 
     # ログイン試行制限チェック
     (
@@ -62,9 +62,8 @@ async def login_for_access_token(
     if not is_allowed:
         logger.warning(
             "Login blocked by security policy",
-            email=email,
-            ip_address=ip_address,
             reason=lockout_reason,
+            retry_after=retry_after,
         )
         
         # セキュリティログに記録
@@ -74,7 +73,10 @@ async def login_for_access_token(
             lockout_type="security_policy",
             attempt_count=0,  # 詳細な回数は後で取得可能
             lockout_duration=retry_after or 0,
-            additional_data={"reason": lockout_reason}
+            additional_data={
+                "auth_method": "password",
+                "failure_reason": lockout_reason,
+            },
         )
         
         raise HTTPException(
@@ -108,7 +110,8 @@ async def login_for_access_token(
             ip_address=ip_address,
             user_agent=device_info,
             success=False,
-            failure_reason="invalid_credentials"
+            failure_reason="invalid_credentials",
+            additional_data={"auth_method": "password"},
         )
         security_metrics.record_authentication_attempt(
             success=False,
@@ -119,8 +122,6 @@ async def login_for_access_token(
 
         logger.warning(
             "Login failed: Incorrect email or password",
-            email=email,
-            ip_address=ip_address,
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -140,11 +141,25 @@ async def login_for_access_token(
             failure_reason="inactive_user",
         )
 
+        security_logger.log_authentication_attempt(
+            email=email,
+            ip_address=ip_address,
+            user_agent=device_info,
+            success=False,
+            failure_reason="inactive_user",
+            user_id=user.id,
+            additional_data={"auth_method": "password"},
+        )
+        security_metrics.record_authentication_attempt(
+            success=False,
+            email=email,
+            ip_address=ip_address,
+            failure_reason="inactive_user",
+        )
+
         logger.warning(
             "Login failed: Inactive user",
-            email=email,
             user_id=user.id,
-            ip_address=ip_address,
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
@@ -166,7 +181,8 @@ async def login_for_access_token(
         ip_address=ip_address,
         user_agent=device_info,
         success=True,
-        user_id=user.id
+        user_id=user.id,
+        additional_data={"auth_method": "password"},
     )
     security_metrics.record_authentication_attempt(
         success=True,
@@ -180,7 +196,7 @@ async def login_for_access_token(
     )
 
     logger.info(
-        "Login successful", email=user.email, user_id=user.id, ip_address=ip_address
+        "Login successful", user_id=user.id
     )
     return TokenWithRefresh(
         access_token=access_token,
@@ -208,11 +224,11 @@ async def register(
     - **password**: パスワード（8文字以上、複雑性要件あり）
     - **full_name**: ユーザーの氏名（任意）
     """
-    logger.info("User registration attempt", email=user_in.email)
+    logger.info("User registration attempt")
 
     new_user = await user_service.create_user(user_in, db)
     logger.info(
-        "User registered successfully", user_id=new_user.id, email=new_user.email
+        "User registered successfully", user_id=new_user.id
     )
 
     # レスポンス用のユーザー情報を準備
@@ -250,5 +266,5 @@ async def logout(
     注意: JWTトークンはステートレスなため、クライアント側でトークンを破棄する必要があります。
     このエンドポイントは主にログアウト処理の統一化とログ記録のために提供されます。
     """
-    logger.info("User logout", user_id=current_user.id, email=current_user.email)
+    logger.info("User logout", user_id=current_user.id)
     return AuthResponse(message="Successfully logged out")

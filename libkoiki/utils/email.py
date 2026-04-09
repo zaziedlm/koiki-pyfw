@@ -2,6 +2,7 @@
 # メール送信関連のユーティリティ関数 (ダミー実装)
 import structlog
 from typing import Dict, Any
+from libkoiki.core.logging import get_log_field_names
 
 logger = structlog.get_logger(__name__)
 
@@ -23,11 +24,8 @@ def send_email(
     # from_email = from_email or settings.EMAILS_FROM_EMAIL
     logger.info(
         "Sending email (dummy)",
-        # from_email=from_email,
-        to_email=to_email,
-        subject=subject,
         template_name=template_name,
-        context=context,
+        context_fields=get_log_field_names(context),
     )
 
     # --- 実際のメール送信ロジック (例) ---
@@ -49,5 +47,5 @@ def send_email(
     #        raise ConnectionRefusedError(f"Failed to send email to {to_email}") # 例外を投げてタスクでリトライさせる
 
     # ダミー実装なので成功したとする
-    logger.info("Email sent successfully (dummy)", to_email=to_email, subject=subject)
+    logger.info("Email sent successfully (dummy)", template_name=template_name)
     return True

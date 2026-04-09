@@ -2,6 +2,7 @@
 import json
 from typing import Dict, Any, Optional
 import structlog
+from libkoiki.core.logging import get_log_field_names
 
 # 条件付きインポート
 try:
@@ -40,16 +41,31 @@ class EventPublisher:
             message = json.dumps(data)
             # publish は成功したクライアント数を返す
             num_clients = await self.redis.publish(channel, message)
-            logger.info("Event published", channel=channel, data=data, received_by_clients=num_clients)
+            logger.info(
+                "Event published",
+                channel=channel,
+                payload_fields=get_log_field_names(data),
+                received_by_clients=num_clients,
+            )
             return num_clients > 0 # 1つ以上のクライアントが受け取れば成功とする
         except TypeError as e:
-            logger.error("Failed to serialize event data to JSON", channel=channel, data=data, exc_info=True)
+            logger.error(
+                "Failed to serialize event data to JSON",
+                channel=channel,
+                payload_fields=get_log_field_names(data),
+                exc_info=True,
+            )
             return False
         except ConnectionError:
              logger.error("Failed to publish event: Redis connection error.", channel=channel, exc_info=False)
              return False
         except Exception as e:
-            logger.error("Failed to publish event", channel=channel, data=data, exc_info=True)
+            logger.error(
+                "Failed to publish event",
+                channel=channel,
+                payload_fields=get_log_field_names(data),
+                exc_info=True,
+            )
             return False
 
 # 使用例 (サービス層などから)

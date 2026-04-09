@@ -16,7 +16,14 @@ from libkoiki.api.dependencies import (
 )
 from libkoiki.core.rate_limiter import limiter
 from libkoiki.core.auth_decorators import handle_auth_errors
+from libkoiki.core.exceptions import ValidationException
 from libkoiki.core.security import extract_device_info
+from libkoiki.core.security_logger import (
+    SECURITY_EVENT_PASSWORD_RESET_COMPLETED,
+    SECURITY_EVENT_PASSWORD_RESET_REJECTED_INVALID_TOKEN,
+    SECURITY_EVENT_PASSWORD_RESET_REQUESTED_EXISTING_USER,
+    security_logger,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -74,21 +81,20 @@ async def request_password_reset(
     
     指定されたメールアドレスが登録されている場合、パスワードリセット用のトークンを発行します。
     セキュリティ上の理由から、メールアドレスの存在有無に関わらず同じレスポンスを返します。
-    
-    注意: 現在はメール送信機能は未実装のため、ログにトークンを出力します。
+
+    実運用では `reset_token` をメール送信や通知処理へ渡して利用する想定です。
+    ただし token 本体はログへ出力しません。
     
     - **email**: パスワードリセット対象のメールアドレス
     """
-    logger.info("Password reset request", email=reset_data.email)
+    logger.info("Password reset request received")
+    device_info = extract_device_info(request)
+    ip_address = request.client.host if request.client else None
     
     # ユーザーの存在確認
     user = await user_service.get_user_by_email(reset_data.email, db)
     
     if user and user.is_active:
-        # デバイス情報を取得
-        device_info = extract_device_info(request)
-        ip_address = request.client.host if request.client else None
-        
         # リセットトークンを生成
         reset_token, token_model = await password_reset_service.create_reset_token(
             user=user,
@@ -96,19 +102,33 @@ async def request_password_reset(
             ip_address=ip_address,
             user_agent=device_info
         )
-        
-        # 注意: 本格運用時にはメール配信サービスでトークンを送信
-        # 開発環境では、ログにトークンを出力（実際の運用では削除）
+
+        # 将来のメール送信や通知処理では、ここで取得した `reset_token` を利用する。
+        # 例:
+        # await mail_service.send_password_reset_email(
+        #     to_email=user.email,
+        #     reset_token=reset_token,
+        #     expires_at=token_model.expires_at,
+        # )
+        #
+        # token 本体は機密情報のため、通常ログ・security log・audit log のいずれにも出力しない。
         logger.info(
-            "Password reset token generated (DEV ONLY - remove in production)", 
-            user_id=user.id, 
+            "Password reset token generated",
+            user_id=user.id,
+            expires_at=token_model.expires_at.isoformat(),
+        )
+        security_logger.log_security_event(
+            SECURITY_EVENT_PASSWORD_RESET_REQUESTED_EXISTING_USER,
+            severity="info",
+            user_id=user.id,
             email=user.email,
-            reset_token=reset_token,  # 本番では削除必須
-            expires_at=token_model.expires_at.isoformat()
+            ip_address=ip_address,
+            user_agent=device_info,
+            auth_method="password_reset",
         )
     else:
         # ユーザーが存在しない場合もログに記録（但し、レスポンスは同じ）
-        logger.info("Password reset requested for non-existent or inactive user", email=reset_data.email)
+        logger.info("Password reset requested for unknown or inactive account")
     
     # セキュリティ上、メールアドレスの存在有無に関わらず同じレスポンス
     return AuthResponse(message="Password reset email sent if account exists")
@@ -127,18 +147,34 @@ async def confirm_password_reset(
     パスワードリセット確認・実行。
     
     リセットトークンを検証し、新しいパスワードに変更します。
+
+    `reset_data.token` は、password-reset/request で生成され、
+    メール等で利用者へ安全に配送された token を受け取る想定です。
     
     - **token**: パスワードリセットトークン
     - **new_password**: 新しいパスワード（8文字以上、複雑性要件あり）
     """
-    logger.info("Password reset confirmation attempt", token=reset_data.token[:10] + "...")
+    logger.info("Password reset confirmation attempt")
+    device_info = extract_device_info(request)
+    ip_address = request.client.host if request.client else None
     
-    # リセットトークンを検証し、パスワードリセットを完了
-    user = await password_reset_service.complete_password_reset(
-        token=reset_data.token,
-        new_password=reset_data.new_password,
-        db=db
-    )
+    try:
+        # リセットトークンを検証し、パスワードリセットを完了
+        user = await password_reset_service.complete_password_reset(
+            token=reset_data.token,
+            new_password=reset_data.new_password,
+            db=db
+        )
+    except ValidationException as exc:
+        security_logger.log_security_event(
+            SECURITY_EVENT_PASSWORD_RESET_REJECTED_INVALID_TOKEN,
+            severity="warning",
+            ip_address=ip_address,
+            user_agent=device_info,
+            auth_method="password_reset",
+            failure_reason=exc.detail,
+        )
+        raise
     
     # パスワードを更新
     from libkoiki.schemas.user import UserUpdate
@@ -148,7 +184,16 @@ async def confirm_password_reset(
     # 既存のリフレッシュトークンも無効化（セキュリティ強化）
     await password_reset_service.revoke_user_tokens(user.id, db)
     
-    logger.info("Password reset completed successfully", user_id=user.id, email=user.email)
+    logger.info("Password reset completed successfully", user_id=user.id)
+    security_logger.log_security_event(
+        SECURITY_EVENT_PASSWORD_RESET_COMPLETED,
+        severity="info",
+        user_id=user.id,
+        email=user.email,
+        ip_address=ip_address,
+        user_agent=device_info,
+        auth_method="password_reset",
+    )
     return AuthResponse(
         message="Password reset completed successfully",
         data={"user_email": user.email}

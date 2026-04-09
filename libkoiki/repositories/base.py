@@ -8,6 +8,7 @@ from pydantic import BaseModel
 import structlog
 
 from libkoiki.db.base import Base # ORM Base
+from libkoiki.core.logging import get_log_field_names
 
 logger = structlog.get_logger(__name__)
 
@@ -77,7 +78,10 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         サービス層でインスタンス化され、データが設定されていることを想定します。
         コミットはトランザクション管理デコレータが行います。
         """
-        logger.debug(f"Creating new {self.model.__name__}", data=obj_in.__dict__) # データ内容をログ出力（注意）
+        logger.debug(
+            f"Creating new {self.model.__name__}",
+            field_names=get_log_field_names(obj_in),
+        )
         self.db.add(obj_in)
         try:
             await self.db.flush() # DBに即時反映させてIDなどを確定させる
@@ -97,12 +101,17 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         ORMモデルインスタンスと、更新データ (Pydanticスキーマまたは辞書) を受け取ります。
         コミットはトランザクション管理デコレータが行います。
         """
-        logger.debug(f"Updating {self.model.__name__}", id=db_obj.id, update_data=obj_in)
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
             # exclude_unset=True で Pydantic スキーマで未指定のフィールドを無視
             update_data = obj_in.dict(exclude_unset=True)
+
+        logger.debug(
+            f"Updating {self.model.__name__}",
+            id=db_obj.id,
+            update_fields=get_log_field_names(update_data),
+        )
 
         if not update_data:
              logger.warning(f"Update called for {self.model.__name__} with no data to update", id=db_obj.id)

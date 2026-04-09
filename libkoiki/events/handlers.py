@@ -3,6 +3,7 @@ import asyncio
 import json
 from typing import Callable, Dict, Any, Optional
 import structlog
+from libkoiki.core.logging import get_log_field_names
 
 # 条件付きインポート
 try:
@@ -71,7 +72,11 @@ class EventHandler:
                     if message:
                         channel = message['channel']
                         data_str = message['data']
-                        logger.debug("Received message", channel=channel, data_str=data_str)
+                        logger.debug(
+                            "Received message",
+                            channel=channel,
+                            data_length=len(str(data_str)),
+                        )
 
                         if channel in self.handlers:
                             try:
@@ -80,7 +85,11 @@ class EventHandler:
                                 # ハンドラーを非同期に実行 (エラーハンドリングを含む)
                                 asyncio.create_task(self._run_handler(handler, data_dict, channel))
                             except json.JSONDecodeError:
-                                logger.error("Failed to decode JSON message", channel=channel, data=data_str)
+                                logger.error(
+                                    "Failed to decode JSON message",
+                                    channel=channel,
+                                    data_length=len(str(data_str)),
+                                )
                             except Exception as e:
                                 # ハンドラー呼び出し前のエラー
                                 logger.error(f"Error processing message for channel {channel}", exc_info=True)
@@ -115,14 +124,19 @@ class EventHandler:
     async def _run_handler(self, handler: Callable, data: Dict[str, Any], channel: str):
         """ハンドラー関数を安全に実行する"""
         try:
-            logger.info("Running event handler", handler=handler.__name__, channel=channel, data=data)
+            logger.info(
+                "Running event handler",
+                handler=handler.__name__,
+                channel=channel,
+                payload_fields=get_log_field_names(data),
+            )
             await handler(data) # ハンドラーは async def である想定
             logger.debug("Event handler finished successfully", handler=handler.__name__, channel=channel)
         except Exception as e:
             logger.error(
                 f"Exception in event handler '{handler.__name__}' for channel '{channel}'",
                 exc_info=True,
-                handler_data=data # エラー発生時のデータもログに残す
+                payload_fields=get_log_field_names(data),
             )
             # ここでエラー通知やリトライ処理などを追加可能
 
@@ -160,14 +174,14 @@ async def user_created_handler(data: Dict[str, Any]):
     """'user_created' イベントを処理するハンドラー"""
     user_id = data.get("user_id")
     email = data.get("email")
-    logger.info(f"Handling 'user_created' event", user_id=user_id, email=email)
+    logger.info("Handling 'user_created' event", user_id=user_id)
     # ここでメール送信タスクをキューに入れる、統計データを更新するなどの非同期処理を行う
     try:
         from libkoiki.tasks.email import send_welcome_email_task # Celeryタスクを呼び出す例
         # Celeryが設定されているか確認
         if send_welcome_email_task:
             send_welcome_email_task.delay(user_id, email)
-            logger.info("Scheduled welcome email task", user_id=user_id, email=email)
+            logger.info("Scheduled welcome email task", user_id=user_id)
         else:
             logger.warning("Celery not configured, skipping welcome email task.", user_id=user_id)
     except ImportError:
@@ -178,4 +192,3 @@ async def user_created_handler(data: Dict[str, Any]):
 # 他のハンドラー例
 # async def order_placed_handler(data: Dict[str, Any]): ...
 # async def data_updated_handler(data: Dict[str, Any]): ...
-

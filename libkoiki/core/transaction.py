@@ -4,6 +4,7 @@ from typing import Optional, Callable, Any, TypeVar
 from sqlalchemy.ext.asyncio import AsyncSession
 # from fastapi import Depends # Depends はここでは使わない
 import structlog
+from libkoiki.core.logging import get_error_type_name
 
 # from libkoiki.db.session import get_db as get_db_session # get_db はエンドポイント層の依存性として使う
 # from libkoiki.core.exceptions import BaseAppException # 必要ならインポート
@@ -80,7 +81,12 @@ def transactional(func: F) -> F:
                      await db_session.commit()
                      logger.debug("Transaction committed", function_name=func.__name__)
                  except Exception as commit_exc:
-                     logger.error("Error during transaction commit, attempting rollback", function_name=func.__name__, exc_info=True)
+                     logger.error(
+                         "Error during transaction commit, attempting rollback",
+                         function_name=func.__name__,
+                         error_type=get_error_type_name(commit_exc),
+                         exc_info=True,
+                     )
                      await db_session.rollback()
                      logger.warning("Transaction rolled back after commit error", function_name=func.__name__)
                      raise commit_exc # コミットエラーも再送出
@@ -89,14 +95,25 @@ def transactional(func: F) -> F:
 
         except Exception as e:
             # --- ロールバック ---
-            logger.error("Exception occurred within transaction, rolling back", function_name=func.__name__, error=str(e), exc_info=True)
+            logger.error(
+                "Exception occurred within transaction, rolling back",
+                function_name=func.__name__,
+                error_type=get_error_type_name(e),
+                exc_info=True,
+            )
             if db_session.in_transaction(): # トランザクション中ならロールバック
                 try:
                     await db_session.rollback()
                     logger.info("Transaction rolled back successfully", function_name=func.__name__)
                 except Exception as rollback_exc:
                     # ロールバック自体に失敗した場合 (深刻な状況)
-                    logger.critical("Failed to rollback transaction!", function_name=func.__name__, rollback_error=str(rollback_exc), original_error=str(e), exc_info=True)
+                    logger.critical(
+                        "Failed to rollback transaction!",
+                        function_name=func.__name__,
+                        rollback_error_type=get_error_type_name(rollback_exc),
+                        original_error_type=get_error_type_name(e),
+                        exc_info=True,
+                    )
             # 元の例外を再送出
             raise e
         # finally ブロックは不要 (セッションのクローズは get_db 依存性で行う)

@@ -16,6 +16,7 @@ from starlette.types import ASGIApp
 from libkoiki.core.logging import (  # コンテキスト管理ヘルパー
     bind_request_context,
     clear_request_context,
+    get_request_context,
 )
 
 # 監査ログ専用のロガーを取得 (logging.pyで設定されている想定)
@@ -41,7 +42,6 @@ class RequestContextLogMiddleware(BaseHTTPMiddleware):
         http_context = {
             "method": request.method,
             "path": request.url.path,
-            "query": str(request.query_params) if request.query_params else None,
             "client": request.client.host if request.client else "unknown",
             "request_id": request_id,
             "user_agent": request.headers.get("User-Agent", ""),
@@ -49,14 +49,16 @@ class RequestContextLogMiddleware(BaseHTTPMiddleware):
         # ユーザー情報は認証後に別の場所でバインドする方が良いかもしれない
         # user_context = {"id": None, "email": None} # 初期値
         bind_request_context(http=http_context)  # user=user_context
+        request.state.request_id = request_id
 
         # レスポンスにリクエストIDヘッダーを追加
-        response = await call_next(request)
-        response.headers["X-Request-ID"] = request_id
-
-        # リクエスト処理後にコンテキストをクリア
-        clear_request_context()
-        return response
+        try:
+            response = await call_next(request)
+            response.headers["X-Request-ID"] = request_id
+            return response
+        finally:
+            # リクエスト処理後にコンテキストをクリア
+            clear_request_context()
 
 
 class AuditLogMiddleware(BaseHTTPMiddleware):
@@ -94,7 +96,7 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
                 user_email = user.email
 
         # --- structlog コンテキストからリクエスト情報を取得 ---
-        log_context = structlog.contextvars.get_contextvars()
+        log_context = get_request_context()
         http_context = log_context.get("http", {})
         request_id = http_context.get("request_id", "unknown")
         client_ip = http_context.get("client", "unknown")
@@ -102,7 +104,17 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
             "method", request.method
         )  # コンテキストになければリクエストから
         path = http_context.get("path", request.url.path)
-        query_params = http_context.get("query")
+        auth_method = getattr(request.state, "auth_method", None)
+        path_params = getattr(request, "path_params", {}) or {}
+        resource_type = None
+        resource_id = None
+        if path_params:
+            path_segments = [segment for segment in path.strip("/").split("/") if segment]
+            if len(path_segments) >= 2:
+                resource_type = path_segments[-2]
+            elif path_segments:
+                resource_type = path_segments[-1]
+            resource_id = next(iter(path_params.values()), None)
 
         # --- 監査ログ記録 ---
         log_entry = {
@@ -110,20 +122,19 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
             "timestamp": datetime.now(
                 timezone.utc
             ).isoformat(),  # ISO形式タイムスタンプ
-            "user.id": user_id,
-            "user.email": user_email,
-            "http.client_ip": client_ip,
+            "actor.user_id": user_id,
+            "actor.email": user_email,
+            "actor.auth_method": auth_method,
+            "client.ip_address": client_ip,
             "http.method": method,
             "http.path": path,
-            "http.query": query_params,
             "http.request_id": request_id,
             "http.status_code": status_code,
-            "event.action": f"{method}_{path.replace('/', '_').strip('_')}",  # アクション名
-            "event.outcome": "success" if 200 <= status_code < 400 else "failure",
-            "event.duration_ms": int(process_time * 1000),
-            # "resource.type": "?", # 操作対象リソースの種類 (例: 'user', 'todo')
-            # "resource.id": "?",   # 操作対象リソースのID (パスパラメータなどから取得)
-            # "request.body": request_body, # 必要なら記録 (機密情報に注意)
+            "action": f"{method}_{path.replace('/', '_').strip('_')}",
+            "outcome": "success" if 200 <= status_code < 400 else "failure",
+            "duration_ms": int(process_time * 1000),
+            "target.resource_type": resource_type,
+            "target.resource_id": resource_id,
         }
 
         # 監査ロガーを使用してログを出力 (structlogがJSON化してくれる)
@@ -177,7 +188,7 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
         status_code = response.status_code
 
         # structlog コンテキストから情報を取得
-        log_context = structlog.contextvars.get_contextvars()
+        log_context = get_request_context()
         http_context = log_context.get("http", {})
         user_context = log_context.get("user", {})  # ユーザー情報があれば
 

@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 import structlog
 
+from libkoiki.core.logging import get_error_type_name
+
 logger = structlog.get_logger(__name__)
 
 
@@ -65,7 +67,10 @@ class SecurityMetrics:
             self._update_timestamp()
             
         except Exception as e:
-            logger.error("Failed to record authentication metrics", error=str(e))
+            logger.error(
+                "Failed to record authentication metrics",
+                error_type=get_error_type_name(e),
+            )
     
     def record_lockout(self, lockout_type: str, identifier: str) -> None:
         """ロックアウトのメトリクスを記録"""
@@ -80,7 +85,10 @@ class SecurityMetrics:
             self._update_timestamp()
             
         except Exception as e:
-            logger.error("Failed to record lockout metrics", error=str(e))
+            logger.error(
+                "Failed to record lockout metrics",
+                error_type=get_error_type_name(e),
+            )
     
     def record_suspicious_activity(self, activity_type: str) -> None:
         """疑わしい活動のメトリクスを記録"""
@@ -93,7 +101,10 @@ class SecurityMetrics:
             self._update_timestamp()
             
         except Exception as e:
-            logger.error("Failed to record suspicious activity metrics", error=str(e))
+            logger.error(
+                "Failed to record suspicious activity metrics",
+                error_type=get_error_type_name(e),
+            )
     
     def record_rate_limit_exceeded(self, endpoint: str) -> None:
         """レート制限超過のメトリクスを記録"""
@@ -106,7 +117,10 @@ class SecurityMetrics:
             self._update_timestamp()
             
         except Exception as e:
-            logger.error("Failed to record rate limit metrics", error=str(e))
+            logger.error(
+                "Failed to record rate limit metrics",
+                error_type=get_error_type_name(e),
+            )
     
     def get_metrics(self) -> Dict[str, Any]:
         """現在のメトリクスを取得"""

@@ -13,6 +13,7 @@ from sqlalchemy.orm import selectinload
 from libkoiki.core.config import settings
 from libkoiki.schemas.token import TokenPayload
 from libkoiki.repositories.user_repository import UserRepository # リポジトリ使用
+from libkoiki.core.logging import get_error_type_name
 # from libkoiki.db.session import get_db as get_db_session # 循環参照を避けるため、ここでは直接呼ばない
 from libkoiki.models.user import UserModel
 from libkoiki.models.role import RoleModel # RoleModelをインポート
@@ -104,7 +105,7 @@ async def get_user_from_token(
         logger.debug("Token decoded successfully", user_id=user_id)
 
     except (InvalidTokenError, ValidationError) as e:
-        logger.warning(f"Token validation failed: {e}", token=token[:10]+"...") # トークンの一部だけログに
+        logger.warning("Token validation failed", error_type=get_error_type_name(e))
         raise credentials_exception
 
     # DBセッションを取得 (ここでは取得せず、依存性として渡される想定)
@@ -277,7 +278,10 @@ def extract_device_info(request: Optional[Any] = None) -> Optional[str]:
         }
         return json.dumps(device_info)
     except Exception as e:
-        logger.warning("Failed to extract device info", error=str(e))
+        logger.warning(
+            "Failed to extract device info",
+            error_type=get_error_type_name(e),
+        )
         return None
 
 # --- UserRepository に get_user_with_roles_permissions を追加する必要がある ---

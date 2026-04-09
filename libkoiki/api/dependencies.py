@@ -160,6 +160,7 @@ CurrentUserDep = Annotated[int, Depends(get_current_user_from_token)]
 
 # アクティブユーザーチェック
 async def get_current_active_user(
+    request: Request,
     user_id: CurrentUserDep,
     db: DBSessionDep
 ):
@@ -179,6 +180,9 @@ async def get_current_active_user(
     if not current_user.is_active:
         logger.warning("Attempt to access by inactive user", user_id=current_user.id)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+
+    request.state.current_user = current_user
+    request.state.auth_method = "bearer"
     
     return current_user
 

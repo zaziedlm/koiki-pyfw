@@ -15,7 +15,7 @@ from libkoiki.api.dependencies import (
 # トランザクションデコレータを使用
 from libkoiki.core.transaction import transactional
 from libkoiki.core.exceptions import ValidationException, ResourceNotFoundException
-from libkoiki.core.logging import get_logger
+from libkoiki.core.logging import get_logger, get_log_field_names, get_error_type_name
 from libkoiki.core.rate_limiter import limiter
 
 logger = get_logger(__name__)
@@ -50,11 +50,11 @@ async def create_user(
     #     logger.warning("Unauthorized attempt to create user")
     #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only administrators can create users")
 
-    logger.info("Attempting to create user", email=user_in.email)
+    logger.info("Attempting to create user", provided_fields=get_log_field_names(user_in))
     # サービス層でValidationExceptionが発生する可能性がある
     # グローバル例外ハンドラで処理される
     new_user = await user_service.create_user(user_in, db)
-    logger.info("User created successfully", user_id=new_user.id, email=new_user.email)
+    logger.info("User created successfully", user_id=new_user.id)
     return new_user
 
 
@@ -92,7 +92,11 @@ async def update_user_me(
     db: DBSessionDep # transactionalデコレータにはDBセッションが必要
 ) -> Any:
     """現在のログインユーザー情報を更新します。"""
-    logger.info("Updating current user info", user_id=current_user.id, data=user_in.dict(exclude_unset=True))
+    logger.info(
+        "Updating current user info",
+        user_id=current_user.id,
+        update_fields=get_log_field_names(user_in),
+    )
     updated_user = await user_service.update_user(current_user.id, user_in, db)
     logger.info("Current user info updated successfully", user_id=current_user.id)
     
@@ -186,7 +190,12 @@ async def update_user_by_id(
     current_admin: ActiveUserDep, # 操作者情報をログ等で使用する場合
 ) -> Any:
     """指定したIDのユーザー情報を更新します (権限が必要)。"""
-    logger.info("Updating user by ID", target_user_id=user_id, admin_user_id=current_admin.id, data=user_in.dict(exclude_unset=True))
+    logger.info(
+        "Updating user by ID",
+        target_user_id=user_id,
+        admin_user_id=current_admin.id,
+        update_fields=get_log_field_names(user_in),
+    )
     # is_superuser の変更など、特別な権限チェックが必要な場合がある
     if 'is_superuser' in user_in.dict(exclude_unset=True) and not current_admin.is_superuser:
         logger.warning("Non-superuser attempting to change superuser status", admin_user_id=current_admin.id, target_user_id=user_id)
@@ -200,7 +209,12 @@ async def update_user_by_id(
         logger.warning("User not found for update by admin", target_user_id=user_id, admin_user_id=current_admin.id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with ID {user_id} not found")
     except ValidationException as e: # パスワードポリシー違反など
-        logger.warning("Validation failed during user update by admin", target_user_id=user_id, admin_user_id=current_admin.id, error=str(e.detail))
+        logger.warning(
+            "Validation failed during user update by admin",
+            target_user_id=user_id,
+            admin_user_id=current_admin.id,
+            error_type=get_error_type_name(e),
+        )
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.detail)
 
 # --- 特定ユーザー削除 (管理者/特定権限持ち) ---

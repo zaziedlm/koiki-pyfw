@@ -8,6 +8,7 @@ from libkoiki.repositories.todo_repository import TodoRepository
 from libkoiki.schemas.todo import TodoCreate, TodoUpdate
 from libkoiki.core.exceptions import ResourceNotFoundException, AuthorizationException
 from libkoiki.core.transaction import transactional # トランザクションデコレータ
+from libkoiki.core.logging import get_log_field_names
 
 logger = structlog.get_logger(__name__)
 
@@ -29,7 +30,11 @@ class TodoService:
         Returns:
             作成されたToDoのORMモデルインスタンス。
         """
-        logger.info("Service: Creating todo", owner_id=owner_id, title=todo_in.title)
+        logger.info(
+            "Service: Creating todo",
+            owner_id=owner_id,
+            provided_fields=get_log_field_names(todo_in),
+        )
         self.repository.set_session(db) # リポジトリにセッションを設定
 
         todo_data = todo_in.dict()
@@ -80,7 +85,12 @@ class TodoService:
             ResourceNotFoundException: ToDoが見つからない場合。
             AuthorizationException: 所有者でない場合。
         """
-        logger.info("Service: Updating todo", todo_id=todo_id, owner_id=owner_id, data=todo_in.dict(exclude_unset=True))
+        logger.info(
+            "Service: Updating todo",
+            todo_id=todo_id,
+            owner_id=owner_id,
+            update_fields=get_log_field_names(todo_in),
+        )
         self.repository.set_session(db)
 
         # まず、更新対象のToDoが存在し、かつ所有者であることを確認
@@ -129,4 +139,3 @@ class TodoService:
 
         # 削除成功時は何も返さない (API層で 204 No Content を返す想定)
         return None
-

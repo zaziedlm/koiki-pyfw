@@ -13,7 +13,7 @@ from libkoiki.api.dependencies import (
 )
 from libkoiki.models.user import UserModel
 from libkoiki.core.exceptions import ResourceNotFoundException, AuthorizationException
-from libkoiki.core.logging import get_logger
+from libkoiki.core.logging import get_logger, get_log_field_names
 from libkoiki.core.rate_limiter import limiter
 from libkoiki.core.transaction import transactional  # transactionalデコレータを追加
 
@@ -43,7 +43,11 @@ async def create_todo(
     - **title**: ToDoのタイトル (必須)
     - **description**: ToDoの説明 (任意)
     """
-    logger.info("Creating new todo", user_id=current_user.id, title=todo_in.title)
+    logger.info(
+        "Creating new todo",
+        user_id=current_user.id,
+        provided_fields=get_log_field_names(todo_in),
+    )
     # サービスメソッドに owner_id とdb を渡す
     new_todo = await todo_service.create_todo(todo_in=todo_in, owner_id=current_user.id, db=db)
     logger.info("Todo created successfully", todo_id=new_todo.id, user_id=current_user.id)
@@ -141,7 +145,12 @@ async def update_todo(
     - **description**: 新しい説明 (任意)
     - **is_completed**: 完了状態 (任意)
     """
-    logger.info("Updating todo", todo_id=todo_id, user_id=current_user.id, data=todo_in.dict(exclude_unset=True))
+    logger.info(
+        "Updating todo",
+        todo_id=todo_id,
+        user_id=current_user.id,
+        update_fields=get_log_field_names(todo_in),
+    )
     try:
         updated_todo = await todo_service.update_todo(
             todo_id=todo_id, todo_in=todo_in, owner_id=current_user.id, db=db
@@ -191,4 +200,3 @@ async def delete_todo(
     except AuthorizationException: # 念のため
         logger.warning("Authorization denied for todo deletion", todo_id=todo_id, user_id=current_user.id)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this ToDo")
-

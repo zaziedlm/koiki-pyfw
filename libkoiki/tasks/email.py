@@ -26,7 +26,7 @@ if celery_app:
             user_id: ユーザーID
             email: 送信先メールアドレス
         """
-        logger.info("Starting welcome email task", task_id=self.request.id, user_id=user_id, email=email)
+        logger.info("Starting welcome email task", task_id=self.request.id, user_id=user_id)
         try:
             # --- 実際のメール送信処理 ---
             # この部分は `src/utils/email.py` などに実装し、それを呼び出す
@@ -49,7 +49,11 @@ if celery_app:
 
         except Exception as e:
             # その他の予期せぬエラー
-            logger.error(f"Failed to send welcome email for user {user_id}", task_id=self.request.id, exc_info=True)
+            logger.error(
+                f"Failed to send welcome email for user {user_id}",
+                task_id=self.request.id,
+                exc_info=True,
+            )
             # リトライ可能ならリトライ、そうでなければエラーとする
             # self.retry(exc=e) # 例外を指定してリトライ
             raise # リトライしない場合は例外を再送出し、タスクを失敗させる

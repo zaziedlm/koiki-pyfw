@@ -19,18 +19,55 @@ from libkoiki.core.exceptions import (
 logger = structlog.get_logger(__name__)
 
 
+def _get_client_host(request: Request) -> str:
+    return request.client.host if request.client else "unknown"
+
+
+def _safe_http_headers(headers: Any) -> bool:
+    return bool(headers)
+
+
+def _summarize_db_exception(exc: SQLAlchemyError) -> dict[str, Any]:
+    summary = {
+        "db_exception_type": type(exc).__name__,
+    }
+
+    original_exc = getattr(exc, "orig", None)
+    if original_exc is not None:
+        summary["db_driver_error_type"] = type(original_exc).__name__
+
+    return summary
+
+
 def _sanitize_validation_errors(errors: list[dict[str, Any]]) -> list[dict[str, Any]]:
     sanitized: list[dict[str, Any]] = []
     for error in errors:
-        cleaned: dict[str, Any] = {}
-        for key, value in error.items():
-            if key == "ctx" and isinstance(value, dict):
-                cleaned[key] = {
-                    ctx_key: str(ctx_val) if isinstance(ctx_val, Exception) else ctx_val
-                    for ctx_key, ctx_val in value.items()
-                }
-            else:
-                cleaned[key] = value
+        cleaned: dict[str, Any] = {
+            "type": error.get("type"),
+            "msg": error.get("msg"),
+        }
+
+        loc = error.get("loc")
+        if isinstance(loc, (list, tuple)):
+            cleaned["loc"] = [str(item) for item in loc]
+        elif loc is not None:
+            cleaned["loc"] = [str(loc)]
+
+        ctx = error.get("ctx")
+        if isinstance(ctx, dict):
+            safe_ctx = {}
+            for ctx_key, ctx_val in ctx.items():
+                if ctx_key == "input":
+                    continue
+                if isinstance(ctx_val, Exception):
+                    safe_ctx[ctx_key] = type(ctx_val).__name__
+                elif isinstance(ctx_val, (str, int, float, bool)) or ctx_val is None:
+                    safe_ctx[ctx_key] = ctx_val
+                else:
+                    safe_ctx[ctx_key] = type(ctx_val).__name__
+            if safe_ctx:
+                cleaned["ctx"] = safe_ctx
+
         sanitized.append(cleaned)
     return sanitized
 
@@ -40,14 +77,12 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     logger.warning(
         "HTTP Exception caught",
         status_code=exc.status_code,
-        detail=exc.detail,
         path=request.url.path,
         method=request.method,
-        client=request.client.host if request.client else "unknown",
-        headers=dict(exc.headers)
-        if exc.headers
-        else None,  # ヘッダー情報もログに含める
+        client=_get_client_host(request),
+        has_headers=_safe_http_headers(exc.headers),
         error_type=type(exc).__name__,
+        response_detail_type=type(exc.detail).__name__,
     )
     return JSONResponse(
         status_code=exc.status_code,
@@ -87,11 +122,10 @@ async def base_app_exception_handler(request: Request, exc: BaseAppException):
         ),  # 文字列からログレベル定数を取得
         log_message,
         status_code=exc.status_code,
-        detail=exc.detail,
         error_code=error_code,
         path=request.url.path,
         method=request.method,
-        client=request.client.host if request.client else "unknown",
+        client=_get_client_host(request),
         error_type=type(exc).__name__,
         exc_info=log_exc_info,  # 必要に応じてスタックトレースを追加
     )
@@ -111,9 +145,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         errors=errors,
         path=request.url.path,
         method=request.method,
-        client=request.client.host if request.client else "unknown",
+        client=_get_client_host(request),
         error_type=type(exc).__name__,
-        # body=exc.body # 必要であればリクエストボディもログに記録（機密情報に注意）
     )
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -147,12 +180,12 @@ async def db_exception_handler(request: Request, exc: SQLAlchemyError):
         getattr(logging, log_level.upper(), logging.ERROR),
         f"Database exception: {type(exc).__name__}",
         status_code=status_code,
-        detail=str(exc),  # DBエラーメッセージを詳細ログに含める
         error_code=error_code,
         path=request.url.path,
         method=request.method,
-        client=request.client.host if request.client else "unknown",
+        client=_get_client_host(request),
         error_type=type(exc).__name__,
+        **_summarize_db_exception(exc),
         exc_info=log_exc_info,  # エラー時はスタックトレースを出力
     )
 
@@ -173,7 +206,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
         "Unhandled internal server error",
         path=request.url.path,
         method=request.method,
-        client=request.client.host if request.client else "unknown",
+        client=_get_client_host(request),
         error_type=type(exc).__name__,
         exc_info=True,  # 必ずスタックトレースを出力
     )

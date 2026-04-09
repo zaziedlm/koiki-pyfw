@@ -17,6 +17,7 @@ from libkoiki.core.security import (
 )
 from libkoiki.core.security_config import get_login_security_config
 from libkoiki.core.transaction import transactional  # トランザクションデコレータ
+from libkoiki.core.logging import get_log_field_names
 from libkoiki.events.publisher import EventPublisher
 from libkoiki.models.user import UserModel
 from libkoiki.repositories.user_repository import UserRepository
@@ -54,7 +55,7 @@ class UserService:
         self, email: str, db: AsyncSession
     ) -> Optional[UserModel]:
         """Emailでユーザーを取得します"""
-        logger.debug("Service: Getting user by email", email=email)
+        logger.debug("Service: Getting user by email")
         self.repository.set_session(db)
         return await self.repository.get_by_email(email)
 
@@ -113,26 +114,28 @@ class UserService:
         新規ユーザーを作成します。
         トランザクション内でメールアドレスの重複チェックとユーザー作成を行います。
         """
-        logger.info("Service: Creating user", email=user_in.email)
+        logger.info(
+            "Service: Creating user",
+            provided_fields=get_log_field_names(user_in),
+        )
         self.repository.set_session(db)
 
         # メールアドレスの重複チェック
         existing_user = await self.repository.get_by_email(user_in.email)
         if existing_user:
-            logger.warning("Service: Email already exists", email=user_in.email)
+            logger.warning("Service: Email already exists", conflict_field="email")
             raise ValidationException("This email address is already registered.")
 
         # ユーザー名の重複チェック
         existing_user_by_username = await self.repository.get_by_username(user_in.username)
         if existing_user_by_username:
-            logger.warning("Service: Username already exists", username=user_in.username)
+            logger.warning("Service: Username already exists", conflict_field="username")
             raise ValidationException("This username is already taken.")
 
         # パスワードポリシーチェック
         if not check_password_complexity(user_in.password):
             logger.warning(
                 "Service: Password does not meet complexity requirements",
-                email=user_in.email,
             )
             raise ValidationException(
                 "Password does not meet complexity requirements. It must be at least 8 characters long and include uppercase, lowercase, digit, and symbol."
@@ -153,7 +156,6 @@ class UserService:
         logger.info(
             "Service: User created successfully",
             user_id=created_user.id,
-            email=created_user.email,
         )
 
         # カスタムメトリクスをインクリメント
@@ -197,7 +199,7 @@ class UserService:
         logger.info(
             "Service: Updating user",
             user_id=user_id,
-            data=user_in.dict(exclude_unset=True),
+            update_fields=get_log_field_names(user_in),
         )
         self.repository.set_session(db)
 
@@ -232,13 +234,12 @@ class UserService:
         if "email" in update_data and update_data["email"] != user.email:
             logger.debug(
                 "Service: Checking for email duplication on update",
-                new_email=update_data["email"],
             )
             existing_user = await self.repository.get_by_email(update_data["email"])
             if existing_user and existing_user.id != user_id:
                 logger.warning(
                     "Service: Email already exists during update",
-                    new_email=update_data["email"],
+                    conflict_field="email",
                 )
                 raise ValidationException(
                     "This email address is already registered by another user."
@@ -286,7 +287,7 @@ class UserService:
         ユーザーを認証します。タイミング攻撃対策を含む。
         成功した場合はユーザーモデルを、失敗した場合は None を返します。
         """
-        logger.debug("Service: Authenticating user", email=email)
+        logger.debug("Service: Authenticating user")
         
         # 最小応答時間を設定（タイミング攻撃対策）
         config = get_login_security_config()
@@ -304,7 +305,7 @@ class UserService:
             # ダミーのハッシュ値でパスワード検証を実行（有効なbcryptハッシュ形式）
             dummy_hash = "$2b$12$T0xrEGNSEy98yCTLWQR2De3N2zlNFkSyXpr8TYo2VbGjDykX/ZndW"
             verify_password(password, dummy_hash)
-            logger.info("Authentication failed: User not found", email=email)
+            logger.info("Authentication failed: User not found")
             
             # 一定時間の応答時間を保証
             await self._ensure_min_response_time(start_time, min_response_time)
@@ -314,7 +315,6 @@ class UserService:
         if not verify_password(password, user.hashed_password):
             logger.info(
                 "Authentication failed: Incorrect password",
-                email=email,
                 user_id=user.id,
             )
             # 一定時間の応答時間を保証
@@ -322,7 +322,7 @@ class UserService:
             return None
         
         # 認証成功
-        logger.info("Authentication successful", email=email, user_id=user.id)
+        logger.info("Authentication successful", user_id=user.id)
         
         # 一定時間の応答時間を保証
         await self._ensure_min_response_time(start_time, min_response_time)

@@ -88,7 +88,7 @@ class AuthService:
         Raises:
             AuthenticationException: トークンが無効な場合
         """
-        logger.debug("Refreshing access token", token_prefix=refresh_token[:10] + "...")
+        logger.debug("Refreshing access token")
         
         # トークン形式検証
         if not verify_refresh_token_format(refresh_token):

@@ -13,6 +13,11 @@ from libkoiki.api.dependencies import (
 from libkoiki.core.security import extract_device_info
 from libkoiki.core.rate_limiter import limiter
 from libkoiki.core.auth_decorators import handle_auth_errors
+from libkoiki.core.exceptions import AuthenticationException
+from libkoiki.core.security_logger import (
+    SECURITY_EVENT_REFRESH_TOKEN_REJECTED,
+    security_logger,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -36,14 +41,27 @@ async def refresh_token(
     
     # デバイス情報の抽出
     device_info = extract_device_info(request)
+    ip_address = request.client.host if request.client else None
     
-    # アクセストークンをリフレッシュ（トークンローテーション有効）
-    access_token, new_refresh_token, expires_in = await auth_service.refresh_access_token(
-        refresh_token=refresh_data.refresh_token,
-        db=db,
-        device_info=device_info,
-        enable_rotation=True
-    )
+    try:
+        # アクセストークンをリフレッシュ（トークンローテーション有効）
+        access_token, new_refresh_token, expires_in = await auth_service.refresh_access_token(
+            refresh_token=refresh_data.refresh_token,
+            db=db,
+            device_info=device_info,
+            enable_rotation=True
+        )
+    except AuthenticationException as exc:
+        security_logger.log_security_event(
+            SECURITY_EVENT_REFRESH_TOKEN_REJECTED,
+            severity="warning",
+            ip_address=ip_address,
+            user_agent=device_info,
+            endpoint="/refresh",
+            auth_method="refresh_token",
+            failure_reason=exc.detail,
+        )
+        raise
     
     logger.info("Token refresh successful")
     
