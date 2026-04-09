@@ -6,11 +6,16 @@ SAML認証フローの主要機能をテスト
 OIDCのテストパターンに合わせて設計
 """
 
+import os
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import Request
+
+os.environ["DEBUG"] = "true"
+os.environ["APP_ENV"] = "testing"
 
 from app.core.saml_config import SAMLSettings
 from app.schemas.saml import SAMLUserInfo
@@ -459,3 +464,304 @@ class TestSAMLService:
 
         assert exc_info.value.status_code == 500
         assert "SAML configuration is incomplete" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    @patch("app.services.saml_service.logger")
+    @patch("app.services.saml_service.OneLogin_Saml2_Settings")
+    @patch("app.services.saml_service.OneLogin_Saml2_Auth")
+    async def test_generate_authn_request_success_keeps_protocol_values_out_of_normal_logger(
+        self,
+        mock_auth_class,
+        mock_settings_class,
+        mock_logger,
+        saml_service,
+    ):
+        """AuthnRequest生成成功時に request_id/redirect_uri を通常ログへ出さない"""
+        mock_auth = Mock()
+        mock_auth.login.return_value = (
+            "https://idp.example.com/saml/sso?SAMLRequest=..."
+        )
+        mock_auth.get_last_request_id.return_value = "REQ123"
+        mock_auth.get_last_request_xml.return_value = (
+            "<samlp:AuthnRequest>...</samlp:AuthnRequest>"
+        )
+        mock_auth_class.return_value = mock_auth
+        mock_settings_class.return_value = Mock()
+
+        await saml_service.generate_authn_request(
+            redirect_uri="https://frontend.example.com/saml/callback",
+        )
+
+        info_kwargs = [call.kwargs for call in mock_logger.info.call_args_list]
+        assert any(kwargs.get("acs_url") == "https://app.example.com/saml/acs" for kwargs in info_kwargs)
+        assert all("request_id" not in kwargs for kwargs in info_kwargs)
+        assert all("redirect_uri" not in kwargs for kwargs in info_kwargs)
+
+    @pytest.mark.asyncio
+    @patch("app.services.saml_service.logger")
+    @patch("app.services.saml_service.OneLogin_Saml2_Settings")
+    @patch("app.services.saml_service.OneLogin_Saml2_Auth")
+    async def test_verify_saml_response_success_keeps_identity_values_out_of_normal_logger(
+        self,
+        mock_auth_class,
+        mock_settings_class,
+        mock_logger,
+        saml_service,
+    ):
+        """SAML Response検証成功時に subject/email/session を通常ログへ出さない"""
+        mock_auth = Mock()
+        mock_auth.process_response.return_value = None
+        mock_auth.get_errors.return_value = []
+        mock_auth.is_authenticated.return_value = True
+        mock_auth.get_attributes.return_value = {
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress": [
+                "user@example.com"
+            ],
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name": [
+                "Test User"
+            ],
+        }
+        mock_auth.get_nameid.return_value = "subject-123"
+        mock_auth.get_session_index.return_value = "session-123"
+        mock_auth_class.return_value = mock_auth
+        mock_settings_class.return_value = Mock()
+
+        mock_request = Mock(spec=Request)
+        mock_request.url = SimpleNamespace(
+            scheme="https",
+            port=None,
+            hostname="app.example.com",
+            path="/saml/acs",
+            query="",
+        )
+        mock_request.client = SimpleNamespace(host="127.0.0.1")
+        mock_request.query_params = {}
+
+        user_info = await saml_service.verify_saml_response(
+            request=mock_request,
+            saml_response="test-response",
+            relay_state_payload={"nonce": "nonce-123", "req": "REQ123"},
+        )
+
+        assert user_info.email == "user@example.com"
+
+        info_kwargs = [call.kwargs for call in mock_logger.info.call_args_list]
+        assert all("request_id" not in kwargs for kwargs in info_kwargs)
+        assert all("subject_id" not in kwargs for kwargs in info_kwargs)
+        assert all("email" not in kwargs for kwargs in info_kwargs)
+        assert all("session_index" not in kwargs for kwargs in info_kwargs)
+
+    @pytest.mark.asyncio
+    @patch("app.services.saml_service.logger")
+    async def test_authenticate_saml_user_keeps_email_and_subject_out_of_normal_logger(
+        self,
+        mock_logger,
+        saml_service,
+    ):
+        """SAMLユーザー認証時に email/subject_id を通常ログへ出さない"""
+        db = Mock()
+        user = Mock(spec=UserModel)
+        user.id = 42
+        user.is_active = True
+        user.username = "test-user"
+
+        user_info = SAMLUserInfo(
+            subject_id="subject-123",
+            email="user@example.com",
+            email_verified=True,
+            name="Test User",
+        )
+
+        saml_service.user_sso_repository.get_by_sso_subject_id = AsyncMock(
+            return_value=None
+        )
+        saml_service.user_sso_repository.create_sso_link = AsyncMock()
+        saml_service.user_service.get_user_by_email = AsyncMock(return_value=user)
+
+        result_user, _ = await saml_service.authenticate_saml_user(user_info, db)
+
+        assert result_user is user
+        info_kwargs = [call.kwargs for call in mock_logger.info.call_args_list]
+        warning_kwargs = [call.kwargs for call in mock_logger.warning.call_args_list]
+        assert all("email" not in kwargs for kwargs in info_kwargs + warning_kwargs)
+        assert all("subject_id" not in kwargs for kwargs in info_kwargs + warning_kwargs)
+        assert any(kwargs.get("user_id") == 42 for kwargs in info_kwargs)
+
+    @pytest.mark.asyncio
+    @patch("app.services.saml_service.logger")
+    async def test_exchange_login_ticket_logs_do_not_expose_nonce_or_ticket_values(
+        self,
+        mock_logger,
+        saml_service,
+    ):
+        """ログインチケット交換時に nonce/ticket 断片を通常ログへ出さない"""
+        mock_db = Mock()
+        mock_user = Mock(spec=UserModel)
+        mock_user.id = 42
+        mock_user.is_active = True
+
+        saml_service.user_service.get_user_by_id = AsyncMock(return_value=mock_user)
+        saml_service.auth_flow_repository = Mock()
+        saml_service.auth_flow_repository.consume_ticket_exclusive = AsyncMock(
+            return_value=None
+        )
+
+        relay_payload = {"nonce": "relay-nonce", "req": "REQ123"}
+        relay_state_token, _ = saml_service._create_relay_state_token(relay_payload)
+        user_info = SAMLUserInfo(
+            subject_id="subject-123",
+            email="user@example.com",
+            email_verified=True,
+        )
+        login_ticket, _, _ = saml_service._create_login_ticket(
+            user=mock_user,
+            relay_state_payload=relay_payload,
+            user_info=user_info,
+        )
+
+        await saml_service.exchange_login_ticket(
+            login_ticket=login_ticket,
+            relay_state=relay_state_token,
+            db=mock_db,
+            device_info="test-device",
+        )
+
+        info_kwargs = [call.kwargs for call in mock_logger.info.call_args_list]
+        assert any(call.args[0] == "No DB flow found for ticket; falling back to in-memory check" for call in mock_logger.info.call_args_list)
+        assert all("ticket_id" not in kwargs for kwargs in info_kwargs)
+
+        bad_relay_state_token, _ = saml_service._create_relay_state_token(
+            {"nonce": "different-nonce", "req": "REQ123"}
+        )
+
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException):
+            await saml_service.exchange_login_ticket(
+                login_ticket=login_ticket,
+                relay_state=bad_relay_state_token,
+                db=mock_db,
+                device_info="test-device",
+            )
+
+        warning_kwargs = [call.kwargs for call in mock_logger.warning.call_args_list]
+        assert warning_kwargs
+        assert all("ticket_nonce" not in kwargs for kwargs in warning_kwargs)
+        assert all("relay_nonce" not in kwargs for kwargs in warning_kwargs)
+        assert all("db_nonce" not in kwargs for kwargs in warning_kwargs)
+        assert all("token_nonce" not in kwargs for kwargs in warning_kwargs)
+
+    @pytest.mark.asyncio
+    @patch("app.services.saml_service.logger")
+    @patch("app.services.saml_service.OneLogin_Saml2_Settings")
+    @patch("app.services.saml_service.OneLogin_Saml2_Auth")
+    async def test_logout_service_logs_do_not_expose_redirect_or_name_id(
+        self,
+        mock_auth_class,
+        mock_settings_class,
+        mock_logger,
+        saml_service,
+    ):
+        """SAML logout service系で redirect/name_id を通常ログへ出さない"""
+        db = Mock()
+        user = Mock(spec=UserModel)
+        user.id = 7
+        saml_service.saml_settings.SAML_SP_SLS_URL = "https://app.example.com/saml/sls"
+
+        primary_link = Mock()
+        primary_link.sso_subject_id = "subject-123"
+        saml_service.user_sso_repository.get_by_user_id = AsyncMock(
+            return_value=[primary_link]
+        )
+        saml_service.auth_flow_repository.get_latest_session_index = AsyncMock(
+            return_value="session-123"
+        )
+
+        mock_auth = Mock()
+        mock_auth.logout.return_value = "https://idp.example.com/logout"
+        mock_auth.process_slo.return_value = "https://app.example.com/post-logout"
+        mock_auth.get_errors.return_value = []
+        mock_auth.get_nameid.return_value = "subject-123"
+        mock_auth_class.return_value = mock_auth
+        mock_settings_class.return_value = Mock()
+
+        request = Mock(spec=Request)
+        request.url = SimpleNamespace(
+            scheme="https",
+            port=None,
+            hostname="app.example.com",
+            path="/saml/sls",
+            query="",
+        )
+        request.client = SimpleNamespace(host="127.0.0.1")
+        request.query_params = {}
+
+        saml_service._cleanup_remote_session = AsyncMock()
+
+        logout_url = await saml_service.initiate_logout(
+            request=request,
+            user=user,
+            db=db,
+            redirect_uri="https://app.example.com/post-logout",
+        )
+        final_redirect = await saml_service.process_logout_request(
+            request=request,
+            db=db,
+            post_data=None,
+        )
+
+        assert logout_url == "https://idp.example.com/logout"
+        assert final_redirect == "https://app.example.com/post-logout"
+
+        info_kwargs = [call.kwargs for call in mock_logger.info.call_args_list]
+        assert any(kwargs.get("user_id") == 7 for kwargs in info_kwargs)
+        assert all("redirect" not in kwargs for kwargs in info_kwargs)
+        assert all("name_id" not in kwargs for kwargs in info_kwargs)
+
+    @pytest.mark.asyncio
+    @patch("app.services.saml_service.logger")
+    async def test_create_internal_token_pair_failure_logs_error_type_only(
+        self,
+        mock_logger,
+        saml_service,
+    ):
+        mock_user = Mock(spec=UserModel)
+        mock_user.id = 55
+        mock_db = Mock()
+        saml_service.auth_service.create_token_pair = AsyncMock(
+            side_effect=RuntimeError("token secret")
+        )
+
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc_info:
+            await saml_service.create_internal_token_pair(mock_user, mock_db)
+
+        assert exc_info.value.status_code == 500
+        error_kwargs = mock_logger.error.call_args.kwargs
+        assert error_kwargs["user_id"] == 55
+        assert error_kwargs["error_type"] == "RuntimeError"
+        assert "error" not in error_kwargs
+
+    @pytest.mark.asyncio
+    @patch("app.services.saml_service.logger")
+    async def test_decode_signed_token_invalid_encoding_logs_error_type_only(
+        self,
+        mock_logger,
+        saml_service,
+    ):
+        with patch.object(
+            saml_service,
+            "_urlsafe_b64decode",
+            side_effect=ValueError("bad token"),
+        ):
+            with pytest.raises(ValidationException):
+                saml_service._decode_signed_token(
+                    "invalid.token",
+                    purpose="RelayState",
+                )
+
+        warning_kwargs = mock_logger.warning.call_args.kwargs
+        assert warning_kwargs["purpose"] == "RelayState"
+        assert warning_kwargs["error_type"] == "ValueError"
+        assert "error" not in warning_kwargs
