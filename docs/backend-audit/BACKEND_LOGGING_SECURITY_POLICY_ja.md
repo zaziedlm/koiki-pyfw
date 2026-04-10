@@ -398,3 +398,5 @@
    - 詳細計画: [`LOG-08_LOGGING_REGRESSION_TEST_PLAN_ja.md`](C:/Users/kataoka/Desktop/KOIKI-FW/KOIKI-FW-VSCodeProj/koiki-pyfw/docs/backend-audit/LOG-08_LOGGING_REGRESSION_TEST_PLAN_ja.md)
 8. `LOG-09` 運用・保守向け文書更新
    - Runbook: [`LOG-09_LOGGING_OPERATIONS_RUNBOOK_ja.md`](C:/Users/kataoka/Desktop/KOIKI-FW/KOIKI-FW-VSCodeProj/koiki-pyfw/docs/backend-audit/LOG-09_LOGGING_OPERATIONS_RUNBOOK_ja.md)
+9. `LOG-12` 残課題管理（`TASK-02` ハンドラ分離 / `TASK-03` 固定コード化）
+   - 残課題台帳: [`LOG-12_DEFERRED_LOGGING_TASKS_ja.md`](C:/Users/kataoka/Desktop/KOIKI-FW/KOIKI-FW-VSCodeProj/koiki-pyfw/docs/backend-audit/LOG-12_DEFERRED_LOGGING_TASKS_ja.md)
