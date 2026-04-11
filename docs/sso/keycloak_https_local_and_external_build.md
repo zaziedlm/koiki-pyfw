@@ -56,7 +56,7 @@
 
 ## PC 側の CA 設定
 
-ローカルブラウザで `https://localhost:8443` を警告なしで開くには、`mkcert` のローカル CA が PC 側の trust store に入っている必要があります。
+ローカルブラウザで `https://localhost:8443` を警告なしで開くには、`mkcert` のローカル CA が端末側の trust store に入っている必要があります。
 
 ### 確認 / 初期化
 
@@ -66,8 +66,26 @@ mkcert -install
 ```
 
 - `mkcert -install`
-  - Windows のローカル trust store に `mkcert` のローカル CA を登録します
+  - Windows ではローカル trust store に `mkcert` のローカル CA を登録します
+  - macOS では Keychain に `mkcert` のローカル CA を登録します
 - これにより、ブラウザが `mkcert` 署名証明書を信頼できるようになります
+
+### macOS での実行例
+
+Homebrew を使っている場合は、未導入なら先に `mkcert` を入れます。
+
+```bash
+brew install mkcert
+```
+
+CA の保存先確認と trust store への登録は以下です。
+
+```bash
+mkcert -CAROOT
+mkcert -install
+```
+
+`mkcert -install` 実行時に macOS の管理者パスワード入力を求められることがあります。
 
 ## ローカル Keycloak HTTPS 証明書の作成
 
@@ -80,6 +98,8 @@ mkcert -install
 - `keycloak`
 - `host.docker.internal`
 
+PowerShell の場合:
+
 ```powershell
 mkcert `
   -cert-file docker/keycloak/certs/server.crt `
@@ -87,11 +107,30 @@ mkcert `
   localhost 127.0.0.1 keycloak host.docker.internal
 ```
 
+macOS のシェルの場合:
+
+```bash
+mkcert \
+  -cert-file docker/keycloak/certs/server.crt \
+  -key-file docker/keycloak/certs/server.key \
+  localhost 127.0.0.1 keycloak host.docker.internal
+```
+
 ### 2. `mkcert` のルート CA をリポジトリへコピー
+
+PowerShell の場合:
 
 ```powershell
 Copy-Item "$env:LOCALAPPDATA\mkcert\rootCA.pem" "docker/certs/mkcert-rootCA.pem" -Force
 Copy-Item "$env:LOCALAPPDATA\mkcert\rootCA.pem" "frontend/docker/certs/mkcert-rootCA.pem" -Force
+```
+
+macOS のシェルの場合:
+
+```bash
+CAROOT="$(mkcert -CAROOT)"
+cp "$CAROOT/rootCA.pem" docker/certs/mkcert-rootCA.pem
+cp "$CAROOT/rootCA.pem" frontend/docker/certs/mkcert-rootCA.pem
 ```
 
 意味:
