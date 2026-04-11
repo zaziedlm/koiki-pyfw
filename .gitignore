@@ -59,3 +59,7 @@ _backup*/
 
 # SSL certificate (ignore all *.pem files anywhere)
 **/*.pem
+
+# Keycloak HTTPS certificates
+docker/keycloak/certs/*.crt
+docker/keycloak/certs/*.key
