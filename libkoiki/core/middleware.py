@@ -86,14 +86,10 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
         if request.url.path in self.EXCLUDE_PATHS:
             return response  # 監査ログに記録せずに早期リターン
 
-        # --- ユーザー情報の取得 (より軽量な方法を検討) ---
-        # `request.state` に認証ミドルウェアがユーザー情報を格納している場合
-        if hasattr(request.state, "current_user") and request.state.current_user:
-            user = request.state.current_user
-            if hasattr(user, "id"):
-                user_id = user.id
-            if hasattr(user, "email"):
-                user_email = user.email
+        # Middleware must only read scalar snapshots here. ORM user objects may
+        # already be detached after rollback in downstream handlers.
+        user_id = getattr(request.state, "audit_user_id", None)
+        user_email = getattr(request.state, "audit_user_email", None)
 
         # --- structlog コンテキストからリクエスト情報を取得 ---
         log_context = get_request_context()

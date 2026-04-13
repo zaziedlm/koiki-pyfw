@@ -45,3 +45,5 @@ class TestAuditDependencyWiring:
         assert result is current_user
         assert request.state.current_user is current_user
         assert request.state.auth_method == "bearer"
+        assert request.state.audit_user_id == 7
+        assert request.state.audit_user_email == "user@example.com"

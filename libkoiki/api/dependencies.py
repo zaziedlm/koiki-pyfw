@@ -183,6 +183,8 @@ async def get_current_active_user(
 
     request.state.current_user = current_user
     request.state.auth_method = "bearer"
+    request.state.audit_user_id = current_user.id
+    request.state.audit_user_email = current_user.email
     
     return current_user
 

@@ -41,8 +41,9 @@ class TestAuditMiddleware:
         middleware_module.audit_logger = mock_audit_logger
 
         async def endpoint(request: Request, todo_id: str):
-            request.state.current_user = SimpleNamespace(id=42, email="user@example.com")
             request.state.auth_method = "bearer"
+            request.state.audit_user_id = 42
+            request.state.audit_user_email = "user@example.com"
             return {"todo_id": todo_id}
 
         app = _build_app(middleware_module, endpoint)
@@ -115,8 +116,9 @@ class TestAuditMiddleware:
         middleware_module.audit_logger = mock_audit_logger
 
         async def endpoint(request: Request, todo_id: str):
-            request.state.current_user = SimpleNamespace(id=8, email="audit@example.com")
             request.state.auth_method = "bearer"
+            request.state.audit_user_id = 8
+            request.state.audit_user_email = "audit@example.com"
             return {"todo_id": todo_id}
 
         app = _build_app(middleware_module, endpoint)
@@ -137,6 +139,39 @@ class TestAuditMiddleware:
         assert "authorization" not in audit_kwargs
         assert "cookie" not in audit_kwargs
         assert "token" not in str(audit_kwargs).lower()
+
+    def test_audit_middleware_uses_scalar_snapshots_when_current_user_is_unreadable(
+        self,
+        middleware_module,
+    ):
+        mock_audit_logger = MagicMock()
+        middleware_module.audit_logger = mock_audit_logger
+
+        class DetachedLikeUser:
+            @property
+            def id(self):
+                raise RuntimeError("detached id access")
+
+            @property
+            def email(self):
+                raise RuntimeError("detached email access")
+
+        async def endpoint(request: Request, todo_id: str):
+            request.state.current_user = DetachedLikeUser()
+            request.state.auth_method = "bearer"
+            request.state.audit_user_id = 13
+            request.state.audit_user_email = "detached@example.com"
+            return {"todo_id": todo_id}
+
+        app = _build_app(middleware_module, endpoint)
+
+        with TestClient(app) as client:
+            response = client.get("/todos/130")
+
+        assert response.status_code == 200
+        audit_kwargs = mock_audit_logger.info.call_args.kwargs
+        assert audit_kwargs["actor.user_id"] == 13
+        assert audit_kwargs["actor.email"] == "detached@example.com"
 
     def test_access_log_uses_same_request_context_source(
         self,
