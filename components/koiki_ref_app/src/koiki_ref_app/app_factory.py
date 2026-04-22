@@ -71,6 +71,7 @@ logger = get_logger(__name__)
 from koiki_ref_app.repositories.saml_auth_flow_repository import (
     SamlAuthFlowRepository,  # noqa: E402
 )
+from koiki_ref_app.bootstrap import bootstrap_orm  # noqa: E402
 
 _cleanup_task: Optional[asyncio.Task] = None
 
@@ -242,6 +243,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 def create_app() -> FastAPI:
     """Create the reference application instance."""
+    bootstrap_orm()
+
     app = FastAPI(
         title=settings.APP_NAME,
         debug=settings.DEBUG,

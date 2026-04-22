@@ -17,16 +17,11 @@ for path in (KOIKI_REF_APP_SRC, LIBKOIKI_SRC, REPO_ROOT):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-# --- モデルのインポート ---
-# target_metadata にアプリケーションの Base.metadata を設定するために必要
-# src/models/__init__.py ですべてのモデルがインポートされていることを確認
+# --- ORM bootstrap ---
+from koiki_ref_app.bootstrap import bootstrap_orm
 from koiki_ref_app.db.base import Base as AppBase
-
-# アプリケーション固有のモデルもインポート（SSO機能含む）
-from koiki_ref_app.models import *  # koiki_ref_app/models/__init__.py からSSO関連モデルをインポート
+bootstrap_orm()
 from libkoiki.core.config import settings  # アプリケーション設定を読み込む
-from libkoiki.db.base import Base as LibBase  # SQLAlchemy Base from your application
-from libkoiki.models import *  # src/models/__init__.py から全てインポート (ToDoModelも含まれる)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
