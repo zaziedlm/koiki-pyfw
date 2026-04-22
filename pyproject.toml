@@ -131,7 +131,7 @@ python = ">=3.11.7,<4.0"
 libkoiki = {path = "components/libkoiki", develop = true}
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "components/libkoiki/tests"]
+testpaths = ["tests", "components/libkoiki/tests", "components/koiki_ref_app/tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
