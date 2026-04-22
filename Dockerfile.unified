@@ -56,10 +56,8 @@ ARG INSTALL_MAIN_ONLY=false
 ARG POETRY_MAX_WORKERS=8
 
 COPY pyproject.toml poetry.lock README.md ./
-COPY ./libkoiki ./libkoiki
 COPY ./app ./app
-COPY ./alembic ./alembic
-COPY ./alembic.ini ./
+COPY ./components ./components
 COPY ./main.py ./
 COPY ./ops ./ops
 
@@ -84,7 +82,7 @@ RUN chmod +x /app/docker-entrypoint.sh
 # ---------------------
 FROM builder AS dev
 RUN adduser --disabled-password --gecos "" appuser && \
-    mkdir -p /app/alembic/versions && \
+    mkdir -p /app/components/koiki_ref_app/alembic/versions && \
     chown -R appuser:appuser /app
 USER appuser
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
@@ -96,7 +94,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload
 # ---------------------
 FROM builder AS optimized
 RUN adduser --disabled-password --gecos "" appuser && \
-    mkdir -p /app/alembic/versions && \
+    mkdir -p /app/components/koiki_ref_app/alembic/versions && \
     chown -R appuser:appuser /app
 USER appuser
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
@@ -132,7 +130,7 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app /app
 
-RUN mkdir -p /app/alembic/versions && chown -R appuser:appuser /app
+RUN mkdir -p /app/components/koiki_ref_app/alembic/versions && chown -R appuser:appuser /app
 USER appuser
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
