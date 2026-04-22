@@ -82,7 +82,6 @@ Task:
   - GitHub Actions 実行結果
 - CI は path 更新済みだが、まだ Poetry ベースであり `uv` 実移行は未完了
 - Docker / docs には互換上の理由で `app.main:app` が意図的に残っている
-- `task-7-1.md` は記録ファイルとして未コミットのまま残っている
 
 検証結果:
 
@@ -97,4 +96,4 @@ Task:
 
 - この再編トラック完了後は、`uv` 実移行と dependency 同期を進めたうえで runtime / CI / Docker / Alembic の実行確認を別途行う
 - `app.main:app` 互換を外す最終タイミングは、実行確認と運用告知を伴う別タスクとして切り出す
-- `task-7-1.md` の扱いは、Stage 7 の docs コミット時に併せて整理する
+- root `AGENTS.md` と旧 `app.*` 記述が残る docs の整理を follow-up タスクとして扱う
