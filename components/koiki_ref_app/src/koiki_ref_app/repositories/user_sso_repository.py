@@ -15,7 +15,7 @@ from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.user_sso import UserSSO
+from koiki_ref_app.models.user_sso import UserSSO
 from libkoiki.core.logging import get_log_field_names
 from libkoiki.models.user import UserModel
 from libkoiki.repositories.base import BaseRepository

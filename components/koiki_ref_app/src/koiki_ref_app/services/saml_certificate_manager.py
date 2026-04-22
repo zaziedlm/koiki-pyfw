@@ -10,8 +10,8 @@ from typing import Dict, Optional, Tuple
 
 import structlog
 
-from app.core.saml_config import SAMLSettings
-from app.services.saml_metadata_loader import SAMLMetadataLoader
+from koiki_ref_app.core.saml_config import SAMLSettings
+from koiki_ref_app.services.saml_metadata_loader import SAMLMetadataLoader
 from libkoiki.core.logging import get_error_type_name
 
 logger = structlog.get_logger(__name__)

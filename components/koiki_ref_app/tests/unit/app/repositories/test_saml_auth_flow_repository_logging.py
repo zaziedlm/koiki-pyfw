@@ -2,12 +2,12 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from app.repositories.saml_auth_flow_repository import SamlAuthFlowRepository
+from koiki_ref_app.repositories.saml_auth_flow_repository import SamlAuthFlowRepository
 
 
 class TestSamlAuthFlowRepositoryLogging:
     @pytest.mark.asyncio
-    @patch("app.repositories.saml_auth_flow_repository.logger")
+    @patch("koiki_ref_app.repositories.saml_auth_flow_repository.logger")
     async def test_create_flow_does_not_log_request_or_nonce_fragments(self, mock_logger):
         repository = SamlAuthFlowRepository()
         db = Mock()
@@ -34,7 +34,7 @@ class TestSamlAuthFlowRepositoryLogging:
         assert log_kwargs == {"flow_id": 10}
 
     @pytest.mark.asyncio
-    @patch("app.repositories.saml_auth_flow_repository.logger")
+    @patch("koiki_ref_app.repositories.saml_auth_flow_repository.logger")
     async def test_update_to_acs_verified_does_not_log_nonce_or_ticket_fragments(
         self,
         mock_logger,
@@ -65,7 +65,7 @@ class TestSamlAuthFlowRepositoryLogging:
         assert log_kwargs == {"flow_id": 11}
 
     @pytest.mark.asyncio
-    @patch("app.repositories.saml_auth_flow_repository.logger")
+    @patch("koiki_ref_app.repositories.saml_auth_flow_repository.logger")
     async def test_consume_ticket_exclusive_does_not_log_ticket_fragments(self, mock_logger):
         repository = SamlAuthFlowRepository()
         db = Mock()
@@ -87,7 +87,7 @@ class TestSamlAuthFlowRepositoryLogging:
         assert log_kwargs == {"flow_id": 12}
 
     @pytest.mark.asyncio
-    @patch("app.repositories.saml_auth_flow_repository.logger")
+    @patch("koiki_ref_app.repositories.saml_auth_flow_repository.logger")
     async def test_find_latest_session_index_logs_presence_only(self, mock_logger):
         repository = SamlAuthFlowRepository()
         db = Mock()

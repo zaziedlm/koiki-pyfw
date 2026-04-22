@@ -1,8 +1,8 @@
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.schemas.kkbiz import BusinessClockRead, BusinessClockUpdate
-from app.services.kkbiz.business_clock_service import BusinessClockService
+from koiki_ref_app.schemas.kkbiz import BusinessClockRead, BusinessClockUpdate
+from koiki_ref_app.services.kkbiz.business_clock_service import BusinessClockService
 from libkoiki.api.dependencies import DBSessionDep, SuperUserDep
 
 logger = structlog.get_logger(__name__)

@@ -13,7 +13,7 @@ import structlog
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.saml_auth_flow import SamlAuthFlow
+from koiki_ref_app.models.saml_auth_flow import SamlAuthFlow
 
 logger = structlog.get_logger(__name__)
 

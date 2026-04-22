@@ -77,7 +77,7 @@ async def test_db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
 @pytest.fixture
 def test_client(test_db_session):
     """テスト用FastAPIクライアント"""
-    from app.main import app
+    from koiki_ref_app.asgi import app
     from libkoiki.db.session import get_db
     
     async def override_get_db():

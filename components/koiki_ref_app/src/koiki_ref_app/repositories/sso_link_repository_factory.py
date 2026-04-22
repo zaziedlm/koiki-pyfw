@@ -4,8 +4,8 @@ import os
 
 import structlog
 
-from app.repositories.user_sso_repository import UserSSORepository
-from app.repositories.user_table_sso_repository import UserTableSSORepository
+from koiki_ref_app.repositories.user_sso_repository import UserSSORepository
+from koiki_ref_app.repositories.user_table_sso_repository import UserTableSSORepository
 
 logger = structlog.get_logger(__name__)
 

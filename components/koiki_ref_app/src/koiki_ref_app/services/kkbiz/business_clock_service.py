@@ -9,9 +9,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.kkbiz import BusinessClock
-from app.repositories.kkbiz import BusinessClockRepository
-from app.schemas.kkbiz import (
+from koiki_ref_app.models.kkbiz import BusinessClock
+from koiki_ref_app.repositories.kkbiz import BusinessClockRepository
+from koiki_ref_app.schemas.kkbiz import (
     BusinessClockMode,
     BusinessClockState,
     BusinessClockUpdate,

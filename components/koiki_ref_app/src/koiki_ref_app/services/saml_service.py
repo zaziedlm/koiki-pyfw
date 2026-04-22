@@ -24,12 +24,12 @@ try:
 except ImportError:
     PYTHON3_SAML_AVAILABLE = False
 
-from app.core.saml_config import SAMLSettings, get_saml_settings
-from app.repositories.saml_auth_flow_repository import SamlAuthFlowRepository
-from app.repositories.sso_link_repository import SSOLinkRepository
-from app.repositories.sso_link_repository_factory import create_sso_link_repository
-from app.schemas.saml import SAMLLinkResponse, SAMLUserInfo, SAMLUserInfoResponse
-from app.services.saml_certificate_manager import SAMLCertificateManager
+from koiki_ref_app.core.saml_config import SAMLSettings, get_saml_settings
+from koiki_ref_app.repositories.saml_auth_flow_repository import SamlAuthFlowRepository
+from koiki_ref_app.repositories.sso_link_repository import SSOLinkRepository
+from koiki_ref_app.repositories.sso_link_repository_factory import create_sso_link_repository
+from koiki_ref_app.schemas.saml import SAMLLinkResponse, SAMLUserInfo, SAMLUserInfoResponse
+from koiki_ref_app.services.saml_certificate_manager import SAMLCertificateManager
 from libkoiki.core.exceptions import ValidationException
 from libkoiki.core.logging import get_error_type_name
 from libkoiki.core.security import check_password_complexity

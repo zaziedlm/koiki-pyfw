@@ -10,13 +10,13 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.models.kkbiz import BusinessClock
-from app.schemas.kkbiz import (
+from koiki_ref_app.models.kkbiz import BusinessClock
+from koiki_ref_app.schemas.kkbiz import (
     BusinessClockMode,
     BusinessClockState,
     BusinessClockUpdate,
 )
-from app.services.kkbiz.business_clock_service import BusinessClockService
+from koiki_ref_app.services.kkbiz.business_clock_service import BusinessClockService
 from libkoiki.db.base import Base
 
 

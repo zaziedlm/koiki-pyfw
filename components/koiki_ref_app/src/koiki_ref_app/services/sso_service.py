@@ -38,10 +38,10 @@ from libkoiki.core.security import check_password_complexity
 from libkoiki.core.exceptions import ValidationException
 from libkoiki.core.logging import get_error_type_name
 
-from app.core.sso_config import SSOSettings, get_sso_settings
-from app.repositories.sso_link_repository import SSOLinkRepository
-from app.repositories.sso_link_repository_factory import create_sso_link_repository
-from app.schemas.sso import SSOUserInfo, SSOLinkResponse
+from koiki_ref_app.core.sso_config import SSOSettings, get_sso_settings
+from koiki_ref_app.repositories.sso_link_repository import SSOLinkRepository
+from koiki_ref_app.repositories.sso_link_repository_factory import create_sso_link_repository
+from koiki_ref_app.schemas.sso import SSOUserInfo, SSOLinkResponse
 
 logger = structlog.get_logger(__name__)
 

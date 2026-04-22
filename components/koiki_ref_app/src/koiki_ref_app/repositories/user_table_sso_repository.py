@@ -22,7 +22,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.sso_link_repository import SSOLinkRecord
+from koiki_ref_app.repositories.sso_link_repository import SSOLinkRecord
 
 logger = structlog.get_logger(__name__)
 

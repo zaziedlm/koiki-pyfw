@@ -3,7 +3,7 @@ from typing import Any, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.kkbiz import BusinessClock
+from koiki_ref_app.models.kkbiz import BusinessClock
 from libkoiki.repositories.base import BaseRepository
 
 

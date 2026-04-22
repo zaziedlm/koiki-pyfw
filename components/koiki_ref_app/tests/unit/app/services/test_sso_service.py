@@ -10,9 +10,9 @@ from fastapi import HTTPException
 os.environ["DEBUG"] = "true"
 os.environ["APP_ENV"] = "testing"
 
-from app.core.sso_config import SSOSettings
-from app.schemas.sso import SSOUserInfo
-from app.services.sso_service import SSOService
+from koiki_ref_app.core.sso_config import SSOSettings
+from koiki_ref_app.schemas.sso import SSOUserInfo
+from koiki_ref_app.services.sso_service import SSOService
 from libkoiki.core.exceptions import ValidationException
 
 
@@ -77,7 +77,7 @@ def test_verify_at_hash_unsupported_alg() -> None:
     assert SSOService._verify_at_hash("token", "hash", "RS123") is False
 
 
-@patch("app.services.sso_service.logger")
+@patch("koiki_ref_app.services.sso_service.logger")
 def test_generate_authorization_context_keeps_redirect_and_nonce_out_of_normal_logger(
     mock_logger,
     sso_service: SSOService,
@@ -92,7 +92,7 @@ def test_generate_authorization_context_keeps_redirect_and_nonce_out_of_normal_l
 
 
 @pytest.mark.asyncio
-@patch("app.services.sso_service.logger")
+@patch("koiki_ref_app.services.sso_service.logger")
 async def test_verify_id_token_success_keeps_identity_values_out_of_normal_logger(
     mock_logger,
     sso_service: SSOService,
@@ -122,7 +122,7 @@ async def test_verify_id_token_success_keeps_identity_values_out_of_normal_logge
 
 
 @pytest.mark.asyncio
-@patch("app.services.sso_service.logger")
+@patch("koiki_ref_app.services.sso_service.logger")
 async def test_authenticate_sso_user_keeps_email_and_sub_out_of_normal_logger(
     mock_logger,
     sso_service: SSOService,
@@ -155,7 +155,7 @@ async def test_authenticate_sso_user_keeps_email_and_sub_out_of_normal_logger(
     assert any(kwargs.get("user_id") == 42 for kwargs in info_kwargs)
 
 
-@patch("app.services.sso_service.logger")
+@patch("koiki_ref_app.services.sso_service.logger")
 def test_redirect_uri_not_allowed_keeps_redirect_value_out_of_normal_logger(
     mock_logger,
     sso_service: SSOService,
@@ -172,7 +172,7 @@ def test_redirect_uri_not_allowed_keeps_redirect_value_out_of_normal_logger(
 
 
 @pytest.mark.asyncio
-@patch("app.services.sso_service.logger")
+@patch("koiki_ref_app.services.sso_service.logger")
 async def test_fetch_jwks_error_keeps_jwks_uri_out_of_normal_logger(
     mock_logger,
     sso_service: SSOService,
@@ -184,7 +184,7 @@ async def test_fetch_jwks_error_keeps_jwks_uri_out_of_normal_logger(
         async def __aexit__(self, exc_type, exc, tb):
             return False
 
-    with patch("app.services.sso_service.httpx.AsyncClient", return_value=DummyClient()):
+    with patch("koiki_ref_app.services.sso_service.httpx.AsyncClient", return_value=DummyClient()):
         with pytest.raises(HTTPException) as exc_info:
             await sso_service._fetch_jwks(force_refresh=True)
 
@@ -195,7 +195,7 @@ async def test_fetch_jwks_error_keeps_jwks_uri_out_of_normal_logger(
 
 
 @pytest.mark.asyncio
-@patch("app.services.sso_service.logger")
+@patch("koiki_ref_app.services.sso_service.logger")
 async def test_verify_id_token_unexpected_error_logs_error_type_only(
     mock_logger,
     sso_service: SSOService,
@@ -217,7 +217,7 @@ async def test_verify_id_token_unexpected_error_logs_error_type_only(
 
 
 @pytest.mark.asyncio
-@patch("app.services.sso_service.logger")
+@patch("koiki_ref_app.services.sso_service.logger")
 async def test_create_internal_token_pair_failure_logs_error_type_only(
     mock_logger,
     sso_service: SSOService,

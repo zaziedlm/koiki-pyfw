@@ -1,4 +1,4 @@
-# app/api/v1/endpoints/saml_auth.py
+# koiki_ref_app/api/v1/endpoints/saml_auth.py
 """
 SAML認証エンドポイント
 
@@ -16,14 +16,14 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 
-from app.core.saml_config import SAMLSettings, get_saml_settings
-from app.schemas.saml import (
+from koiki_ref_app.core.saml_config import SAMLSettings, get_saml_settings
+from koiki_ref_app.schemas.saml import (
     SAMLAuthorizationInitResponse,
     SAMLHealthCheckResponse,
     SAMLLoginTicketRequest,
     SAMLUserInfoResponse,
 )
-from app.services.saml_service import SAMLService
+from koiki_ref_app.services.saml_service import SAMLService
 from libkoiki.api.dependencies import (
     ActiveUserDep,
     AuthServiceDep,
@@ -422,7 +422,7 @@ async def saml_health_check(
                 idp_accessible = False
 
         # ライブラリ可用性チェック
-        from app.services.saml_service import PYTHON3_SAML_AVAILABLE
+        from koiki_ref_app.services.saml_service import PYTHON3_SAML_AVAILABLE
 
         saml_configured = PYTHON3_SAML_AVAILABLE and settings_valid
 

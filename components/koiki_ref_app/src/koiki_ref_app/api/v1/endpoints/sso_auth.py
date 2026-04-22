@@ -11,13 +11,13 @@ from typing import Annotated, Optional
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from app.core.sso_config import SSOSettings, get_sso_settings
-from app.schemas.sso import (
+from koiki_ref_app.core.sso_config import SSOSettings, get_sso_settings
+from koiki_ref_app.schemas.sso import (
     SSOAuthorizationInitResponse,
     SSOLoginRequest,
     SSOUserInfoResponse,
 )
-from app.services.sso_service import SSOService
+from koiki_ref_app.services.sso_service import SSOService
 from libkoiki.api.dependencies import (
     AuthServiceDep,
     DBSessionDep,

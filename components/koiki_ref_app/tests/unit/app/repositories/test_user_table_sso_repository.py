@@ -6,9 +6,9 @@ import pytest_asyncio
 from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.repositories.sso_link_repository_factory import create_sso_link_repository
-from app.repositories.user_sso_repository import UserSSORepository
-from app.repositories.user_table_sso_repository import (
+from koiki_ref_app.repositories.sso_link_repository_factory import create_sso_link_repository
+from koiki_ref_app.repositories.user_sso_repository import UserSSORepository
+from koiki_ref_app.repositories.user_table_sso_repository import (
     UserTableSSORepository,
     _USER_TABLE,
 )

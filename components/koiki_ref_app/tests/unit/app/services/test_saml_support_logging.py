@@ -22,14 +22,14 @@ def logging_setup(monkeypatch):
 @pytest.fixture
 def metadata_loader_module(logging_setup):
     del logging_setup
-    module = importlib.import_module("app.services.saml_metadata_loader")
+    module = importlib.import_module("koiki_ref_app.services.saml_metadata_loader")
     return importlib.reload(module)
 
 
 @pytest.fixture
 def certificate_manager_module(logging_setup):
     del logging_setup
-    module = importlib.import_module("app.services.saml_certificate_manager")
+    module = importlib.import_module("koiki_ref_app.services.saml_certificate_manager")
     return importlib.reload(module)
 
 

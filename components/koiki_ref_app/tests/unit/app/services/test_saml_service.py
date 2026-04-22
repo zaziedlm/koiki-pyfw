@@ -17,9 +17,9 @@ from fastapi import Request
 os.environ["DEBUG"] = "true"
 os.environ["APP_ENV"] = "testing"
 
-from app.core.saml_config import SAMLSettings
-from app.schemas.saml import SAMLUserInfo
-from app.services.saml_service import SAMLService, ValidationException
+from koiki_ref_app.core.saml_config import SAMLSettings
+from koiki_ref_app.schemas.saml import SAMLUserInfo
+from koiki_ref_app.services.saml_service import SAMLService, ValidationException
 from libkoiki.models.user import UserModel
 
 
@@ -99,7 +99,7 @@ class TestSAMLService:
     @pytest.fixture
     def saml_service(self, mock_user_service, mock_auth_service, mock_saml_settings):
         """SAMLServiceインスタンス"""
-        with patch("app.services.saml_service.PYTHON3_SAML_AVAILABLE", True):
+        with patch("koiki_ref_app.services.saml_service.PYTHON3_SAML_AVAILABLE", True):
             service = SAMLService(
                 user_service=mock_user_service,
                 auth_service=mock_auth_service,
@@ -107,7 +107,7 @@ class TestSAMLService:
             )
             # リポジトリもモック化
             service.user_sso_repository = Mock()
-            from app.services import saml_service as saml_module
+            from koiki_ref_app.services import saml_service as saml_module
 
             saml_module._LOGIN_TICKET_CACHE.clear()
             return service
@@ -116,7 +116,7 @@ class TestSAMLService:
         self, mock_user_service, mock_auth_service, mock_saml_settings
     ):
         """SAMLService初期化成功テスト"""
-        with patch("app.services.saml_service.PYTHON3_SAML_AVAILABLE", True):
+        with patch("koiki_ref_app.services.saml_service.PYTHON3_SAML_AVAILABLE", True):
             service = SAMLService(
                 user_service=mock_user_service,
                 auth_service=mock_auth_service,
@@ -132,7 +132,7 @@ class TestSAMLService:
         settings = Mock(spec=SAMLSettings)
         settings.SAML_RELAY_STATE_SIGNING_KEY = ""
 
-        with patch("app.services.saml_service.PYTHON3_SAML_AVAILABLE", True):
+        with patch("koiki_ref_app.services.saml_service.PYTHON3_SAML_AVAILABLE", True):
             with pytest.raises(
                 RuntimeError, match="SAML RelayState signing key is required"
             ):
@@ -145,7 +145,7 @@ class TestSAMLService:
     @pytest.mark.asyncio
     async def test_generate_authn_request_library_unavailable(self, saml_service):
         """ライブラリ未導入時のAuthnRequest生成失敗テスト"""
-        with patch("app.services.saml_service.PYTHON3_SAML_AVAILABLE", False):
+        with patch("koiki_ref_app.services.saml_service.PYTHON3_SAML_AVAILABLE", False):
             from fastapi import HTTPException
 
             with pytest.raises(HTTPException) as exc_info:
@@ -168,8 +168,8 @@ class TestSAMLService:
         assert "SAML configuration is incomplete" in exc_info.value.detail
 
     @pytest.mark.asyncio
-    @patch("app.services.saml_service.OneLogin_Saml2_Settings")
-    @patch("app.services.saml_service.OneLogin_Saml2_Auth")
+    @patch("koiki_ref_app.services.saml_service.OneLogin_Saml2_Settings")
+    @patch("koiki_ref_app.services.saml_service.OneLogin_Saml2_Auth")
     async def test_generate_authn_request_success(
         self, mock_auth_class, mock_settings_class, saml_service
     ):
@@ -433,7 +433,7 @@ class TestSAMLService:
     @pytest.mark.asyncio
     async def test_verify_saml_response_library_unavailable(self, saml_service):
         """ライブラリ未導入時のSAML Response検証失敗テスト"""
-        with patch("app.services.saml_service.PYTHON3_SAML_AVAILABLE", False):
+        with patch("koiki_ref_app.services.saml_service.PYTHON3_SAML_AVAILABLE", False):
             from fastapi import HTTPException
 
             mock_request = Mock(spec=Request)
@@ -466,9 +466,9 @@ class TestSAMLService:
         assert "SAML configuration is incomplete" in exc_info.value.detail
 
     @pytest.mark.asyncio
-    @patch("app.services.saml_service.logger")
-    @patch("app.services.saml_service.OneLogin_Saml2_Settings")
-    @patch("app.services.saml_service.OneLogin_Saml2_Auth")
+    @patch("koiki_ref_app.services.saml_service.logger")
+    @patch("koiki_ref_app.services.saml_service.OneLogin_Saml2_Settings")
+    @patch("koiki_ref_app.services.saml_service.OneLogin_Saml2_Auth")
     async def test_generate_authn_request_success_keeps_protocol_values_out_of_normal_logger(
         self,
         mock_auth_class,
@@ -498,9 +498,9 @@ class TestSAMLService:
         assert all("redirect_uri" not in kwargs for kwargs in info_kwargs)
 
     @pytest.mark.asyncio
-    @patch("app.services.saml_service.logger")
-    @patch("app.services.saml_service.OneLogin_Saml2_Settings")
-    @patch("app.services.saml_service.OneLogin_Saml2_Auth")
+    @patch("koiki_ref_app.services.saml_service.logger")
+    @patch("koiki_ref_app.services.saml_service.OneLogin_Saml2_Settings")
+    @patch("koiki_ref_app.services.saml_service.OneLogin_Saml2_Auth")
     async def test_verify_saml_response_success_keeps_identity_values_out_of_normal_logger(
         self,
         mock_auth_class,
@@ -552,7 +552,7 @@ class TestSAMLService:
         assert all("session_index" not in kwargs for kwargs in info_kwargs)
 
     @pytest.mark.asyncio
-    @patch("app.services.saml_service.logger")
+    @patch("koiki_ref_app.services.saml_service.logger")
     async def test_authenticate_saml_user_keeps_email_and_subject_out_of_normal_logger(
         self,
         mock_logger,
@@ -588,7 +588,7 @@ class TestSAMLService:
         assert any(kwargs.get("user_id") == 42 for kwargs in info_kwargs)
 
     @pytest.mark.asyncio
-    @patch("app.services.saml_service.logger")
+    @patch("koiki_ref_app.services.saml_service.logger")
     async def test_exchange_login_ticket_logs_do_not_expose_nonce_or_ticket_values(
         self,
         mock_logger,
@@ -652,9 +652,9 @@ class TestSAMLService:
         assert all("token_nonce" not in kwargs for kwargs in warning_kwargs)
 
     @pytest.mark.asyncio
-    @patch("app.services.saml_service.logger")
-    @patch("app.services.saml_service.OneLogin_Saml2_Settings")
-    @patch("app.services.saml_service.OneLogin_Saml2_Auth")
+    @patch("koiki_ref_app.services.saml_service.logger")
+    @patch("koiki_ref_app.services.saml_service.OneLogin_Saml2_Settings")
+    @patch("koiki_ref_app.services.saml_service.OneLogin_Saml2_Auth")
     async def test_logout_service_logs_do_not_expose_redirect_or_name_id(
         self,
         mock_auth_class,
@@ -719,7 +719,7 @@ class TestSAMLService:
         assert all("name_id" not in kwargs for kwargs in info_kwargs)
 
     @pytest.mark.asyncio
-    @patch("app.services.saml_service.logger")
+    @patch("koiki_ref_app.services.saml_service.logger")
     async def test_create_internal_token_pair_failure_logs_error_type_only(
         self,
         mock_logger,
@@ -744,7 +744,7 @@ class TestSAMLService:
         assert "error" not in error_kwargs
 
     @pytest.mark.asyncio
-    @patch("app.services.saml_service.logger")
+    @patch("koiki_ref_app.services.saml_service.logger")
     async def test_decode_signed_token_invalid_encoding_logs_error_type_only(
         self,
         mock_logger,
