@@ -43,6 +43,54 @@
 
 - Task 1-6 で「廃止可能」と判断できる材料が揃っている
 
+## 実施結果
+
+Task:
+
+- Task 1-2: `libkoiki/setup.py` 廃止方針の確定
+
+変更内容:
+
+- `libkoiki/setup.py` の内容を確認し、役割を次のように整理した
+  - `setuptools.setup()` による従来型 package 定義
+  - `find_packages()` による flat layout 前提の package 収集
+  - runtime dependency の別定義
+- `libkoiki/pyproject.toml` と比較した結果、`setup.py` は現行の正本ではなく、古い定義が残っている状態と判断した
+- `setup.py` と `pyproject.toml` の主な差分を確認した
+  - `setup.py` にのみある依存
+    - `email-validator`
+    - `prometheus-client`
+    - `python-multipart`
+  - `pyproject.toml` にのみある依存
+    - `pydantic-settings`
+    - `slowapi`
+    - `tzdata`
+    - version pin を含む各種 runtime dependency
+  - 依存構成が一致しておらず、二重管理の状態になっている
+- 参照箇所を確認した結果、`setup.py` を直接使う運用は見当たらなかった
+  - `docs/dev/local_setup.md` に `pip install -e ./libkoiki` の記載はあるが、「非推奨」と明記されている
+  - パッケージング手順は `poetry build` または `python -m build` が推奨されている
+- 以上から、`libkoiki` の package 定義の正本は `libkoiki/pyproject.toml` に寄せるべきであり、`setup.py` は削除対象として扱ってよいと判断した
+
+未解決事項:
+
+- `libkoiki/pyproject.toml` 側の dependency 自体もまだ精査途上であり、削除前に Task 1-5 の境界整理を通す必要がある
+- `tool.poetry.packages = [{include = \"*\"}]` の妥当性は、将来の `components/libkoiki` / `src` 化も踏まえて別途見直しが必要
+- `libkoiki.egg-info` など `setuptools` 由来の成果物整理は、実削除タスク時にあわせて判断が必要
+
+検証結果:
+
+- `setup.py` にしか存在しない package metadata の必須情報は見当たらなかった
+- `setup.py` の dependency 定義は `pyproject.toml` と不整合であり、正本として扱うべきではないことを確認した
+- 現行ドキュメント上でも `setup.py` ベース運用は推奨されていないことを確認した
+
+次タスクへ渡す事項:
+
+- Task 1-3 では root `pyproject.toml` の workspace 責務を明確化する
+- Task 1-5 で `libkoiki` に残すべき依存を精査した上で、`setup.py` 削除の最終判断へ進む
+- Stage 1 の結論としては、「`libkoiki` の package 定義は `pyproject.toml` に一本化する」方向で問題ない
+- 実削除自体は、Task 1-6 または Stage 1 の具体編集タイミングで行う
+
 ## 次タスク
 
 - [Task 1-3](./task-1-3.md)
