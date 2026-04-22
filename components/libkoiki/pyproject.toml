@@ -62,8 +62,8 @@ dev = [
 
 # Poetry 2.x: Minimal configuration, PEP 621 takes precedence
 [tool.poetry]
-# Poetry 2.x: Correct package configuration for libkoiki
-packages = [{include = "*"}]
+# Poetry 2.x: src layout package configuration for libkoiki
+packages = [{include = "libkoiki", from = "src"}]
 
 # Poetry 2.x: Development dependencies in optional groups
 [tool.poetry.group.dev]

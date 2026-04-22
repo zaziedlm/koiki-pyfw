@@ -11,7 +11,14 @@ from sqlalchemy.orm import sessionmaker
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+LIBKOIKI_SRC = os.path.join(REPO_ROOT, 'components', 'libkoiki', 'src')
+
+if LIBKOIKI_SRC not in sys.path:
+    sys.path.insert(0, LIBKOIKI_SRC)
+if REPO_ROOT not in sys.path:
+    sys.path.insert(1, REPO_ROOT)
 
 
 @pytest.fixture(scope="session")

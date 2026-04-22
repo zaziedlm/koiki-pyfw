@@ -128,10 +128,10 @@ bandit = ">=1.8.0,<1.9.0"
 [tool.poetry.dependencies]
 python = ">=3.11.7,<4.0"
 # Poetry 2.x: Local dependency with develop mode
-libkoiki = {path = "libkoiki", develop = true}
+libkoiki = {path = "components/libkoiki", develop = true}
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "components/libkoiki/tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
