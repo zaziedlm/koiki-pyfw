@@ -14,11 +14,14 @@ import os
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 LIBKOIKI_SRC = os.path.join(REPO_ROOT, 'components', 'libkoiki', 'src')
+KOIKI_REF_APP_SRC = os.path.join(REPO_ROOT, 'components', 'koiki_ref_app', 'src')
 
 if LIBKOIKI_SRC not in sys.path:
     sys.path.insert(0, LIBKOIKI_SRC)
+if KOIKI_REF_APP_SRC not in sys.path:
+    sys.path.insert(1, KOIKI_REF_APP_SRC)
 if REPO_ROOT not in sys.path:
-    sys.path.insert(1, REPO_ROOT)
+    sys.path.insert(2, REPO_ROOT)
 
 
 @pytest.fixture(scope="session")

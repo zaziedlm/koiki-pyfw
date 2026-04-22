@@ -137,7 +137,7 @@ python_classes = "Test*"
 python_functions = "test_*"
 
 [tool.coverage.run]
-source = ["app", "libkoiki"]
+source = ["app", "koiki_ref_app", "libkoiki"]
 omit = ["tests/*"]
 
 [tool.coverage.report]

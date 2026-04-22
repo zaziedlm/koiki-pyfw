@@ -4,20 +4,26 @@ import sys
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
-from sqlalchemy.ext.asyncio import create_async_engine  # Async engine
 
 from alembic import context
 
-# src ディレクトリをパスに追加
-sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
+ALEMBIC_DIR = os.path.dirname(__file__)
+COMPONENT_ROOT = os.path.realpath(os.path.join(ALEMBIC_DIR, ".."))
+REPO_ROOT = os.path.realpath(os.path.join(COMPONENT_ROOT, "..", ".."))
+KOIKI_REF_APP_SRC = os.path.join(COMPONENT_ROOT, "src")
+LIBKOIKI_SRC = os.path.join(REPO_ROOT, "components", "libkoiki", "src")
+
+for path in (KOIKI_REF_APP_SRC, LIBKOIKI_SRC, REPO_ROOT):
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
 # --- モデルのインポート ---
 # target_metadata にアプリケーションの Base.metadata を設定するために必要
 # src/models/__init__.py ですべてのモデルがインポートされていることを確認
-from app.db.base import Base as AppBase
+from koiki_ref_app.db.base import Base as AppBase
 
 # アプリケーション固有のモデルもインポート（SSO機能含む）
-from app.models import *  # app/models/__init__.py からSSO関連モデルをインポート
+from koiki_ref_app.models import *  # koiki_ref_app/models/__init__.py からSSO関連モデルをインポート
 from libkoiki.core.config import settings  # アプリケーション設定を読み込む
 from libkoiki.db.base import Base as LibBase  # SQLAlchemy Base from your application
 from libkoiki.models import *  # src/models/__init__.py から全てインポート (ToDoModelも含まれる)
@@ -45,7 +51,7 @@ config.set_main_option("sqlalchemy.url", sync_db_url)
 
 # --- ターゲットメタデータの設定 ---
 # Autogenerateのためにモデルのメタデータを設定
-target_metadata = LibBase.metadata
+target_metadata = AppBase.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
