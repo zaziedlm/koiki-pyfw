@@ -2,10 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    # branches: [main, develop]
-    branches: [master, develop, dev/*, feature/*, bugfix/*]
+    branches: [main, dev/v0.7, support/0.6, topic/*, feature/*]
   pull_request:
-    branches: [master, develop]
+    branches: [main, dev/v0.7, support/0.6]
 
 jobs:
   build-and-test:
@@ -79,11 +78,12 @@ jobs:
 
       - name: Run tests with coverage (Poetry 2.x)
         run: |
-          # Poetry 2.x: Use dependency groups for testing
-          poetry run pytest --cov=app --cov=libkoiki --cov-report=term-missing --cov-report=html \
-            tests/unit/app/ \
-            tests/unit/agent_guidance/
-          # Poetry 2.x: Additional environment check
+          # Stage 6: component-based test layout
+          poetry run pytest --cov=koiki_ref_app --cov=libkoiki --cov-report=term-missing --cov-report=html \
+            components/libkoiki/tests/ \
+            components/koiki_ref_app/tests/ \
+            tests/unit/agent_guidance/ \
+            tests/integration/services/
           poetry show --tree --only=main
 
       - name: Upload HTML coverage report (optional)
