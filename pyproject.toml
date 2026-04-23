@@ -135,6 +135,11 @@ testpaths = ["tests", "components/libkoiki/tests", "components/koiki_ref_app/tes
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
+markers = [
+    "unit: fast tests with no external dependencies",
+    "integration: integration tests",
+    "db_integration: tests requiring live PostgreSQL; excluded from default CI unless RUN_DB_INTEGRATION=1",
+]
 
 [tool.coverage.run]
 source = ["app", "koiki_ref_app", "libkoiki"]

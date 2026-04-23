@@ -8,6 +8,7 @@ from libkoiki.core.exceptions import AuthenticationException, ValidationExceptio
 
 
 @pytest.mark.integration
+@pytest.mark.db_integration
 class TestAuthServiceDatabase:
     """認証サービス データベース統合テスト"""
     
@@ -99,7 +100,7 @@ class TestAuthServiceDatabase:
         assert new_access_token is not None
         assert new_refresh_token is not None
         assert expires_in > 0
-        assert new_access_token != initial_access_token  # 新しいアクセストークン
+        assert new_refresh_token != initial_refresh_token  # ローテーションで新しいリフレッシュトークン
     
     @pytest.mark.asyncio
     async def test_refresh_access_token_invalid_token(

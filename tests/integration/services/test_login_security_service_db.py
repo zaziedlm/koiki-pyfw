@@ -3,6 +3,7 @@ import pytest
 
 
 @pytest.mark.integration
+@pytest.mark.db_integration
 class TestLoginSecurityServiceDatabase:
     """ログインセキュリティサービス データベース統合テスト"""
     

@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 
 @pytest.mark.integration
+@pytest.mark.db_integration
 class TestAuthAPI:
     """認証系API統合テスト"""
     
