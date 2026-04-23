@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 
 COMPONENT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -25,6 +26,10 @@ os.environ["APP_ENV"] = "testing"
 os.environ["DEBUG"] = "true"
 os.environ["REDIS_ENABLED"] = "false"
 os.environ["RATE_LIMIT_ENABLED"] = "false"
+
+from koiki_ref_app.bootstrap import bootstrap_orm
+
+bootstrap_orm()
 
 
 @pytest.fixture(scope="session")
@@ -60,7 +65,7 @@ async def test_engine(test_settings):
     engine = create_async_engine(
         test_settings.DATABASE_URL,
         echo=False,
-        poolclass=None,
+        poolclass=NullPool,
     )
 
     async with engine.begin() as conn:
@@ -189,3 +194,24 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "unit: marks tests as unit tests (no external dependencies)"
     )
+    config.addinivalue_line(
+        "markers", "db_integration: marks tests that require live PostgreSQL and are excluded from default CI"
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    """DB統合テストは明示指定時のみ実行"""
+    run_db_integration = os.environ.get("RUN_DB_INTEGRATION", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    if run_db_integration:
+        return
+
+    skip_db = pytest.mark.skip(
+        reason="db_integration test is excluded by default; set RUN_DB_INTEGRATION=1 to run."
+    )
+    for item in items:
+        if "db_integration" in item.keywords:
+            item.add_marker(skip_db)

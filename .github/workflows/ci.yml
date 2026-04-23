@@ -86,8 +86,10 @@ jobs:
       - name: Run koiki_ref_app and integration tests with coverage
         run: |
           # 別セッション: bootstrap_orm() が UserModel.sso_links を安全に追加できる
+          # db_integration は Docker / 手動確認向けに分離し、標準CIから除外する
           poetry run pytest --cov=koiki_ref_app --cov=libkoiki --cov-append \
             --cov-report=term-missing --cov-report=html \
+            -m "not db_integration" \
             components/koiki_ref_app/tests/ \
             tests/integration/services/
           poetry show --tree --only=main
