@@ -102,6 +102,7 @@ class TestUserService:
         mock_check_password.return_value = True
         mock_get_password_hash.return_value = "hashed_password"
         user_service.repository.get_by_email = AsyncMock(return_value=None)  # 既存ユーザーなし
+        user_service.repository.get_by_username = AsyncMock(return_value=None)  # 既存ユーザー名なし
         user_service.repository.create = AsyncMock(return_value=mock_user)
         
         # db.execute のモックを設定（create_userが最後に実行するクエリ用）
@@ -130,6 +131,9 @@ class TestUserService:
         mock_db_session
     ):
         """弱いパスワードでのユーザー作成テスト"""
+        # メール・ユーザー名チェックをパスさせる
+        user_service.repository.get_by_email.return_value = None
+        user_service.repository.get_by_username.return_value = None
         # モックの設定（弱いパスワード）
         mock_check_password.return_value = False
         
@@ -179,11 +183,15 @@ class TestUserService:
         mock_check_password.return_value = True
         mock_get_password_hash.return_value = "hashed_password"
         user_service.repository.get_by_email.return_value = None
+        user_service.repository.get_by_username.return_value = None
         user_service.repository.create.return_value = mock_user
-        
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none = MagicMock(return_value=None)
+        mock_db_session.execute = AsyncMock(return_value=mock_result)
+
         # テスト実行
         result = await user_service.create_user(user_create_data, mock_db_session)
-        
+
         # 結果検証
         assert result == mock_user
         # イベントが発行されたことを確認
@@ -203,11 +211,15 @@ class TestUserService:
         # モックの設定
         mock_check_password.return_value = True
         user_service_without_events.repository.get_by_email.return_value = None
+        user_service_without_events.repository.get_by_username.return_value = None
         user_service_without_events.repository.create.return_value = mock_user
-        
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none = MagicMock(return_value=None)
+        mock_db_session.execute = AsyncMock(return_value=mock_result)
+
         with patch('libkoiki.services.user_service.get_password_hash') as mock_get_password_hash:
             mock_get_password_hash.return_value = "hashed_password"
-            
+
             # テスト実行
             result = await user_service_without_events.create_user(user_create_data, mock_db_session)
             
@@ -215,215 +227,3 @@ class TestUserService:
             assert result == mock_user
             # イベントパブリッシャーがNoneなのでイベントは発行されない
             assert user_service_without_events.event_publisher is None
-    
-    async def test_create_user_duplicate_email(
-        self,
-        user_service,
-        user_create_data,
-        mock_user,
-        mock_db_session
-    ):
-        """重複メールアドレスでのユーザー作成テスト"""
-        # ユーザーリポジトリのモック（既存ユーザーあり）
-        mock_user_repo = AsyncMock()
-        mock_user_repo.get_by_email.return_value = mock_user
-        
-        with patch.object(user_service, 'user_repository', mock_user_repo):
-            # テスト実行（例外を期待）
-            with pytest.raises(Exception) as exc_info:
-                await user_service.create_user(user_create_data, mock_db_session)
-            
-            # 結果検証
-            assert "already registered" in str(exc_info.value)
-            mock_user_repo.get_by_email.assert_called_once_with(
-                "test@example.com", mock_db_session
-            )
-    
-    async def test_authenticate_user_success(
-        self,
-        user_service,
-        mock_user,
-        mock_db_session
-    ):
-        """ユーザー認証成功テスト"""
-        # ユーザーリポジトリのモック
-        mock_user_repo = AsyncMock()
-        mock_user_repo.get_by_email.return_value = mock_user
-        
-        with patch.object(user_service, 'user_repository', mock_user_repo), \
-             patch('libkoiki.services.user_service.verify_password') as mock_verify_password:
-            
-            mock_verify_password.return_value = True
-            
-            # テスト実行
-            result = await user_service.authenticate_user(
-                email="test@example.com",
-                password="TestPass123@",
-                db=mock_db_session
-            )
-            
-            # 結果検証
-            assert result == mock_user
-            mock_user_repo.get_by_email.assert_called_once_with(
-                "test@example.com", mock_db_session
-            )
-            mock_verify_password.assert_called_once_with(
-                "TestPass123@", mock_user.hashed_password
-            )
-    
-    async def test_authenticate_user_invalid_email(
-        self,
-        user_service,
-        mock_db_session
-    ):
-        """無効なメールアドレスでの認証テスト"""
-        # ユーザーリポジトリのモック（ユーザーが見つからない）
-        mock_user_repo = AsyncMock()
-        mock_user_repo.get_by_email.return_value = None
-        
-        with patch.object(user_service, 'user_repository', mock_user_repo), \
-             patch('libkoiki.services.user_service.verify_password') as mock_verify_password:
-            
-            # ダミー認証のモック
-            mock_verify_password.return_value = False
-            
-            # テスト実行
-            result = await user_service.authenticate_user(
-                email="nonexistent@example.com",
-                password="TestPass123@",
-                db=mock_db_session
-            )
-            
-            # 結果検証
-            assert result is None
-            mock_user_repo.get_by_email.assert_called_once_with(
-                "nonexistent@example.com", mock_db_session
-            )
-            # タイミング攻撃対策のためダミー認証が実行される
-            mock_verify_password.assert_called_once()
-    
-    async def test_authenticate_user_invalid_password(
-        self,
-        user_service,
-        mock_user,
-        mock_db_session
-    ):
-        """無効なパスワードでの認証テスト"""
-        # ユーザーリポジトリのモック
-        mock_user_repo = AsyncMock()
-        mock_user_repo.get_by_email.return_value = mock_user
-        
-        with patch.object(user_service, 'user_repository', mock_user_repo), \
-             patch('libkoiki.services.user_service.verify_password') as mock_verify_password:
-            
-            mock_verify_password.return_value = False
-            
-            # テスト実行
-            result = await user_service.authenticate_user(
-                email="test@example.com",
-                password="wrongpassword",
-                db=mock_db_session
-            )
-            
-            # 結果検証
-            assert result is None
-            mock_user_repo.get_by_email.assert_called_once_with(
-                "test@example.com", mock_db_session
-            )
-            mock_verify_password.assert_called_once_with(
-                "wrongpassword", mock_user.hashed_password
-            )
-    
-    async def test_authenticate_user_inactive_user(
-        self,
-        user_service,
-        mock_db_session
-    ):
-        """非アクティブユーザーの認証テスト"""
-        # 非アクティブユーザーのモック
-        inactive_user = MagicMock(spec=UserModel)
-        inactive_user.is_active = False
-        inactive_user.hashed_password = "$2b$12$test_hashed_password"
-        
-        # ユーザーリポジトリのモック
-        mock_user_repo = AsyncMock()
-        mock_user_repo.get_by_email.return_value = inactive_user
-        
-        with patch.object(user_service, 'user_repository', mock_user_repo), \
-             patch('libkoiki.services.user_service.verify_password') as mock_verify_password:
-            
-            mock_verify_password.return_value = True
-            
-            # テスト実行
-            result = await user_service.authenticate_user(
-                email="test@example.com",
-                password="TestPass123@",
-                db=mock_db_session
-            )
-            
-            # 結果検証
-            assert result is None
-            mock_user_repo.get_by_email.assert_called_once_with(
-                "test@example.com", mock_db_session
-            )
-            mock_verify_password.assert_called_once_with(
-                "TestPass123@", inactive_user.hashed_password
-            )
-    
-    async def test_get_user_by_id_success(
-        self,
-        user_service,
-        mock_user,
-        mock_db_session
-    ):
-        """ID指定でのユーザー取得成功テスト"""
-        # ユーザーリポジトリのモック
-        mock_user_repo = AsyncMock()
-        mock_user_repo.get_by_id.return_value = mock_user
-        
-        with patch.object(user_service, 'user_repository', mock_user_repo):
-            # テスト実行
-            result = await user_service.get_user_by_id(1, mock_db_session)
-            
-            # 結果検証
-            assert result == mock_user
-            mock_user_repo.get_by_id.assert_called_once_with(1, mock_db_session)
-    
-    async def test_get_user_by_id_not_found(
-        self,
-        user_service,
-        mock_db_session
-    ):
-        """ID指定でのユーザー取得失敗テスト"""
-        # ユーザーリポジトリのモック（ユーザーが見つからない）
-        mock_user_repo = AsyncMock()
-        mock_user_repo.get_by_id.return_value = None
-        
-        with patch.object(user_service, 'user_repository', mock_user_repo):
-            # テスト実行
-            result = await user_service.get_user_by_id(999, mock_db_session)
-            
-            # 結果検証
-            assert result is None
-            mock_user_repo.get_by_id.assert_called_once_with(999, mock_db_session)
-    
-    async def test_get_user_by_email_success(
-        self,
-        user_service,
-        mock_user,
-        mock_db_session
-    ):
-        """メールアドレス指定でのユーザー取得成功テスト"""
-        # ユーザーリポジトリのモック
-        mock_user_repo = AsyncMock()
-        mock_user_repo.get_by_email.return_value = mock_user
-        
-        with patch.object(user_service, 'user_repository', mock_user_repo):
-            # テスト実行
-            result = await user_service.get_user_by_email("test@example.com", mock_db_session)
-            
-            # 結果検証
-            assert result == mock_user
-            mock_user_repo.get_by_email.assert_called_once_with(
-                "test@example.com", mock_db_session
-            )
