@@ -12,6 +12,7 @@ class TestAuthAPI:
         response = test_client.post(
             "/api/v1/auth/register",
             json={
+                "username": "testuser",
                 "email": "test@example.com",
                 "password": "TestPass123@",
                 "full_name": "Test User"
@@ -33,16 +34,18 @@ class TestAuthAPI:
         test_client.post(
             "/api/v1/auth/register",
             json={
+                "username": "firstuser",
                 "email": "duplicate@example.com",
                 "password": "TestPass123@",
                 "full_name": "First User"
             }
         )
-        
+
         # 重複登録を試行
         response = test_client.post(
             "/api/v1/auth/register",
             json={
+                "username": "seconduser",
                 "email": "duplicate@example.com",
                 "password": "TestPass123@",
                 "full_name": "Second User"
@@ -57,6 +60,7 @@ class TestAuthAPI:
         response = test_client.post(
             "/api/v1/auth/register",
             json={
+                "username": "weakuser",
                 "email": "weak@example.com",
                 "password": "weak",
                 "full_name": "Weak User"
@@ -74,6 +78,7 @@ class TestAuthAPI:
         test_client.post(
             "/api/v1/auth/register",
             json={
+                "username": "loginuser",
                 "email": "login@example.com",
                 "password": "TestPass123@",
                 "full_name": "Login User"
@@ -104,6 +109,7 @@ class TestAuthAPI:
         test_client.post(
             "/api/v1/auth/register",
             json={
+                "username": "invaliduser",
                 "email": "invalid@example.com",
                 "password": "TestPass123@",
                 "full_name": "Invalid User"
@@ -141,6 +147,7 @@ class TestAuthAPI:
         test_client.post(
             "/api/v1/auth/register",
             json={
+                "username": "currentuser",
                 "email": "current@example.com",
                 "password": "TestPass123@",
                 "full_name": "Current User"
@@ -195,6 +202,7 @@ class TestAuthAPI:
         test_client.post(
             "/api/v1/auth/register",
             json={
+                "username": "logoutuser",
                 "email": "logout@example.com",
                 "password": "TestPass123@",
                 "full_name": "Logout User"
