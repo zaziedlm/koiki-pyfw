@@ -26,12 +26,17 @@ def transactional(func: F) -> F:
         db_session: Optional[AsyncSession] = None
         session_arg_index = -1
 
+        def _is_session_like(obj: Any) -> bool:
+            return isinstance(obj, AsyncSession) or all(
+                hasattr(obj, attr) for attr in ('commit', 'rollback', 'execute', 'in_transaction')
+            )
+
         # 位置引数の最後が AsyncSession かチェック
-        if args and isinstance(args[-1], AsyncSession):
+        if args and _is_session_like(args[-1]):
             db_session = args[-1]
             session_arg_index = len(args) - 1
         # キーワード引数に AsyncSession があるかチェック (例: db=session)
-        elif 'db' in kwargs and isinstance(kwargs['db'], AsyncSession):
+        elif 'db' in kwargs and _is_session_like(kwargs['db']):
             db_session = kwargs['db']
         # 他のキーワード引数名も探す場合 (より汎用的だが複雑)
         # else:
