@@ -128,16 +128,21 @@ bandit = ">=1.8.0,<1.9.0"
 [tool.poetry.dependencies]
 python = ">=3.11.7,<4.0"
 # Poetry 2.x: Local dependency with develop mode
-libkoiki = {path = "libkoiki", develop = true}
+libkoiki = {path = "components/libkoiki", develop = true}
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "components/libkoiki/tests", "components/koiki_ref_app/tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
+markers = [
+    "unit: fast tests with no external dependencies",
+    "integration: integration tests",
+    "db_integration: tests requiring live PostgreSQL; excluded from default CI unless RUN_DB_INTEGRATION=1",
+]
 
 [tool.coverage.run]
-source = ["app", "libkoiki"]
+source = ["app", "koiki_ref_app", "libkoiki"]
 omit = ["tests/*"]
 
 [tool.coverage.report]

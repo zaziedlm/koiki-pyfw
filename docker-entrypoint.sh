@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+ALEMBIC_INI="/app/components/koiki_ref_app/alembic.ini"
+ALEMBIC_VERSIONS_DIR="/app/components/koiki_ref_app/alembic/versions"
+
 # リトライ関数定義
 function retry {
   local retries=$1
@@ -50,26 +53,26 @@ psycopg2.connect(
 print('データベース接続成功')
 "
 
-# alembic/versionsディレクトリの存在確認と作成
-if [ ! -d "/app/alembic/versions" ]; then
-    echo "alembic/versionsディレクトリを作成します..."
-    mkdir -p /app/alembic/versions
-    chown -R appuser:appuser /app/alembic/versions
+# Alembic versionsディレクトリの存在確認と作成
+if [ ! -d "$ALEMBIC_VERSIONS_DIR" ]; then
+    echo "Alembic versionsディレクトリを作成します..."
+    mkdir -p "$ALEMBIC_VERSIONS_DIR"
+    chown -R appuser:appuser "$ALEMBIC_VERSIONS_DIR"
 fi
 
 # マイグレーション実行
 echo "データベースマイグレーションを実行中..."
-alembic upgrade head || {
+alembic -c "$ALEMBIC_INI" upgrade head || {
     echo "マイグレーション実行中にエラーが発生しました。"
     echo "alembicリビジョンの状態確認..."
-    alembic current
+    alembic -c "$ALEMBIC_INI" current
     
     echo "マイグレーションファイルが存在しない場合、初期マイグレーションを作成します..."
-    if [ -z "$(ls -A /app/alembic/versions)" ]; then
+    if [ -z "$(ls -A "$ALEMBIC_VERSIONS_DIR")" ]; then
         echo "初期マイグレーションを作成..."
-        alembic revision --autogenerate -m "initial_migration"
+        alembic -c "$ALEMBIC_INI" revision --autogenerate -m "initial_migration"
         echo "マイグレーション実行..."
-        alembic upgrade head
+        alembic -c "$ALEMBIC_INI" upgrade head
     fi
 }
 

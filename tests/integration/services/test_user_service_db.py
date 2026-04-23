@@ -7,6 +7,7 @@ from libkoiki.core.exceptions import ValidationException
 
 
 @pytest.mark.integration
+@pytest.mark.db_integration
 class TestUserServiceDatabase:
     """ユーザーサービス データベース統合テスト"""
     
@@ -96,7 +97,7 @@ class TestUserServiceDatabase:
         user_data = UserCreate(
             username="weak_password_user",
             email="weak_password@example.com",
-            password="weak",
+            password="weakpass",
             full_name="Weak Password User"
         )
         
@@ -319,7 +320,7 @@ class TestUserServiceDatabase:
         # ユーザー更新
         updated_user = await user_service.update_user(
             user_id=created_user.id,
-            user_update=update_data,
+            user_in=update_data,
             db=test_db_session
         )
         

@@ -2,8 +2,10 @@
 
 ## ローカル開発環境のセットアップ
 
-このプロジェクトでは、`libkoiki` フレームワークと `app` アプリケーションを同時に開発できる構造になっています。
+このプロジェクトでは、`components/libkoiki` フレームワークと `components/koiki_ref_app` 参照アプリを同時に開発できる構造になっています。
 推奨 Python バージョンは **3.11.7** です。以下の手順でセットアップしてください。
+
+**注意**: `uv` への移行は計画済みですが、現時点の実運用手順はまだ Poetry ベースです。
 
 ### 0. Python 3.11.7 のインストール (pyenv 使用)
 
@@ -46,19 +48,20 @@ poetry install --with dev
 poetry shell
 ```
 
-### 2. libkoikiを開発モードでインストール
+### 2. ローカル component の取り込み
 
 #### 従来の方法（pip）（非推奨）
 
 ```powershell
-# 注意: このプロジェクトではpoetryへの完全移行が行われており、この方法は推奨されません
-pip install -e ./libkoiki
+# 注意: component は root pyproject.toml から参照されます
+# 追加の pip install -e は不要です
 ```
 
 #### poetry を使用する方法（推奨）
 
 ```powershell
-# Poetry 2.x: libkoikiは既にpyproject.tomlで開発モードとして設定済み
+# Poetry 2.x: libkoiki は既に root pyproject.toml で
+# components/libkoiki をローカル dependency として参照します
 # 追加の手順は不要です
 ```
 
@@ -85,7 +88,7 @@ poetry install --only=dev
 ### 4. アプリケーションの実行
 
 ```powershell
-# Poetry 2.x 推奨方法: 直接実行
+# Poetry 2.x 推奨方法: 互換 wrapper 経由で直接実行
 poetry run uvicorn app.main:app --reload
 
 # または、仮想環境内で実行
@@ -97,13 +100,19 @@ poetry run pytest  # テスト実行
 poetry run pytest --cov  # カバレッジ付きテスト実行
 ```
 
+補足:
+
+- 実ソースの正本は `components/koiki_ref_app/src/koiki_ref_app/` にあります
+- `app.main:app` は Stage 6 時点では互換導線として維持しています
+- 将来的な正式 ASGI path は `koiki_ref_app.asgi:app` です
+
 ## パッケージング
 
 `libkoiki` を別のプロジェクトで使用する場合は、Poetry 2.x のビルド機能を使用します：
 
 ```powershell
 # libkoikiディレクトリに移動
-cd libkoiki
+cd components/libkoiki
 
 # Poetry 2.x でビルド（推奨）
 poetry build

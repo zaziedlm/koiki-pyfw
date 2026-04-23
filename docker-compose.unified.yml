@@ -59,8 +59,7 @@ services:
         condition: service_started
     volumes:
       - ./app:/app/app:cached
-      - ./libkoiki:/app/libkoiki:cached
-      - ./alembic:/app/alembic:cached
+      - ./components:/app/components:cached
       - ./ops:/app/ops:cached
 
   app-optimized:

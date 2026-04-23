@@ -1,8 +1,10 @@
-# FastAPI エンタープライズアプリケーション基盤 (KOIKI-FW v0.6.0)
+# FastAPI エンタープライズアプリケーション基盤 (KOIKI-FW)
 
-これは、Python (FastAPI) を用いたエンタープライズ向けWebアプリケーション構築のための、堅牢な基盤フレームワーク「KOIKI-FW」の v0.6.0 をベースにしたプロジェクトテンプレートです。
+これは、Python (FastAPI) を用いたエンタープライズ向けWebアプリケーション構築のための、堅牢な基盤フレームワーク「KOIKI-FW」をベースにしたプロジェクトテンプレートです。
 
-詳細は `docs/design_kkfw_0.6.0.md` ドキュメントを参照してください。
+現在は `v0.7` に向けた再編作業中で、バックエンドは `components/libkoiki` と `components/koiki_ref_app` を中心とした構成へ移行しています。
+
+詳細は `docs/design_kkfw_0.6.0.md` と `docs/dev/` 配下の再編計画を参照してください。
 
 ## 特徴
 
@@ -31,7 +33,7 @@ docker-compose up --build -d
 
 上記コマンドにより、以下が自動的に実行されます：
 - データベース接続の確認（最大30回リトライ）
-- alembic/versionsディレクトリの確認と作成
+- `components/koiki_ref_app/alembic/versions` ディレクトリの確認と作成
 - 初期マイグレーション実行
 
 ### アプリケーションログの確認
@@ -85,17 +87,21 @@ bash scripts/security_test_manager.sh test
 poetry run pytest
 
 # カバレッジレポート付きでテスト実行
-poetry run pytest --cov=app --cov=libkoiki --cov-report=term-missing tests/
+poetry run pytest --cov=koiki_ref_app --cov=libkoiki --cov-report=term-missing \
+  components/libkoiki/tests/ \
+  components/koiki_ref_app/tests/ \
+  tests/unit/agent_guidance/ \
+  tests/integration/services/
 ```
 
 ### 継続的インテグレーション (CI)
 
 GitHub Actionsによる自動テストパイプラインが設定されており、以下のブランチへのプッシュ時に自動実行されます：
-- master
-- develop
-- dev/*
-- feature/*
-- bugfix/*
+- `main`
+- `dev/v0.7`
+- `support/0.6`
+- `topic/*`
+- `feature/*`
 
 プルリクエスト時にも自動的にテストが実行され、コードの品質が検証されます。
 
@@ -103,24 +109,18 @@ GitHub Actionsによる自動テストパイプラインが設定されており
 
 ```
 プロジェクトルート/
-├── app/                     # アプリケーション固有のコード (拡張用)
-│   ├── api/                 # アプリケーション固有のDIなど
-│   ├── models/              # アプリケーション固有のDBモデル (拡張用)
-│   ├── repositories/        # アプリケーション固有のリポジトリ (拡張用)
-│   ├── schemas/             # アプリケーション固有のPydanticスキーマ (拡張用)
-│   ├── services/            # アプリケーション固有のサービス (拡張用)
-│   └── main.py              # アプリケーションのエントリポイント
-├── libkoiki/                # フレームワークコアライブラリ (主要機能実装済み)
-│   ├── api/                 # API共通コンポーネント
-│   ├── core/                # コアユーティリティ (設定・認証・ロギングなど)
-│   ├── db/                  # データベース関連
-│   ├── models/              # 共通DBモデル (User, Role, Permission, Todo等)
-│   ├── repositories/        # 共通リポジトリ
-│   ├── schemas/             # 共通Pydanticスキーマ
-│   ├── services/            # 共通サービス
-│   └── tasks/               # Celeryタスク関連
-├── alembic/                 # DBマイグレーションスクリプト
-├── tests/                   # テストコード (unit, integration)
+├── app/                              # 互換 wrapper (`app.main:app`) を維持する薄い層
+├── apps/                             # downstream 案件固有アプリの配置先
+├── components/
+│   ├── libkoiki/
+│   │   ├── src/libkoiki/             # 再利用可能なバックエンドフレームワーク
+│   │   └── tests/                    # framework 所有テスト
+│   └── koiki_ref_app/
+│       ├── src/koiki_ref_app/        # 参照アプリ兼 backend starter
+│       ├── alembic/                  # 参照アプリ所有マイグレーション
+│       └── tests/                    # ref app 所有テスト
+├── frontend/                         # root 配置の starter frontend
+├── tests/                            # root 共有テスト / e2e / agent guidance
 ├── .env.example             # 環境変数サンプル
 ├── .github/                 # GitHub Actions設定
 ├── docker-compose.yml       # Docker構成
@@ -128,7 +128,10 @@ GitHub Actionsによる自動テストパイプラインが設定されており
 └── README.md                # プロジェクト説明
 ```
 
-**注意**: v0.6.0 では、主要機能（認証、Todo、ユーザー管理）は `libkoiki/` 内に実装されており、`app/` は将来的な拡張用の基盤を提供しています。
+**注意**:
+- 現在の主な実装は `components/libkoiki` と `components/koiki_ref_app` にあります。
+- root `app/` は互換導線を維持するための wrapper です。
+- `apps/` は downstream の案件固有コードのための予約領域です。
 
 詳細な構成と機能説明は `docs/design_kkfw_0.6.0.md` を参照してください。
 

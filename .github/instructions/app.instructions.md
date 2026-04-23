@@ -1,5 +1,5 @@
 ---
-applyTo: "app/**/*.py,app/**/*.toml"
+applyTo: "app/**/*.py,app/**/*.toml,components/koiki_ref_app/**/*.py,components/koiki_ref_app/**/*.toml"
 ---
 
 # app Instructions
@@ -7,9 +7,9 @@ applyTo: "app/**/*.py,app/**/*.toml"
 This scope is for application-specific backend behavior.
 
 - keep business-specific logic, integrations, and composition here
-- reuse `libkoiki/` capabilities before extending shared framework code
-- follow the current `app/api/v1/` and `app/main.py` structure
+- reuse `components/libkoiki` capabilities before extending shared framework code
+- follow the current `components/koiki_ref_app/src/koiki_ref_app/api/v1/` structure and keep `app/main.py` as a compatibility wrapper
 - add only the layers needed for the feature
 - validate application behavior and affected integration points
 
-Do not duplicate framework behavior in `app/` when a shared solution already exists in `libkoiki/`.
+Do not duplicate framework behavior in `components/koiki_ref_app` when a shared solution already exists in `components/libkoiki`.

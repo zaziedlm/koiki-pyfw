@@ -2,6 +2,8 @@
 
 このディレクトリには、KOIKI-FWのセキュリティ監視APIおよび権限管理システムのテスト環境が含まれています。
 
+現在のバックエンド正本は `components/libkoiki` と `components/koiki_ref_app` にあり、root `app/` は互換 wrapper として維持されています。`ops` 配下の手順はこの新構造を前提に読んでください。
+
 ## 📁 ディレクトリ構造
 
 ```

@@ -24,16 +24,16 @@ poetry install --with test
 
 ```bash
 # ✅ 推奨：動作確認済みテストの実行
-poetry run pytest tests/unit/test_simple_auth.py tests/unit/test_hello.py tests/unit/libkoiki/services/test_user_service_simple.py tests/integration/app/api/test_todos_api.py -v
+poetry run pytest tests/unit/test_simple_auth.py tests/unit/test_hello.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/integration/app/api/test_todos_api.py -v
 
 # ✅ 基本的なユニットテスト
 poetry run pytest tests/unit/test_simple_auth.py -v
 
 # ✅ 認証サービスのシンプルテスト
-poetry run pytest tests/unit/libkoiki/services/test_user_service_simple.py -v
+poetry run pytest components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py -v
 
 # ✅ 統合テスト（データベース必要）
-poetry run pytest tests/integration/app/api/test_todos_api.py -v
+poetry run pytest components/koiki_ref_app/tests/integration/app/api/test_todos_api.py -v
 ```
 
 ### データベース統合テスト
@@ -58,20 +58,22 @@ poetry run pytest tests/integration/services/test_user_service_db.py::TestUserSe
 tests/
 ├── conftest.py                                          # 共通テスト設定
 ├── integration/
-│   ├── app/api/
-│   │   └── test_todos_api.py                           # API統合テスト
 │   └── services/
 │       ├── test_user_service_db.py                     # ユーザーサービス DB統合テスト
 │       ├── test_auth_service_db.py                     # 認証サービス DB統合テスト
 │       └── test_login_security_service_db.py           # ログインセキュリティ DB統合テスト
 └── unit/
     ├── test_simple_auth.py                             # シンプルな認証テスト
-    ├── test_hello.py                                   # 基本テスト
-    └── libkoiki/services/
-        ├── test_user_service_simple.py                 # ユーザーサービス シンプルテスト ✅
-        ├── test_user_service.py                        # ユーザーサービス 複合テスト（修正中）
-        ├── test_auth_service_comprehensive.py          # 認証サービス 包括テスト（修正中）
-        └── test_login_security_service.py              # ログインセキュリティテスト（修正中）
+    └── test_hello.py                                   # 基本テスト
+
+components/
+├── libkoiki/tests/unit/libkoiki/services/
+│   ├── test_user_service_simple.py                     # ユーザーサービス シンプルテスト ✅
+│   ├── test_user_service.py                            # ユーザーサービス 複合テスト（修正中）
+│   ├── test_auth_service_comprehensive.py              # 認証サービス 包括テスト（修正中）
+│   └── test_login_security_service.py                  # ログインセキュリティテスト（修正中）
+└── koiki_ref_app/tests/integration/app/api/
+    └── test_todos_api.py                               # API統合テスト
 ```
 
 ### 🏷️ テストマーカー
@@ -87,7 +89,7 @@ tests/
 
 ```bash
 # 推奨実行コマンド
-poetry run pytest tests/unit/test_simple_auth.py tests/unit/test_hello.py tests/unit/libkoiki/services/test_user_service_simple.py tests/integration/app/api/test_todos_api.py -v
+poetry run pytest tests/unit/test_simple_auth.py tests/unit/test_hello.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/integration/app/api/test_todos_api.py -v
 
 # 結果: 10 passed, 12 warnings
 ```
@@ -103,9 +105,9 @@ poetry run pytest tests/unit/test_simple_auth.py tests/unit/test_hello.py tests/
 **@transactionalデコレータ関連の複雑なテスト**:
 ```bash
 # 現在エラーが発生
-poetry run pytest tests/unit/libkoiki/services/test_user_service.py -v
-poetry run pytest tests/unit/libkoiki/services/test_auth_service_comprehensive.py -v
-poetry run pytest tests/integration/app/api/test_auth_api.py -v
+poetry run pytest components/libkoiki/tests/unit/libkoiki/services/test_user_service.py -v
+poetry run pytest components/libkoiki/tests/unit/libkoiki/services/test_auth_service_comprehensive.py -v
+poetry run pytest components/koiki_ref_app/tests/integration/app/api/test_auth_api.py -v
 ```
 
 **データベース統合テスト**:
@@ -123,7 +125,7 @@ poetry run pytest tests/integration/services/ -v
 - ビジネスロジックを直接テスト
 - 高速で安定
 
-**例**: `tests/unit/libkoiki/services/test_user_service_simple.py`
+**例**: `components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py`
 
 ```python
 """ユーザーサービス シンプルユニットテスト"""
@@ -275,10 +277,10 @@ async def test_services(test_repositories):
 
 ```bash
 # カバレッジ付きテスト実行
-poetry run pytest --cov=app --cov=libkoiki --cov-report=term-missing tests/unit/test_simple_auth.py tests/unit/test_hello.py tests/unit/libkoiki/services/test_user_service_simple.py tests/integration/app/api/test_todos_api.py
+poetry run pytest --cov=koiki_ref_app --cov=libkoiki --cov-report=term-missing tests/unit/test_simple_auth.py tests/unit/test_hello.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/integration/app/api/test_todos_api.py
 
 # HTMLレポート生成
-poetry run pytest --cov=app --cov=libkoiki --cov-report=html tests/unit/test_simple_auth.py tests/unit/test_hello.py tests/unit/libkoiki/services/test_user_service_simple.py tests/integration/app/api/test_todos_api.py
+poetry run pytest --cov=koiki_ref_app --cov=libkoiki --cov-report=html tests/unit/test_simple_auth.py tests/unit/test_hello.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/integration/app/api/test_todos_api.py
 
 # カバレッジレポート確認
 open htmlcov/index.html
@@ -332,20 +334,20 @@ async def test_repositories(test_db_session):
 
 1. **ユニットテストから開始**:
    ```bash
-   # tests/unit/app/services/test_new_service_simple.py を作成
-   poetry run pytest tests/unit/app/services/test_new_service_simple.py -v
+   # components/koiki_ref_app/tests/unit/app/services/test_new_service_simple.py を作成
+   poetry run pytest components/koiki_ref_app/tests/unit/app/services/test_new_service_simple.py -v
    ```
 
 2. **統合テストを追加**:
    ```bash
-   # tests/integration/app/services/test_new_service_db.py を作成
-   poetry run pytest tests/integration/app/services/test_new_service_db.py::TestNewServiceDatabase::test_basic_function -v
+   # components/koiki_ref_app/tests/integration/app/services/test_new_service_db.py を作成
+   poetry run pytest components/koiki_ref_app/tests/integration/app/services/test_new_service_db.py::TestNewServiceDatabase::test_basic_function -v
    ```
 
 3. **動作確認**:
    ```bash
    # 既存の動作確認済みテストと一緒に実行
-   poetry run pytest tests/unit/test_simple_auth.py tests/unit/app/services/test_new_service_simple.py -v
+   poetry run pytest tests/unit/test_simple_auth.py components/koiki_ref_app/tests/unit/app/services/test_new_service_simple.py -v
    ```
 
 ## 備考：テスト実装で調整したポイント
@@ -390,18 +392,18 @@ async with async_session_factory() as session:
 ### 1. アプリケーションサービスのテスト
 
 ```python
-# app/services/my_service.py をテストする場合
-# tests/unit/app/services/test_my_service_simple.py
+# components/koiki_ref_app/src/koiki_ref_app/services/my_service.py をテストする場合
+# components/koiki_ref_app/tests/unit/app/services/test_my_service_simple.py
 
 class TestMyServiceSimple:
     """マイサービス シンプルユニットテスト"""
     
-    @patch('app.services.my_service.external_api_call')
+    @patch('koiki_ref_app.services.my_service.external_api_call')
     @pytest.mark.asyncio
     async def test_my_business_logic(self, mock_api_call):
         """ビジネスロジックテスト"""
         # サービスを直接作成
-        from app.services.my_service import MyService
+        from koiki_ref_app.services.my_service import MyService
         
         # モックの設定
         mock_api_call.return_value = {"result": "success"}
@@ -419,8 +421,8 @@ class TestMyServiceSimple:
 ### 2. アプリケーションAPIのテスト
 
 ```python
-# app/api/v1/endpoints/my_endpoint.py をテストする場合
-# tests/integration/app/api/test_my_endpoint.py
+# components/koiki_ref_app/src/koiki_ref_app/api/v1/endpoints/my_endpoint.py をテストする場合
+# components/koiki_ref_app/tests/integration/app/api/test_my_endpoint.py
 
 @pytest.mark.integration
 class TestMyEndpoint:
@@ -446,9 +448,9 @@ class TestMyEndpoint:
 
 ```bash
 # 開発フロー例
-poetry run pytest tests/unit/app/services/test_my_service_simple.py -v
-poetry run pytest tests/integration/app/api/test_my_endpoint.py -v
-poetry run pytest tests/unit/test_simple_auth.py tests/unit/app/services/test_my_service_simple.py -v
+poetry run pytest components/koiki_ref_app/tests/unit/app/services/test_my_service_simple.py -v
+poetry run pytest components/koiki_ref_app/tests/integration/app/api/test_my_endpoint.py -v
+poetry run pytest tests/unit/test_simple_auth.py components/koiki_ref_app/tests/unit/app/services/test_my_service_simple.py -v
 ```
 
 この手順により、@transactionalデコレータやその他のフレームワーク機能に依存せず、純粋なビジネスロジックをテストできる、保守性の高いテストコードを作成できます。

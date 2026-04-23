@@ -1,0 +1,17 @@
+[project]
+name = "koiki_ref_app"
+version = "0.6.1"
+description = "Reference application built with KOIKI Framework."
+authors = [{ name = "KOIKI Team" }]
+license = {text = "MIT"}
+requires-python = ">=3.11.7"
+dependencies = [
+    "libkoiki"
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

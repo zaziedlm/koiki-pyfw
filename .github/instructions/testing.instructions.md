@@ -1,5 +1,5 @@
 ---
-applyTo: "tests/**/*.py,.github/workflows/**/*.yml,pyproject.toml"
+applyTo: "tests/**/*.py,components/**/tests/**/*.py,.github/workflows/**/*.yml,pyproject.toml"
 ---
 
 # Testing Instructions
