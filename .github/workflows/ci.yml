@@ -76,13 +76,19 @@ jobs:
           # Poetry 2.x: Verify installation
           poetry env info
 
-      - name: Run tests with coverage (Poetry 2.x)
+      - name: Run libkoiki unit tests
         run: |
-          # Stage 6: component-based test layout
-          poetry run pytest --cov=koiki_ref_app --cov=libkoiki --cov-report=term-missing --cov-report=html \
+          # libkoiki 単独セッション: koiki_ref_app の ORM bootstrap と分離してマッパー汚染を防止
+          poetry run pytest --cov=libkoiki --cov-report= \
             components/libkoiki/tests/ \
+            tests/unit/agent_guidance/
+
+      - name: Run koiki_ref_app and integration tests with coverage
+        run: |
+          # 別セッション: bootstrap_orm() が UserModel.sso_links を安全に追加できる
+          poetry run pytest --cov=koiki_ref_app --cov=libkoiki --cov-append \
+            --cov-report=term-missing --cov-report=html \
             components/koiki_ref_app/tests/ \
-            tests/unit/agent_guidance/ \
             tests/integration/services/
           poetry show --tree --only=main
 
