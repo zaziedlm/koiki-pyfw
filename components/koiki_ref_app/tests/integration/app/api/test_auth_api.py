@@ -138,8 +138,8 @@ class TestAuthAPI:
             }
         )
         
-        assert response.status_code == 500
-        assert "login failed" in response.json()["detail"]
+        assert response.status_code == 401
+        assert "Incorrect email or password" in response.json()["detail"]
     
     def test_get_current_user_success(self, test_client: TestClient):
         """認証済みユーザー情報取得テスト"""

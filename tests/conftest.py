@@ -6,6 +6,7 @@ from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock
 
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -22,6 +23,11 @@ if KOIKI_REF_APP_SRC not in sys.path:
     sys.path.insert(1, KOIKI_REF_APP_SRC)
 if REPO_ROOT not in sys.path:
     sys.path.insert(2, REPO_ROOT)
+
+os.environ["APP_ENV"] = "testing"
+os.environ["DEBUG"] = "true"
+os.environ["REDIS_ENABLED"] = "false"
+os.environ["RATE_LIMIT_ENABLED"] = "false"
 
 
 @pytest.fixture(scope="session")
@@ -47,22 +53,39 @@ def test_settings():
 @pytest_asyncio.fixture(scope="session")
 async def test_engine(test_settings):
     """テスト用データベースエンジン"""
+    from koiki_ref_app.bootstrap import bootstrap_orm
+    from libkoiki.db.base import Base
+    import libkoiki.models  # noqa: F401
+    import koiki_ref_app.models  # noqa: F401
+
+    bootstrap_orm()
+
     engine = create_async_engine(
         test_settings.DATABASE_URL,
         echo=False,
         poolclass=None,
     )
-    
-    # テスト開始時にテーブルが存在するかチェック（既存のDBを使用）
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
     yield engine
-    
-    # テスト終了時にテーブルをクリーンアップ（必要に応じて）
+
     await engine.dispose()
 
 
 @pytest_asyncio.fixture
 async def test_db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     """テスト用データベースセッション - @transactionalデコレータと協調"""
+    from libkoiki.db.base import Base
+
+    table_names = [table.name for table in Base.metadata.sorted_tables]
+    if table_names:
+        truncate_sql = "TRUNCATE TABLE " + ", ".join(table_names) + " RESTART IDENTITY CASCADE"
+        async with test_engine.begin() as conn:
+            await conn.execute(text(truncate_sql))
+
     async_session_factory = sessionmaker(
         test_engine, class_=AsyncSession, expire_on_commit=False
     )
@@ -74,19 +97,30 @@ async def test_db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture
-def test_client(test_db_session):
+def test_client(test_engine):
     """テスト用FastAPIクライアント"""
     from koiki_ref_app.asgi import app
+    from libkoiki.core.rate_limiter import limiter as shared_limiter
     from libkoiki.db.session import get_db
-    
+    async_session_factory = sessionmaker(
+        test_engine, class_=AsyncSession, expire_on_commit=False
+    )
+
     async def override_get_db():
-        yield test_db_session
-    
+        async with async_session_factory() as session:
+            yield session
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
+    previous_shared_enabled = shared_limiter.enabled
+    shared_limiter.enabled = False
+
     with TestClient(app) as client:
+        if getattr(app.state, "limiter", None) is not None:
+            app.state.limiter.enabled = False
         yield client
-    
+
+    shared_limiter.enabled = previous_shared_enabled
     app.dependency_overrides.clear()
 
 

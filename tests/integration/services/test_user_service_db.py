@@ -319,7 +319,7 @@ class TestUserServiceDatabase:
         # ユーザー更新
         updated_user = await user_service.update_user(
             user_id=created_user.id,
-            user_update=update_data,
+            user_in=update_data,
             db=test_db_session
         )
         
