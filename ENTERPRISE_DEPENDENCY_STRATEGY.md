@@ -1,5 +1,11 @@
 # エンタープライズ向け依存性管理戦略
 
+> **Historical reference**
+>
+> この文書は Poetry 2.x 時代の依存性管理方針を含む履歴資料です。
+> 現行の標準経路は `uv.lock`、`uv sync --locked`、`uv run --locked ...` です。
+> セキュリティ監査の現行手順は `SECURITY_AUDIT_COMMANDS.md` を参照してください。
+
 ## バージョン管理ポリシー
 
 ### 1. 本番環境（Production）
