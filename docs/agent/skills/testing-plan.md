@@ -33,7 +33,7 @@ They validate:
 Run:
 
 ```bash
-poetry run pytest tests/unit/agent_guidance/
+uv run --locked pytest tests/unit/agent_guidance/
 ```
 
 ### 2. Agent-routing smoke tests
@@ -58,31 +58,31 @@ For each case, record `observed_skills` in the order the runtime selected them.
 Generate a manual checklist:
 
 ```bash
-poetry run python scripts/agent_skill_smoke.py generate
+uv run --locked python scripts/agent_skill_smoke.py generate
 ```
 
 On Windows PowerShell, prefer direct UTF-8 file output to avoid console-pipeline encoding issues:
 
 ```bash
-poetry run python scripts/agent_skill_smoke.py generate --output agent-skill-checklist.md
+uv run --locked python scripts/agent_skill_smoke.py generate --output agent-skill-checklist.md
 ```
 
 Generate an empty results template:
 
 ```bash
-poetry run python scripts/agent_skill_smoke.py template
+uv run --locked python scripts/agent_skill_smoke.py template
 ```
 
 Windows PowerShell:
 
 ```bash
-poetry run python scripts/agent_skill_smoke.py template --output agent-skill-results.json
+uv run --locked python scripts/agent_skill_smoke.py template --output agent-skill-results.json
 ```
 
 Evaluate recorded results:
 
 ```bash
-poetry run python scripts/agent_skill_smoke.py evaluate --results agent-skill-results.json
+uv run --locked python scripts/agent_skill_smoke.py evaluate --results agent-skill-results.json
 ```
 
 ## Recommended Smoke Cases

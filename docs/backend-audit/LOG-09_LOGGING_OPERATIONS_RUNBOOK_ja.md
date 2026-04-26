@@ -230,34 +230,34 @@
 ### 6.1 logging 周辺をまとめて確認する場合
 
 ```powershell
-poetry run pytest `
-  tests/unit/core/test_logging_sanitizer.py `
-  tests/unit/core/test_security_logger.py `
-  tests/unit/core/test_audit_middleware.py `
-  tests/unit/libkoiki/api/test_auth_logging.py `
-  tests/unit/libkoiki/test_input_logging.py `
-  tests/unit/libkoiki/test_error_logging.py `
-  tests/unit/libkoiki/test_audit_dependencies.py `
-  tests/unit/app/test_sso_auth_logging.py `
-  tests/unit/app/test_saml_auth_logging.py `
-  tests/unit/app/services/test_sso_service.py `
-  tests/unit/app/services/test_saml_service.py
+uv run --locked pytest `
+  components/libkoiki/tests/unit/core/test_logging_sanitizer.py `
+  components/libkoiki/tests/unit/core/test_security_logger.py `
+  components/libkoiki/tests/unit/core/test_audit_middleware.py `
+  components/libkoiki/tests/unit/libkoiki/api/test_auth_logging.py `
+  components/libkoiki/tests/unit/libkoiki/test_input_logging.py `
+  components/libkoiki/tests/unit/libkoiki/test_error_logging.py `
+  components/libkoiki/tests/unit/libkoiki/test_audit_dependencies.py `
+  components/koiki_ref_app/tests/unit/app/test_sso_auth_logging.py `
+  components/koiki_ref_app/tests/unit/app/test_saml_auth_logging.py `
+  components/koiki_ref_app/tests/unit/app/services/test_sso_service.py `
+  components/koiki_ref_app/tests/unit/app/services/test_saml_service.py
 ```
 
 ### 6.2 変更単位ごとの最小実行
 
 - sanitizer / formatter を変えた場合:
-  - `tests/unit/core/test_logging_sanitizer.py`
-  - `tests/unit/core/test_security_logger.py`
+  - `components/libkoiki/tests/unit/core/test_logging_sanitizer.py`
+  - `components/libkoiki/tests/unit/core/test_security_logger.py`
 - audit / middleware を変えた場合:
-  - `tests/unit/core/test_audit_middleware.py`
-  - `tests/unit/libkoiki/test_audit_dependencies.py`
+  - `components/libkoiki/tests/unit/core/test_audit_middleware.py`
+  - `components/libkoiki/tests/unit/libkoiki/test_audit_dependencies.py`
 - auth endpoint / service を変えた場合:
-  - `tests/unit/libkoiki/api/test_auth_logging.py`
-  - `tests/unit/app/test_sso_auth_logging.py`
-  - `tests/unit/app/test_saml_auth_logging.py`
-  - `tests/unit/app/services/test_sso_service.py`
-  - `tests/unit/app/services/test_saml_service.py`
+  - `components/libkoiki/tests/unit/libkoiki/api/test_auth_logging.py`
+  - `components/koiki_ref_app/tests/unit/app/test_sso_auth_logging.py`
+  - `components/koiki_ref_app/tests/unit/app/test_saml_auth_logging.py`
+  - `components/koiki_ref_app/tests/unit/app/services/test_sso_service.py`
+  - `components/koiki_ref_app/tests/unit/app/services/test_saml_service.py`
 
 ## 7. 既知の残課題
 

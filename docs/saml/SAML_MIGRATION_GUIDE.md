@@ -115,7 +115,7 @@ importパスが全て同一のため確認事項は最小限。
 **作業:**
 - 移植先 `Dockerfile` にxml/xmlsecシステムライブラリを追加
 - `pyproject.toml` に `python3-saml`, `xmlsec` を追加
-- `poetry lock && poetry install`
+- `uv lock && uv sync --locked`
 
 **検証:**
 ```bash

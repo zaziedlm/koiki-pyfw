@@ -64,12 +64,13 @@ dependencies = [
     "limits>=5.4.0,<5.5.0",                 # Rate limiting support
     "tzdata>=2024.2,<2026.0",               # IANA timezone database (required for zoneinfo on Windows/containers)
     
-    # Local Framework Dependency
-    "libkoiki",                             # Local package
+    # Local Workspace Dependencies
+    "libkoiki",
+    "koiki-ref-app",
 ]
 
-# PEP 621: Enterprise optional dependencies with security focus
-[project.optional-dependencies]
+# PEP 735 dependency groups for local development and CI.
+[dependency-groups]
 dev = [
     # Testing Framework (minor version locked)
     "pytest>=8.4.1,<8.5.0",
@@ -96,39 +97,18 @@ security = [
     # Alternative: Use pip-audit which covers similar vulnerability detection
 ]
 
-# Poetry 2.x: Minimal configuration, PEP 621 compliant
-[tool.poetry]
-# Only Poetry-specific settings remain here
-# All metadata now in [project] section per PEP 621
-package-mode = false
+[tool.uv]
+package = false
 
-# Poetry 2.x: Dependency groups with explicit dependencies
-[tool.poetry.group.dev]
-optional = true
+[tool.uv.workspace]
+members = [
+    "components/libkoiki",
+    "components/koiki_ref_app",
+]
 
-[tool.poetry.group.dev.dependencies]
-# Development dependencies managed here for Poetry 2.x features
-pytest = ">=8.4.1,<8.5.0"
-pytest-asyncio = ">=1.0.0,<1.1.0"
-pytest-cov = ">=6.2.1,<6.3.0"
-pytest-mock = ">=3.14.0,<3.15.0"
-PyYAML = ">=6.0,<7.0"
-# Security tools (pydantic 2.7+ compatible)
-pip-audit = ">=2.9.0,<3.0.0"
-bandit = ">=1.8.0,<1.9.0"
-
-# Poetry 2.x: Security group for enterprise auditing
-[tool.poetry.group.security]
-optional = true
-
-[tool.poetry.group.security.dependencies]
-pip-audit = ">=2.9.0,<3.0.0"
-bandit = ">=1.8.0,<1.9.0"
-
-[tool.poetry.dependencies]
-python = ">=3.11.7,<4.0"
-# Poetry 2.x: Local dependency with develop mode
-libkoiki = {path = "components/libkoiki", develop = true}
+[tool.uv.sources]
+libkoiki = { workspace = true }
+"koiki-ref-app" = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "components/libkoiki/tests", "components/koiki_ref_app/tests"]
@@ -154,8 +134,3 @@ exclude_lines = [
     "pass",
     "raise ImportError"
 ]
-
-# Poetry 2.x: Modern build system configuration
-[build-system]
-requires = ["poetry-core>=1.5.0"]
-build-backend = "poetry.core.masonry.api"

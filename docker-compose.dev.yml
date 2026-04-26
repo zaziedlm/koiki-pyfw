@@ -46,7 +46,7 @@ services:
       - "8000:8000"
     environment:
       - APP_ENV=development
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload # 開発時はリロード有効
+    command: uvicorn koiki_ref_app.asgi:app --host 0.0.0.0 --port 8000 --reload # 開発時はリロード有効
     volumes:
       # Enable hot reload for backend development
       - ./app:/app/app:cached # 互換 wrapper

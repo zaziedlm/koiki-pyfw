@@ -53,7 +53,6 @@ try {
             --file Dockerfile.unified `
             --target production `
             --build-arg INSTALL_MAIN_ONLY=true `
-            --build-arg POETRY_MAX_WORKERS=4 `
             --tag koiki-pyfw-app:prod-unified `
             .
     }

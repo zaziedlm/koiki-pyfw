@@ -60,37 +60,9 @@ dev = [
     "pytest-mock>=3.14.0,<4.0.0",
 ]
 
-# Poetry 2.x: Minimal configuration, PEP 621 takes precedence
-[tool.poetry]
-# Poetry 2.x: src layout package configuration for libkoiki
-packages = [{include = "libkoiki", from = "src"}]
-
-# Poetry 2.x: Development dependencies in optional groups
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-# Development tools for libkoiki specifically
-pytest = ">=8.4.1,<8.5.0"
-pytest-asyncio = ">=1.0.0,<1.1.0"
-pytest-cov = ">=6.2.1,<7.0.0"
-pytest-mock = ">=3.14.0,<4.0.0"
-
-# Poetry 2.x: Testing group for CI/CD optimization
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-pytest = ">=8.4.1,<8.5.0"
-pytest-asyncio = ">=1.0.0,<1.1.0"
-pytest-cov = ">=6.2.1,<7.0.0"
-
-# Poetry 2.x: Minimized dependencies - most moved to PEP 621
-[tool.poetry.dependencies]
-python = ">=3.11.7,<4.0"
-# Only Poetry-specific dependencies remain here
-
-# Poetry 2.x: Modern build system with proper versioning
 [build-system]
-requires = ["poetry-core>=1.5.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

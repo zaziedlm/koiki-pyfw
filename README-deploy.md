@@ -2,6 +2,12 @@
 
 このドキュメントでは、KOIKIフレームワークのDockerコンテナによる各種配備シナリオと必要なコマンドを説明します。[`docker-entrypoint.sh`](docker-entrypoint.sh)の自動実行機能を考慮した最適な手順を示しています。
 
+> **Dependency workflow note**
+>
+> この文書には Poetry 2.x 時代の履歴記述が一部残っています。
+> 現行の依存同期と実行は `uv.lock`、`uv sync --locked`、`uv run --locked ...` を標準とします。
+> Docker build は `Dockerfile` / `Dockerfile.unified` の `uv sync --locked` 経路を使用します。
+
 **更新**: Poetry 2.x移行とセキュリティ修正完了（2025-06-21）
 
 ## 1. 初回環境構築時

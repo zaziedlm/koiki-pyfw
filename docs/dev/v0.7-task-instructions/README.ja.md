@@ -1,6 +1,11 @@
 # KOIKI-FW v0.7 個別タスク指示書
 
-本ディレクトリは、[v0.7-directory-reorganization-tasks.ja.md](../v0.7-directory-reorganization-tasks.ja.md) のうち、先行着手する `Task 0-1` から `Task 2-5` までを個別の実行指示書に分解したものです。
+本ディレクトリは、[v0.7-directory-reorganization-tasks.ja.md](../v0.7-directory-reorganization-tasks.ja.md) の個別実行指示書を収録するものです。
+現時点では、初期タスクに加えて Stage 2 継続実装タスク `Task 2-6` から `Task 2-10` も含みます。
+
+Stage 2 の `uv` 実移行後に残る Poetry 関連 follow-up は、次の文書で管理します。
+
+- [v0.7-stage2-uv-follow-up-plan.ja.md](../v0.7-stage2-uv-follow-up-plan.ja.md)
 
 ## 使い方
 
@@ -27,11 +32,18 @@
 12. [Task 2-3](./task-2-3.md)
 13. [Task 2-4](./task-2-4.md)
 14. [Task 2-5](./task-2-5.md)
+15. [Task 2-6](./task-2-6.md)
+16. [Task 2-7](./task-2-7.md)
+17. [Task 2-8](./task-2-8.md)
+18. [Task 2-9](./task-2-9.md)
+19. [Task 2-10](./task-2-10.md)
 
 ## 推奨進行順
 
 - まず Stage 0 を完了する
 - 次に Stage 1 を通しで完了する
 - その後に Stage 2 へ入る
+- Stage 2 の方針タスク `Task 2-1` から `Task 2-5` 完了後は、継続実装タスク `Task 2-6` から `Task 2-10` を branch 単位で進める
+- `Task 2-10` 完了後は、`v0.7-stage2-uv-follow-up-plan.ja.md` の FU-1 から順に Poetry 残存整理を進める
 
 この順序を守ることで、`uv` 移行や構造移動の前提を崩さずに進められます。

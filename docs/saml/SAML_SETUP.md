@@ -21,7 +21,7 @@ KOIKI-FWは以下のSAML認証機能を提供します：
 
 1. **Python依存関係**:
    ```bash
-   poetry install  # python3-saml, xmlsec が含まれます
+   uv sync --locked  # python3-saml, xmlsec が含まれます
    ```
 
 2. **PostgreSQL**: SAML認証フローの状態管理に `saml_auth_flow` テーブルを使用
@@ -105,10 +105,10 @@ docker logs osskk_keycloak
 
 ```bash
 # 依存関係インストール
-poetry install
+uv sync --locked
 
 # アプリケーション起動
-poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv run --locked uvicorn koiki_ref_app.asgi:app --reload --host 0.0.0.0 --port 8000
 
 # Docker統合環境の場合
 .\start-docker.ps1 unified-prod
@@ -118,7 +118,7 @@ poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ```bash
 # saml_auth_flow テーブルの作成
-alembic upgrade head
+uv run --locked alembic upgrade head
 ```
 
 ## 認証フロー詳細
@@ -464,7 +464,7 @@ async function completeSamlLogin() {
 
 5. **データベースマイグレーション**:
    ```bash
-   alembic upgrade head  # saml_auth_flow テーブル作成
+   uv run --locked alembic upgrade head  # saml_auth_flow テーブル作成
    ```
 
 ### 証明書管理
