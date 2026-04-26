@@ -114,7 +114,7 @@ Write-Host "[INFO] DATABASE_URL=$env:DATABASE_URL"
 Write-Host "[INFO] ENV_FILE=$env:ENV_FILE"
 Write-Host "[INFO] Running db_integration tests..."
 
-poetry run pytest `
+uv run pytest `
   components/koiki_ref_app/tests/integration/app/api/test_auth_api.py `
   tests/integration/services/ `
   -m db_integration

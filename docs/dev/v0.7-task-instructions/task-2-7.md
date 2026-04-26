@@ -50,6 +50,50 @@
 
 - Task 2-8 と Task 2-9 が `uv.lock` を前提に進められる
 
+## 実施結果
+
+Task:
+
+- Task 2-7: `uv.lock` 生成と lockfile 切替
+
+変更内容:
+
+- `uv lock` を実行し、root に `uv.lock` を生成した
+- 生成された `uv.lock` が root workspace と component 依存を反映していることを確認した
+  - `koiki-pyfw`
+  - `koiki-ref-app`
+  - `libkoiki`
+- workspace package は editable source として lock された
+  - `components/koiki_ref_app`
+  - `components/libkoiki`
+- `uv.lock` を Stage 2 以降の lockfile 正本として扱う方針を固定した
+
+lockfile 切替方針:
+
+- 正本は `uv.lock`
+- `poetry.lock` は Task 2-9 の CI 切替後に削除した
+  - 理由:
+    - CI workflow が `uv.lock` / `uv sync --locked` 前提へ切り替わった
+    - local docs / helper script も `uv` 標準経路へ切り替わった
+    - lockfile 正本を複数残すと依存解決の source of truth が曖昧になる
+
+未解決事項:
+
+- `components/libkoiki/pyproject.toml` には Poetry 固有設定が残っている
+  - これは component の build backend / package discovery に関わる残置であり、root lockfile 正本ではない
+
+検証結果:
+
+- `uv lock` が成功した
+- `uv lock --check` が成功した
+- `uv.lock` 内で root / component の workspace package が認識されていることを確認した
+- 未解決 dependency conflict は確認されなかった
+
+次タスクへ渡す事項:
+
+- Task 2-8 では local docs / helper script を `uv.lock` 前提の `uv sync` / `uv run` に更新する
+- Task 2-9 では CI を `uv sync --locked` / `uv run --locked ...` へ切り替え、cache key を `uv.lock` 基準にする
+
 ## 次タスク
 
 - [Task 2-8](./task-2-8.md)

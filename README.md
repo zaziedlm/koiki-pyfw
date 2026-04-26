@@ -83,11 +83,11 @@ bash scripts/security_test_manager.sh test
 ### ローカルでのテスト実行
 
 ```bash
-# Poetryを使用したテスト実行
-poetry run pytest
+# 依存関係の同期
+uv sync
 
 # カバレッジレポート付きでテスト実行
-poetry run pytest --cov=koiki_ref_app --cov=libkoiki --cov-report=term-missing \
+uv run pytest --cov=koiki_ref_app --cov=libkoiki --cov-report=term-missing \
   components/libkoiki/tests/ \
   components/koiki_ref_app/tests/ \
   tests/unit/agent_guidance/ \

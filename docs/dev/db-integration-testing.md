@@ -10,7 +10,7 @@ export RUN_DB_INTEGRATION=1
 export DATABASE_URL=postgresql+asyncpg://test_user:test_pass@localhost:5432/test_db
 export ENV_FILE=.env.ci
 
-poetry run pytest \
+uv run pytest \
   components/koiki_ref_app/tests/integration/app/api/test_auth_api.py \
   tests/integration/services/ \
   -m db_integration
