@@ -74,17 +74,18 @@ Task:
   - 成功
   - `libkoiki` と `koiki_ref_app` の import を確認した
 - `uv run python -c "from koiki_ref_app.asgi import app; print(app.title)"`
-  - `.env` の `DEBUG=release` により失敗
-  - これは `uv` 移行ではなく既存の環境変数値が boolean として不正な問題
-- `DEBUG=false uv run python -c "from koiki_ref_app.asgi import app; print(app.title)"`
+  - Codex 実行プロセス環境に継承されていた `DEBUG=release` により失敗
+  - これは `uv` 移行ではなく、`Settings.DEBUG` に対する環境変数値が boolean として不正な問題
+- `DEBUG=true uv run python -c "from koiki_ref_app.asgi import app; print(app.title)"`
   - 成功
   - `koiki_ref_app.asgi:app` の import を確認した
 
 残課題:
 
-- `.env` の `DEBUG=release` は `libkoiki.core.config.Settings.DEBUG` の bool parsing に失敗する
-  - local runtime 確認では `DEBUG=false` など boolean 値で上書きが必要
-  - `.env` の値修正は uv 移行とは別タスクとして扱う
+- Codex 実行プロセス環境に継承されていた `DEBUG=release` は `libkoiki.core.config.Settings.DEBUG` の bool parsing に失敗する
+  - repository の `.env` には `DEBUG=release` は存在しない
+  - local runtime 確認では `DEBUG=true` / `DEBUG=false` など boolean 値で上書きが必要
+  - Codex 側の検証では `DEBUG=true` を明示して実行する
 - `components/libkoiki/pyproject.toml` には Poetry 固有設定が残っている
   - root dependency workflow からは外れたが、component build backend の整理余地は残る
 - GitHub Actions の実行結果は push / PR 後に確認する必要がある
