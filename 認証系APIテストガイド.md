@@ -17,23 +17,23 @@
 docker-compose up -d db
 
 # 依存関係のインストール（テスト用）
-poetry install --with test
+uv sync --locked --group test
 ```
 
 ### 基本的なテスト実行
 
 ```bash
 # ✅ 推奨：動作確認済みテストの実行
-poetry run pytest tests/unit/test_simple_auth.py tests/unit/test_hello.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/integration/app/api/test_todos_api.py -v
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_simple_auth.py tests/unit/test_hello.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/integration/app/api/test_todos_api.py -v
 
 # ✅ 基本的なユニットテスト
-poetry run pytest tests/unit/test_simple_auth.py -v
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_simple_auth.py -v
 
 # ✅ 認証サービスのシンプルテスト
-poetry run pytest components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py -v
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py -v
 
 # ✅ 統合テスト（データベース必要）
-poetry run pytest components/koiki_ref_app/tests/integration/app/api/test_todos_api.py -v
+uv run --locked pytest components/koiki_ref_app/tests/integration/app/api/test_todos_api.py -v
 ```
 
 ### データベース統合テスト
@@ -43,11 +43,11 @@ poetry run pytest components/koiki_ref_app/tests/integration/app/api/test_todos_
 docker-compose up -d db
 
 # 個別の統合テスト実行
-poetry run pytest tests/integration/services/test_user_service_db.py::TestUserServiceDatabase::test_create_user_success -v
+uv run --locked pytest tests/integration/services/test_user_service_db.py::TestUserServiceDatabase::test_create_user_success -v
 
 # 統合テストの実行（データベースクリーンアップ後）
 docker-compose exec db psql -U koiki_user -d koiki_todo_db -c "DELETE FROM refresh_tokens; DELETE FROM login_attempts; DELETE FROM users;"
-poetry run pytest tests/integration/services/test_user_service_db.py::TestUserServiceDatabase::test_create_user_success -v
+uv run --locked pytest tests/integration/services/test_user_service_db.py::TestUserServiceDatabase::test_create_user_success -v
 ```
 
 ## テスト構成
@@ -89,7 +89,7 @@ components/
 
 ```bash
 # 推奨実行コマンド
-poetry run pytest tests/unit/test_simple_auth.py tests/unit/test_hello.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/integration/app/api/test_todos_api.py -v
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_simple_auth.py tests/unit/test_hello.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/integration/app/api/test_todos_api.py -v
 
 # 結果: 10 passed, 12 warnings
 ```
@@ -105,15 +105,15 @@ poetry run pytest tests/unit/test_simple_auth.py tests/unit/test_hello.py compon
 **@transactionalデコレータ関連の複雑なテスト**:
 ```bash
 # 現在エラーが発生
-poetry run pytest components/libkoiki/tests/unit/libkoiki/services/test_user_service.py -v
-poetry run pytest components/libkoiki/tests/unit/libkoiki/services/test_auth_service_comprehensive.py -v
-poetry run pytest components/koiki_ref_app/tests/integration/app/api/test_auth_api.py -v
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_user_service.py -v
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_auth_service_comprehensive.py -v
+uv run --locked pytest components/koiki_ref_app/tests/integration/app/api/test_auth_api.py -v
 ```
 
 **データベース統合テスト**:
 ```bash
 # 個別実行は成功、複数実行時にデータ競合
-poetry run pytest tests/integration/services/ -v
+uv run --locked pytest tests/integration/services/ -v
 ```
 
 ## テストの書き方ガイド
@@ -277,10 +277,10 @@ async def test_services(test_repositories):
 
 ```bash
 # カバレッジ付きテスト実行
-poetry run pytest --cov=koiki_ref_app --cov=libkoiki --cov-report=term-missing tests/unit/test_simple_auth.py tests/unit/test_hello.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/integration/app/api/test_todos_api.py
+uv run --locked pytest --cov=koiki_ref_app --cov=libkoiki --cov-report=term-missing components/libkoiki/tests/unit/libkoiki/services/test_simple_auth.py tests/unit/test_hello.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/integration/app/api/test_todos_api.py
 
 # HTMLレポート生成
-poetry run pytest --cov=koiki_ref_app --cov=libkoiki --cov-report=html tests/unit/test_simple_auth.py tests/unit/test_hello.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/integration/app/api/test_todos_api.py
+uv run --locked pytest --cov=koiki_ref_app --cov=libkoiki --cov-report=html components/libkoiki/tests/unit/libkoiki/services/test_simple_auth.py tests/unit/test_hello.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/integration/app/api/test_todos_api.py
 
 # カバレッジレポート確認
 open htmlcov/index.html
@@ -314,7 +314,7 @@ existing_user = await user_service.repository.get_by_email(user_data.email)
 docker-compose exec db psql -U koiki_user -d koiki_todo_db -c "DELETE FROM refresh_tokens; DELETE FROM login_attempts; DELETE FROM users;"
 
 # 個別テストの実行
-poetry run pytest tests/integration/services/test_user_service_db.py::TestUserServiceDatabase::test_create_user_success -v
+uv run --locked pytest tests/integration/services/test_user_service_db.py::TestUserServiceDatabase::test_create_user_success -v
 ```
 
 #### 3. pytest-asyncio の警告
@@ -335,19 +335,19 @@ async def test_repositories(test_db_session):
 1. **ユニットテストから開始**:
    ```bash
    # components/koiki_ref_app/tests/unit/app/services/test_new_service_simple.py を作成
-   poetry run pytest components/koiki_ref_app/tests/unit/app/services/test_new_service_simple.py -v
+   uv run --locked pytest components/koiki_ref_app/tests/unit/app/services/test_new_service_simple.py -v
    ```
 
 2. **統合テストを追加**:
    ```bash
    # components/koiki_ref_app/tests/integration/app/services/test_new_service_db.py を作成
-   poetry run pytest components/koiki_ref_app/tests/integration/app/services/test_new_service_db.py::TestNewServiceDatabase::test_basic_function -v
+   uv run --locked pytest components/koiki_ref_app/tests/integration/app/services/test_new_service_db.py::TestNewServiceDatabase::test_basic_function -v
    ```
 
 3. **動作確認**:
    ```bash
    # 既存の動作確認済みテストと一緒に実行
-   poetry run pytest tests/unit/test_simple_auth.py components/koiki_ref_app/tests/unit/app/services/test_new_service_simple.py -v
+   uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_simple_auth.py components/koiki_ref_app/tests/unit/app/services/test_new_service_simple.py -v
    ```
 
 ## 備考：テスト実装で調整したポイント
@@ -448,9 +448,9 @@ class TestMyEndpoint:
 
 ```bash
 # 開発フロー例
-poetry run pytest components/koiki_ref_app/tests/unit/app/services/test_my_service_simple.py -v
-poetry run pytest components/koiki_ref_app/tests/integration/app/api/test_my_endpoint.py -v
-poetry run pytest tests/unit/test_simple_auth.py components/koiki_ref_app/tests/unit/app/services/test_my_service_simple.py -v
+uv run --locked pytest components/koiki_ref_app/tests/unit/app/services/test_my_service_simple.py -v
+uv run --locked pytest components/koiki_ref_app/tests/integration/app/api/test_my_endpoint.py -v
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_simple_auth.py components/koiki_ref_app/tests/unit/app/services/test_my_service_simple.py -v
 ```
 
 この手順により、@transactionalデコレータやその他のフレームワーク機能に依存せず、純粋なビジネスロジックをテストできる、保守性の高いテストコードを作成できます。
