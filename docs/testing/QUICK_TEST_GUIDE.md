@@ -6,7 +6,7 @@
 
 ```bash
 # プロジェクトルートから一発実行
-./run_security_test.sh test
+./ops/scripts/run_tests.sh test
 ```
 
 ## 🔄 従来の方法
@@ -24,7 +24,7 @@ bash scripts/security_test_manager.sh test
 
 ```bash
 # プロジェクトルートから（推奨）
-./run_security_test.sh setup
+./ops/scripts/run_tests.sh setup
 
 # または従来の方法
 docker-compose up -d
@@ -61,7 +61,7 @@ bash scripts/security_test_manager.sh test
 ### Git Bash / WSL の場合
 ```bash
 # 上記と同じコマンドが使用可能
-./run_security_test.sh test
+./ops/scripts/run_tests.sh test
 ```
 
 ### PowerShell の場合
@@ -75,13 +75,13 @@ cd ops
 
 ```bash
 # ヘルプ表示
-./run_security_test.sh help
+./ops/scripts/run_tests.sh help
 
 # ログ確認
-./run_security_test.sh logs
+./ops/scripts/run_tests.sh logs
 
 # 完全リセット（データ削除）
-./run_security_test.sh reset
+./ops/scripts/run_tests.sh reset
 
 # 従来の方法（opsディレクトリから）
 cd ops
@@ -100,14 +100,14 @@ bash scripts/security_test_manager.sh db-check
 
 2. **ログの確認**
    ```bash
-   ./run_security_test.sh logs
+   ./ops/scripts/run_tests.sh logs
    # または
    docker-compose logs app
    ```
 
 3. **データベースリセット**
    ```bash
-   ./run_security_test.sh reset
+   ./ops/scripts/run_tests.sh reset
    ```
 
 ## 📚 詳細情報

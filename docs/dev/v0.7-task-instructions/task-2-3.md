@@ -52,7 +52,7 @@ Task:
 
 変更内容:
 
-- 現在のローカル開発で使われている主要コマンドを、`docs/dev/local_setup.md`、`README.md`、`認証系APIテストガイド.md` から次のように整理した
+- 現在のローカル開発で使われている主要コマンドを、`docs/dev/local_setup.md`、`README.md`、`docs/testing/認証系APIテストガイド.md` から次のように整理した
   - セットアップ
     - `poetry check --lock`
     - `poetry install`
@@ -103,13 +103,13 @@ Task:
   - 最優先
     - `docs/dev/local_setup.md`
     - `README.md`
-    - `認証系APIテストガイド.md`
+    - `docs/testing/認証系APIテストガイド.md`
   - 後続更新
     - `docs/agent/skills/testing-plan.md`
     - `docs/saml/SAML_SETUP.md`
     - `docs/saml/SAML_MIGRATION_GUIDE.md`
-    - `SECURITY_AUDIT_COMMANDS.md`
-    - `ENTERPRISE_DEPENDENCY_STRATEGY.md`
+    - `docs/security/SECURITY_AUDIT_COMMANDS.md`
+    - `docs/archive/ENTERPRISE_DEPENDENCY_STRATEGY.md`
     - backend-audit 系 runbook 群
 - 置換方針も段階化して整理した
   - Stage 2 前半

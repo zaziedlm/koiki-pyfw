@@ -1,5 +1,5 @@
 # KOIKI Framework - ローカル開発用起動スクリプト
-# 使用方法: .\start-local-dev.ps1
+# 使用方法: .\scripts\start-local-dev.ps1
 
 Write-Host "KOIKI Framework - ローカル開発環境起動中..." -ForegroundColor Green
 
@@ -30,7 +30,7 @@ $env:DEBUG = "True"
 
 # 3. Alembicでマイグレーションを実行
 Write-Host "データベースマイグレーションを実行中..." -ForegroundColor Yellow
-alembic upgrade head
+uv run --locked alembic upgrade head
 
 # 4. アプリケーションを起動
 Write-Host "KOIKIフレームワークアプリケーションを起動中..." -ForegroundColor Green
@@ -38,4 +38,4 @@ Write-Host "アクセスURL: http://localhost:8000" -ForegroundColor Cyan
 Write-Host "API ドキュメント: http://localhost:8000/docs" -ForegroundColor Cyan
 Write-Host "停止するには Ctrl+C を押してください" -ForegroundColor Yellow
 
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uv run --locked uvicorn koiki_ref_app.asgi:app --host 0.0.0.0 --port 8000 --reload

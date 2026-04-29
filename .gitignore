@@ -48,6 +48,10 @@ logs/
 .coverage
 htmlcov/
 
+# Generated agent skill smoke-test outputs
+agent-skill-evaluation.json
+agent-skill-results.json
+
 # Backup files
 *~
 *.bak

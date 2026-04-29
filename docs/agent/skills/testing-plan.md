@@ -64,7 +64,7 @@ uv run --locked python scripts/agent_skill_smoke.py generate
 On Windows PowerShell, prefer direct UTF-8 file output to avoid console-pipeline encoding issues:
 
 ```bash
-uv run --locked python scripts/agent_skill_smoke.py generate --output agent-skill-checklist.md
+uv run --locked python scripts/agent_skill_smoke.py generate --output docs/dev/agent-skill-checklist.md
 ```
 
 Generate an empty results template:

@@ -22,7 +22,7 @@ fi
 
 echo ""
 echo "📋 前提条件の確認:"
-echo "  1. バックエンドサーバーが起動していること (python main.py)"
+echo "  1. バックエンドサーバーが起動していること (uv run --locked uvicorn koiki_ref_app.asgi:app --host 0.0.0.0 --port 8000 --reload)"
 echo "  2. フロントエンドサーバーが起動していること (cd frontend && npm run dev)" 
 echo "  3. テストユーザーが登録されていること (user@example.com / testuser123456)"
 echo ""
