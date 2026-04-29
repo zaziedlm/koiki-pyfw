@@ -18,7 +18,6 @@ ops/
 │   └── run_tests.sh                 # クロスプラットフォームランチャー
 ├── tests/
 │   └── test_security_api.py         # APIテストスクリプト
-├── requirements.txt                 # 依存関係
 └── README.md                        # このファイル
 ```
 
