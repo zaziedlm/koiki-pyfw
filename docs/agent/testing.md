@@ -18,8 +18,8 @@ Do not start with end-to-end coverage when unit or integration coverage is suffi
 
 Place tests near the responsibility they validate.
 
-- framework behavior -> `tests/unit/libkoiki/` or matching integration paths
-- application behavior -> `tests/unit/app/` or matching integration paths
+- framework behavior -> `components/libkoiki/tests/` or matching integration paths
+- application behavior -> `components/koiki_ref_app/tests/` or matching integration paths
 - cross-layer behavior -> integration tests
 
 Use the current project structure before creating new test directories.

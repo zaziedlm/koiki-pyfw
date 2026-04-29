@@ -91,7 +91,7 @@ The prompt catalog already includes the minimum representative cases:
 
 - ambiguous layer selection
 - app-specific business feature work
-- reusable `libkoiki/` framework work
+- reusable `components/libkoiki/` framework work
 - auth and RBAC changes
 - app-specific SSO/SAML changes
 - framework-level security changes

@@ -9,14 +9,14 @@ Use this skill first when the task is ambiguous or when the correct edit locatio
 
 ## Focus
 
-- determine whether the task belongs to `libkoiki/`, `app/`, `frontend/`, or cross-cutting areas
+- determine whether the task belongs to `components/libkoiki/`, `components/koiki_ref_app/`, `frontend/`, or cross-cutting areas
 - preserve the framework/application boundary
 - route the task to a more specific skill after the initial classification
 
 ## Decision Rules
 
-- if the change is reusable across applications, prefer `libkoiki/`
-- if the change depends on business requirements, prefer `app/`
+- if the change is reusable across applications, prefer `components/libkoiki/`
+- if the change depends on business requirements, prefer `components/koiki_ref_app/`
 - if the change affects UI integration or browser flows, inspect `frontend/`
 - if the change affects auth, SSO, SAML, rate limiting, or audit behavior, also read the auth/security skill
 

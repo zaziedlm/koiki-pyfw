@@ -69,13 +69,13 @@ NODE_ENV=production
 ### 手動実行
 ```bash
 # マイグレーション作成
-poetry run alembic revision --autogenerate -m "説明"
+uv run --locked alembic revision --autogenerate -m "説明"
 
 # 適用
-poetry run alembic upgrade head
+uv run --locked alembic upgrade head
 
 # ロールバック
-poetry run alembic downgrade -1
+uv run --locked alembic downgrade -1
 ```
 
 ## ヘルスチェック
@@ -94,7 +94,7 @@ curl http://localhost:9000/health/ready
 ## Dockerfile特徴
 
 ### バックエンド
-- Poetry 2.x 最適化（並列インストール）
+- uv lockfile ベースの依存同期
 - 非rootユーザー（appuser）
 - カスタム証明書対応
 - ヘルスチェック設定
@@ -108,7 +108,7 @@ curl http://localhost:9000/health/ready
 
 ```yaml
 # .github/workflows/ci.yml
-- Poetry依存関係インストール
+- uv依存関係同期
 - セキュリティ監査（pip-audit, bandit）
 - テスト実行（pytest）
 - カバレッジレポート生成

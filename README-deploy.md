@@ -8,7 +8,7 @@
 > 現行の依存同期と実行は `uv.lock`、`uv sync --locked`、`uv run --locked ...` を標準とします。
 > Docker build は `Dockerfile` / `Dockerfile.unified` の `uv sync --locked` 経路を使用します。
 
-**更新**: Poetry 2.x移行とセキュリティ修正完了（2025-06-21）
+**履歴注記**: この文書はコンテナ配備手順の履歴資料です。現行 Docker 運用は `DOCKER_SETUP.md` と `start-docker.ps1` を優先してください。
 
 ## 1. 初回環境構築時
 
@@ -21,7 +21,7 @@ cp .env.example .env
 .\start-docker.ps1 unified-dev
 # この過程で以下が自動的に実行されます:
 # - データベース接続の確認（最大30回リトライ）
-# - alembic/versionsディレクトリの確認と作成
+# - components/koiki_ref_app/alembic/versionsディレクトリの確認と作成
 # - 初期マイグレーション実行（または必要に応じて自動生成）
 
 # アプリケーション起動ログの確認
@@ -144,7 +144,7 @@ cp .env.example .env.production
 docker-compose exec app pip-audit
 
 # 静的セキュリティ解析
-docker-compose exec app bandit -r app/ libkoiki/
+docker-compose exec app uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src
 
 # 包括的APIテスト（開発環境）
 curl -s http://localhost:8000/ | jq .
@@ -181,7 +181,7 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
    - 最大30回のリトライでデータベースへの接続を確認
 
 2. **マイグレーション準備**：
-   - `alembic/versions`ディレクトリの存在確認と作成
+   - `components/koiki_ref_app/alembic/versions`ディレクトリの存在確認と作成
 
 3. **マイグレーション実行**：
    - `alembic upgrade head`でマイグレーションを実行
@@ -189,10 +189,10 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
 
 この自動化により、開発者はデータベースセットアップの多くの手順を意識する必要がなくなり、アプリケーション開発に集中できます。
 
-## 最新のPoetry 2.x対応状況
+## 履歴: Poetry 2.x対応状況
 
 ### 依存性管理の改善点
-- **Poetry 2.1.0**: 最新のPoetry 2.xシステムを採用
+- **Poetry 2.1.0**: 当時の依存管理システム。現行標準は `uv`。
 - **PEP 621準拠**: `pyproject.toml`が標準的な設定構造に移行
 - **セキュリティ強化**: 全脆弱性（PYSEC-2024-38, PYSEC-2024-232/233, GHSA-f96h-pmfr-66vw）を修正
 - **Python 3.13対応**: 完全な互換性を確保

@@ -1,6 +1,6 @@
 ---
 name: koiki-libkoiki-feature-work
-description: Use when adding or modifying reusable framework capabilities under libkoiki/, including shared API patterns, services, repositories, schemas, configuration, security, and infrastructure behavior.
+description: Use when adding or modifying reusable framework capabilities under components/libkoiki/, including shared API patterns, services, repositories, schemas, configuration, security, and infrastructure behavior.
 ---
 
 # KOIKI libkoiki Feature Work
@@ -11,13 +11,13 @@ Use this skill when the requested change belongs in the reusable framework layer
 
 Target directories include:
 
-- `libkoiki/api/`
-- `libkoiki/core/`
-- `libkoiki/services/`
-- `libkoiki/repositories/`
-- `libkoiki/models/`
-- `libkoiki/schemas/`
-- `libkoiki/db/`
+- `components/libkoiki/src/libkoiki/api/`
+- `components/libkoiki/src/libkoiki/core/`
+- `components/libkoiki/src/libkoiki/services/`
+- `components/libkoiki/src/libkoiki/repositories/`
+- `components/libkoiki/src/libkoiki/models/`
+- `components/libkoiki/src/libkoiki/schemas/`
+- `components/libkoiki/src/libkoiki/db/`
 
 ## Workflow
 
@@ -29,13 +29,13 @@ Target directories include:
 
 ## Guardrails
 
-- do not place business-specific rules in `libkoiki/`
+- do not place business-specific rules in `components/libkoiki/`
 - do not bypass the service layer with endpoint-specific data logic unless an existing pattern already does so
 - do not introduce new cross-cutting mechanisms if an existing core module already owns that concern
 
 ## Validate
 
-- affected unit tests under `tests/unit/libkoiki/`
+- affected unit tests under `components/libkoiki/tests/`
 - relevant integration coverage when behavior crosses DB, auth, or middleware boundaries
 
 ## Read Next

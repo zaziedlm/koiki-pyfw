@@ -59,7 +59,7 @@ root `pyproject.toml` の `tool.uv.workspace` と `tool.uv.sources` により、
 互換導線:
 
 ```powershell
-uv run uvicorn app.main:app --reload
+uv run --locked uvicorn koiki_ref_app.asgi:app --reload
 ```
 
 正式な参照アプリ導線:
@@ -71,7 +71,7 @@ uv run uvicorn koiki_ref_app.asgi:app --reload
 補足:
 
 - 実ソースの正本は `components/koiki_ref_app/src/koiki_ref_app/` にあります
-- `app.main:app` は互換 wrapper です
+- `app.main:app` は互換 wrapper です。新規起動手順では `koiki_ref_app.asgi:app` を使います。
 - `koiki_ref_app.asgi:app` が新しい ASGI import path です
 
 ### 5. テスト実行
