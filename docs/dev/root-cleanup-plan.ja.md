@@ -226,6 +226,7 @@ rg -n "run_security_test\.sh|test_csrf\.sh|start-local-dev\.ps1|start-docker\.ps
 - 現行 ASGI 正本は `koiki_ref_app.asgi:app`
 - root `main.py` は `app.main:app` 互換導線をさらに包む補助入口になっている
 - Dockerfile は root `main.py` を copy しているが、CMD は `koiki_ref_app.asgi:app` を使っている
+- 業務アプリ固有 API の composition は `docs/dev/apps-plugin-composition-plan.ja.md` で別タスクとして扱う
 
 推奨方針:
 

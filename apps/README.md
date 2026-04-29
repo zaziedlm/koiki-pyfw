@@ -14,6 +14,10 @@
 `components/` から `apps/` を参照してはいけません。
 依存方向は `apps/ -> components/` のみです。
 
+業務アプリ固有 API の router 登録や ASGI composition は、`components/` ではなく `apps/<project-slug>/backend/` 側で所有します。
+業務アプリ固有 model の Base 定義も、`apps/<project-slug>/backend/db/base.py` 側に用意します。
+詳細は `docs/dev/apps-plugin-composition-plan.ja.md` を参照してください。
+
 ## 推奨レイアウト
 
 ```text
@@ -34,4 +38,3 @@ apps/
 - customer 固有 workflow、branding、private integration は `apps/` に閉じる
 - root `frontend/` は starter template として維持し、案件固有 frontend は `apps/<project-slug>/frontend` に置く
 - `apps/` は root Python workspace member に含めない
-
