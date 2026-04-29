@@ -248,6 +248,23 @@ rg -n "python main\.py|uvicorn main:app|from main import app|import main|COPY \.
 uv run --locked python -c "from koiki_ref_app.asgi import app; print(app.title)"
 ```
 
+実施結果:
+
+- root `main.py` を削除した
+- `Dockerfile` と `Dockerfile.unified` から `COPY ./main.py ./` を削除した
+- `app/main.py` は `app.main:app` 互換 wrapper として維持した
+- 業務アプリ固有 API composition は `apps/<project-slug>/backend/asgi.py` 側で所有する方針とし、root `main.py` には持たせない
+
+検証結果:
+
+- 現行 ASGI 正本 `koiki_ref_app.asgi:app` の import を確認した
+- root `main.py` の copy / import / 起動参照が現行実行経路に残っていないことを確認した
+- `app.main:app` の残存は互換 wrapper または履歴・計画文書内の説明に限定される
+
+状態:
+
+- `完了`
+
 ## Root Cleanup RC-4: 生成物 / local artifact の整理
 
 対象候補:

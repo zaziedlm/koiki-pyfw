@@ -37,7 +37,6 @@ COPY pyproject.toml uv.lock README.md ./
 # アプリケーションコードのコピー (component 構成)
 COPY ./app ./app
 COPY ./components ./components
-COPY ./main.py ./
 COPY ./ops ./ops
 
 # uv: Install all dependencies used by the development image

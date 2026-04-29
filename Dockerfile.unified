@@ -49,7 +49,6 @@ ARG INSTALL_MAIN_ONLY=false
 COPY pyproject.toml uv.lock README.md ./
 COPY ./app ./app
 COPY ./components ./components
-COPY ./main.py ./
 COPY ./ops ./ops
 
 RUN --mount=type=cache,target=$UV_CACHE_DIR \
