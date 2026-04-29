@@ -1,6 +1,6 @@
 # プロダクト概要
 
-## KOIKI-FW v0.6.1
+## KOIKI-FW
 
 KOIKI-FW は Python (FastAPI) を用いたエンタープライズ向け Web アプリケーション構築のための堅牢な基盤フレームワークです。
 
@@ -20,8 +20,9 @@ KOIKI-FW は Python (FastAPI) を用いたエンタープライズ向け Web ア
 - Keycloak統合
 
 ### アーキテクチャ
-- **libkoiki/**: フレームワークコアライブラリ（認証、ユーザー管理、Todo等の主要機能を実装）
-- **app/**: アプリケーション固有の拡張（SSO/SAML連携、ビジネスロジック）
+- **components/libkoiki/**: reusable framework package
+- **components/koiki_ref_app/**: reference application package（SSO/SAML連携、参照ドメイン）
+- **app/**: legacy compatibility wrapper
 - **frontend/**: Next.js 15 + React 19 フロントエンド
 
 ### フルスタック統合
@@ -33,6 +34,6 @@ KOIKI-FW は Python (FastAPI) を用いたエンタープライズ向け Web ア
 ## 設計思想
 
 1. **関心事の分離**: API層 → Service層 → Repository層 → Model層
-2. **フレームワークとアプリの分離**: libkoiki（再利用可能）と app（プロジェクト固有）
+2. **フレームワークとアプリの分離**: components/libkoiki（再利用可能）と components/koiki_ref_app（参照アプリ）
 3. **セキュリティファースト**: エンタープライズグレードのセキュリティ実装
 4. **非同期処理**: 高パフォーマンスな async/await ベースの実装

@@ -88,7 +88,7 @@ Copy-Item .env.example .env.production
 - ローカル開発のみ `frontend/.env.local`
 
 ## 不要になったファイル
-- `docker-compose.production*.yml`、`docker-compose.optimized.yml`、`docker-compose.base.yml`、`docker-compose.unified.dev.yml` は廃止（削除予定）
+- `docker-compose.production*.yml`、`docker-compose.optimized.yml`、`docker-compose.base.yml`、`docker-compose.unified.dev.yml` は廃止済み
 - それに対応する `Dockerfile.production` / `Dockerfile.optimized`（ルート・frontend）も廃止対象
 
 ## トラブルシューティング

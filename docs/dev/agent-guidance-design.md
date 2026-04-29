@@ -1,5 +1,8 @@
 # Agent Guidance Design
 
+> Historical note:
+> This document describes the guidance design process. Current canonical paths are `components/libkoiki/` and `components/koiki_ref_app/`; root `app/` is a compatibility wrapper.
+
 ## Purpose
 
 This document explains the design and maintenance model for the repository's rule files and Agent Skills.

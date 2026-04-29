@@ -62,10 +62,10 @@ const PROTECTED_ROUTES = ['/dashboard', '/profile', '/admin'];
 
 ```bash
 # 脆弱性スキャン
-poetry run pip-audit
+uv run --locked pip-audit
 
 # 静的解析
-poetry run bandit -r app/ libkoiki/
+uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src
 
 # セキュリティAPIテスト
 ./run_security_test.sh test

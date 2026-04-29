@@ -4,10 +4,10 @@ This directory is the reusable framework layer.
 
 Read first:
 
-- `../docs/agent/boundaries.md`
-- `../docs/agent/architecture.md`
-- `../docs/agent/libkoiki.md`
-- `../docs/agent/testing.md`
+- `../../docs/agent/boundaries.md`
+- `../../docs/agent/architecture.md`
+- `../../docs/agent/libkoiki.md`
+- `../../docs/agent/testing.md`
 
 Use this directory for:
 
@@ -21,5 +21,5 @@ Before changing code in this directory:
 
 - confirm the behavior belongs in the framework layer
 - extend existing patterns before creating new abstractions
-- check whether `app/` composes the affected contract
+- check whether `components/koiki_ref_app/` composes the affected contract
 - validate at the correct framework or integration scope

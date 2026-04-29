@@ -11,7 +11,7 @@ Use these documents as the primary operational guidance before relying on older 
 Start here when the task is not yet classified.
 
 1. `boundaries.md`
-   - decide whether the change belongs in `libkoiki/` or `app/`
+   - decide whether the change belongs in `components/libkoiki/` or `components/koiki_ref_app/`
 2. `architecture.md`
    - understand the repository structure and preferred layer flow
 3. `testing.md`
@@ -32,8 +32,9 @@ Start here when the task is not yet classified.
 
 ## Main Repository Split
 
-- `libkoiki/`: reusable framework behavior
-- `app/`: business-specific backend behavior
+- `components/libkoiki/`: reusable framework behavior
+- `components/koiki_ref_app/`: reference application backend behavior
+- `app/`: compatibility wrapper
 - `frontend/`: frontend implementation
 - `tests/`: validation
 - `docs/`: human-oriented documentation

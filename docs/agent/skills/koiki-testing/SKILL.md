@@ -1,6 +1,6 @@
 ---
 name: koiki-testing
-description: Use when adding, updating, or validating tests for libkoiki/ or app/, including unit, integration, fixture, and CI-scope decisions.
+description: Use when adding, updating, or validating tests for components/libkoiki/ or components/koiki_ref_app/, including unit, integration, fixture, and CI-scope decisions.
 ---
 
 # KOIKI Testing

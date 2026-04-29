@@ -1,6 +1,6 @@
 ---
 name: koiki-auth-security
-description: Work on authentication, authorization, RBAC, token flows, security monitoring, SSO, or SAML-related behavior across libkoiki/ and app/.
+description: Work on authentication, authorization, RBAC, token flows, security monitoring, SSO, or SAML-related behavior across components/libkoiki/ and components/koiki_ref_app/.
 ---
 
 # KOIKI Auth and Security
