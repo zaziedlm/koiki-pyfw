@@ -77,7 +77,7 @@ bash scripts/security_test_manager.sh test
 ```
 
 📚 **詳細情報:**
-- クイックガイド: `QUICK_TEST_GUIDE.md`
+- クイックガイド: `docs/testing/QUICK_TEST_GUIDE.md`
 - 詳細なテスト手順: `ops/README.md`
 
 ### ローカルでのテスト実行

@@ -11,7 +11,7 @@
 - `docs/dev/v0.7-task-instructions/task-6-4.md`
 - `README.md`
 - `docs/dev/local_setup.md`
-- `認証系APIテストガイド.md`
+- `docs/testing/認証系APIテストガイド.md`
 - `ops/README.md`
 - `.github/instructions/*.instructions.md`
 
@@ -30,7 +30,7 @@
 
 1. `README.md` のディレクトリ構造、CI ブランチ、テスト実行例を新構造へ更新する
 2. `docs/dev/local_setup.md` の component path と現行 Poetry ベース手順を更新する
-3. `認証系APIテストガイド.md` の test path / coverage path を新構造へ更新する
+3. `docs/testing/認証系APIテストガイド.md` の test path / coverage path を新構造へ更新する
 4. `ops/README.md` に新しい backend 正本配置の注記を追加する
 5. `.github/instructions` の `applyTo` と本文中の旧 `libkoiki/` / `app/` 前提を新構造へ更新する
 
@@ -67,7 +67,7 @@ Task:
   - `components/libkoiki` / `components/koiki_ref_app` 前提の説明へ更新
   - `uv` は計画済み、現時点の実運用は Poetry ベースであると明記
   - `cd components/libkoiki` で package build する手順へ更新
-- `認証系APIテストガイド.md` を更新した
+- `docs/testing/認証系APIテストガイド.md` を更新した
   - `components/libkoiki/tests/...` / `components/koiki_ref_app/tests/...` を使う test path に更新
   - coverage target を `koiki_ref_app` / `libkoiki` に更新
   - app 側サンプルコードの import を `koiki_ref_app` ベースへ更新
