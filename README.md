@@ -57,13 +57,13 @@ KOIKI-FWの権限管理システムとセキュリティAPIをテストする場
 #### 🚀 推奨実行方法（プロジェクトルートから）
 ```bash
 # 環境起動 + テスト実行（ワンコマンド）
-./run_security_test.sh test
+./ops/scripts/run_tests.sh test
 
 # 初回実行（セットアップ付き）
-./run_security_test.sh setup
+./ops/scripts/run_tests.sh setup
 
 # ヘルプ表示
-./run_security_test.sh help
+./ops/scripts/run_tests.sh help
 ```
 
 #### 📋 従来の方法（opsディレクトリから）

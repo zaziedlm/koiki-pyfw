@@ -168,8 +168,8 @@ rg -n "QUICK_TEST_GUIDE|README-deploy|ENTERPRISE_DEPENDENCY_STRATEGY|KOIKI-FW_0\
 推奨方針:
 
 - `run_security_test.sh`
-  - `ops/scripts/` へ寄せる候補
-  - root からの一発実行を残す必要がある場合は、root wrapper を薄く残すか README のコマンドを更新する
+  - root 版は削除し、既存の `ops/scripts/run_tests.sh` を推奨入口にする
+  - `ops/scripts/run_security_test.sh` は統合テスト実体として維持する
 - `test_csrf.sh`
   - `ops/scripts/` または `scripts/` へ移動する
   - `python main.py` 前提の案内を `uv run --locked uvicorn koiki_ref_app.asgi:app ...` へ更新する
@@ -192,6 +192,26 @@ rg -n "QUICK_TEST_GUIDE|README-deploy|ENTERPRISE_DEPENDENCY_STRATEGY|KOIKI-FW_0\
 Get-ChildItem -File *.sh,*.ps1 | Select-Object -ExpandProperty Name
 rg -n "run_security_test\.sh|test_csrf\.sh|start-local-dev\.ps1|start-docker\.ps1|start-docker\.sh|python main\.py|app\.main:app" README.md docs ops scripts *.sh *.ps1
 ```
+
+実施結果:
+
+- root `run_security_test.sh` を削除し、利用者向けの推奨入口を `./ops/scripts/run_tests.sh` に統一した
+- `test_csrf.sh` を `scripts/test_csrf.sh` へ移動した
+- `start-local-dev.ps1` を `scripts/start-local-dev.ps1` へ移動した
+- `scripts/start-local-dev.ps1` の起動先を `uv run --locked uvicorn koiki_ref_app.asgi:app ...` へ更新した
+- `scripts/test_csrf.sh` と `ops/tests/test_csrf_validation.py` の `python main.py` 案内を現行 ASGI 起動コマンドへ更新した
+- `README.md`、`docs/testing/QUICK_TEST_GUIDE.md`、`ops/README.md`、`docs/csrf-testing-guide.md` の script path を更新した
+- `start-docker.ps1` / `start-docker.sh` / `docker-entrypoint.sh` は root entry helper として維持した
+
+検証結果:
+
+- root に残る shell / PowerShell は `docker-entrypoint.sh`、`start-docker.sh`、`start-docker.ps1` のみ
+- `run_security_test.sh` の残存参照は `ops/scripts/run_security_test.sh` の実体、または計画文書内の履歴説明に限定されている
+- `test_csrf.sh` / `start-local-dev.ps1` の利用者向け参照は `scripts/` 配下へ更新済み
+
+状態:
+
+- `完了`
 
 ## Root Cleanup RC-3: root `main.py` の扱い整理
 

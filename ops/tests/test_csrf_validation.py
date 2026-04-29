@@ -437,7 +437,7 @@ if __name__ == "__main__":
     print("🚀 CSRF検証テストスクリプト")
     print("📝 使用方法:")
     print("  1. フロントエンドサーバーを起動: cd frontend && npm run dev")
-    print("  2. バックエンドサーバーを起動: python main.py")
+    print("  2. バックエンドサーバーを起動: uv run --locked uvicorn koiki_ref_app.asgi:app --host 0.0.0.0 --port 8000 --reload")
     print("  3. このスクリプトを実行: python ops/tests/test_csrf_validation.py")
     print("")
 
