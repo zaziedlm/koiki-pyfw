@@ -293,6 +293,16 @@ uv run --locked python -c "from koiki_ref_app.asgi import app; print(app.title)"
 - root に生成物が Git 管理対象として残っていない
 - local artifact の ignore ルールが説明できる
 
+実施結果:
+
+- `agent-skill-evaluation.json` と `agent-skill-results.json` はローカルファイルとして残したまま Git 管理対象から外した
+- `.gitignore` に `agent-skill-evaluation.json` と `agent-skill-results.json` を追加した
+- `.coverage` / `.env.backup` / `.pytest_cache` / `.venv` / agent skill JSON が Git 管理対象に残っていないことを確認した
+
+状態:
+
+- `完了`
+
 検証コマンド:
 
 ```powershell
