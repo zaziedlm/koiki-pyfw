@@ -2,7 +2,8 @@
     "python.defaultInterpreterPath": ".venv/Scripts/python.exe",
     "python.analysis.extraPaths": [
         "${workspaceFolder}/app",
-        "${workspaceFolder}/libkoiki"
+        "${workspaceFolder}/components/libkoiki/src",
+        "${workspaceFolder}/components/koiki_ref_app/src"
     ],
     "terminal.integrated.cwd": "${workspaceFolder}",
     "python.terminal.activateEnvironment": true,
