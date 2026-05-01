@@ -56,16 +56,16 @@ root `pyproject.toml` の `tool.uv.workspace` と `tool.uv.sources` により、
 
 ### 4. アプリケーションの実行
 
-互換導線:
+正式な参照アプリ導線:
 
 ```powershell
 uv run --locked uvicorn koiki_ref_app.asgi:app --reload
 ```
 
-正式な参照アプリ導線:
+互換導線:
 
 ```powershell
-uv run uvicorn koiki_ref_app.asgi:app --reload
+uv run --locked uvicorn app.main:app --reload
 ```
 
 補足:

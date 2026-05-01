@@ -179,7 +179,7 @@ python -c "from app.core.saml_config import SAMLSettings; print('OK')"
 
 **検証:**
 ```bash
-alembic upgrade head
+uv run --locked alembic -c components/koiki_ref_app/alembic.ini upgrade head
 # user_sso, saml_auth_flow テーブルが生成されること
 ```
 
