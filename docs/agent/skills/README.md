@@ -25,3 +25,4 @@ Use these skills when the task already matches a known work type and you want co
 - Skill-specific metadata lives in each skill's `agents/openai.yaml`.
 - Claude Code discovery wrappers live under `.claude/skills/`.
 - `docs/agent/skills/` remains the canonical source for skill content.
+- Future maintainer/template role alignment is tracked in `future-role-alignment.md`.
