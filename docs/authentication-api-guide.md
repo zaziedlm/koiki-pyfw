@@ -1344,10 +1344,10 @@ app.add_middleware(
 
 ```bash
 # マイグレーション状態確認
-alembic current
+uv run --locked alembic -c components/koiki_ref_app/alembic.ini current
 
 # 最新マイグレーション適用
-alembic upgrade head
+uv run --locked alembic -c components/koiki_ref_app/alembic.ini upgrade head
 
 # データベース接続テスト
 python -c "

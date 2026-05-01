@@ -13,6 +13,10 @@ Use this skill first when the task is ambiguous or when the correct edit locatio
 - preserve the framework/application boundary
 - route the task to a more specific skill after the initial classification
 
+## Future Role Alignment
+
+This skill is the transitional repository overview and routing skill. In a later maintainer/template split, it is the seed for a maintainer overview skill and should remain active until replacement overview skills exist.
+
 ## Decision Rules
 
 - if the change is reusable across applications, prefer `components/libkoiki/`
@@ -28,3 +32,4 @@ Use this skill first when the task is ambiguous or when the correct edit locatio
 - `docs/agent/app.md`
 - `docs/agent/auth-security.md`
 - `docs/agent/testing.md`
+- `docs/agent/skills/future-role-alignment.md`

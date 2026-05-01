@@ -118,7 +118,7 @@ uv run --locked uvicorn koiki_ref_app.asgi:app --reload --host 0.0.0.0 --port 80
 
 ```bash
 # saml_auth_flow テーブルの作成
-uv run --locked alembic upgrade head
+uv run --locked alembic -c components/koiki_ref_app/alembic.ini upgrade head
 ```
 
 ## 認証フロー詳細
@@ -464,7 +464,7 @@ async function completeSamlLogin() {
 
 5. **データベースマイグレーション**:
    ```bash
-   uv run --locked alembic upgrade head  # saml_auth_flow テーブル作成
+   uv run --locked alembic -c components/koiki_ref_app/alembic.ini upgrade head  # saml_auth_flow テーブル作成
    ```
 
 ### 証明書管理

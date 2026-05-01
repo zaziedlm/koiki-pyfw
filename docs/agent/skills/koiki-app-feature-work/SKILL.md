@@ -19,6 +19,10 @@ Typical targets:
 - `components/koiki_ref_app/src/koiki_ref_app/schemas/`
 - `components/koiki_ref_app/src/koiki_ref_app/core/`
 
+## Future Role Alignment
+
+This skill aligns with future template backend work. It should remain focused on the upstream reference application / backend starter, not downstream customer-specific app behavior.
+
 ## Workflow
 
 1. confirm the request is business-specific or application-specific
@@ -47,3 +51,4 @@ Typical targets:
 - `docs/agent/testing.md`
 - `docs/agent/auth-security.md`
 - `references/app-extension-patterns.md`
+- `docs/agent/skills/future-role-alignment.md`

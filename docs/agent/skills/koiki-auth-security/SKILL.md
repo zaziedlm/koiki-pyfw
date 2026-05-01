@@ -17,6 +17,10 @@ This skill applies to:
 - security logging and monitoring
 - SSO and SAML integration
 
+## Future Role Alignment
+
+This skill remains cross-cutting across future maintainer and template skill families. Auth and security work often spans `components/libkoiki`, `components/koiki_ref_app`, and frontend/browser flows, so it should not be split prematurely.
+
 ## Workflow
 
 1. identify whether the change is framework auth, app-specific SSO/SAML, or both
@@ -46,3 +50,4 @@ This skill applies to:
 - `docs/agent/libkoiki.md`
 - `docs/agent/app.md`
 - `references/auth-security-reference.md`
+- `docs/agent/skills/future-role-alignment.md`

@@ -19,6 +19,10 @@ Target directories include:
 - `components/libkoiki/src/libkoiki/schemas/`
 - `components/libkoiki/src/libkoiki/db/`
 
+## Future Role Alignment
+
+This skill aligns with future maintainer framework work. It should continue to own reusable `components/libkoiki` behavior until a dedicated maintainer framework skill is introduced.
+
 ## Workflow
 
 1. confirm the feature is reusable and not business-specific
@@ -46,3 +50,4 @@ Target directories include:
 - `docs/agent/testing.md`
 - `docs/agent/auth-security.md`
 - `references/framework-patterns.md`
+- `docs/agent/skills/future-role-alignment.md`
