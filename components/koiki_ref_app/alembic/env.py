@@ -36,7 +36,12 @@ if config.config_file_name is not None:
 # alembic.ini の sqlalchemy.url をアプリケーション設定から取得した同期URLで上書き
 # Alembic はマイグレーション生成・適用時に同期接続を使用するため
 if not settings.DATABASE_URL:
-    raise ValueError("DATABASE_URL is not configured in settings")
+    raise ValueError(
+        "DATABASE_URL is not configured. Run Alembic with "
+        "`uv run --locked alembic -c components/koiki_ref_app/alembic.ini ...` "
+        "and set DATABASE_URL. Use host `localhost` from the local machine and "
+        "host `db` from inside Docker Compose containers."
+    )
 
 # PostgreSQL用に同期DB URLに変換
 # asyncpg -> psycopg2 に変換

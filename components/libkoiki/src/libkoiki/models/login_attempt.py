@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, synonym
 from sqlalchemy.sql import func
 
 from libkoiki.db.base import Base
@@ -30,8 +30,8 @@ class LoginAttemptModel(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )
     
-    # Base class の created_at を attempted_at にマップ (semantically correct)
-    created_at = attempted_at
+    # Base class の created_at contract を attempted_at への明示 alias として維持する。
+    created_at = synonym("attempted_at")
     
     # updated_at は不要だが Base class 要件を満たすため None に設定
     updated_at = None

@@ -5,7 +5,7 @@ from datetime import date, datetime, time
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class BusinessClockMode(str, Enum):
@@ -41,7 +41,8 @@ class BusinessClockUpdate(BaseModel):
     comment: Optional[str] = None
     version: int = Field(..., ge=1)
 
-    @validator("base_timezone")
+    @field_validator("base_timezone")
+    @classmethod
     def validate_timezone(cls, value: str) -> str:
         from zoneinfo import ZoneInfo
 
@@ -52,24 +53,24 @@ class BusinessClockUpdate(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def validate_mode_payload(cls, model: "BusinessClockUpdate") -> "BusinessClockUpdate":
-        if model.mode == BusinessClockMode.FROZEN:
-            if model.frozen_business_date is None or model.frozen_business_time is None:
+    def validate_mode_payload(self) -> "BusinessClockUpdate":
+        if self.mode == BusinessClockMode.FROZEN:
+            if self.frozen_business_date is None or self.frozen_business_time is None:
                 raise ValueError(
                     "frozen_business_date and frozen_business_time are required for FROZEN mode"
                 )
         else:
-            if model.frozen_business_date is not None or model.frozen_business_time is not None:
+            if self.frozen_business_date is not None or self.frozen_business_time is not None:
                 raise ValueError(
                     "frozen business date/time must be omitted unless mode is FROZEN"
                 )
-            model.frozen_business_date = None
-            model.frozen_business_time = None
+            self.frozen_business_date = None
+            self.frozen_business_time = None
 
-        if model.mode == BusinessClockMode.REALTIME:
-            model.offset_days = 0
-            model.offset_minutes = 0
-        return model
+        if self.mode == BusinessClockMode.REALTIME:
+            self.offset_days = 0
+            self.offset_minutes = 0
+        return self
 
 
 @dataclass(slots=True)

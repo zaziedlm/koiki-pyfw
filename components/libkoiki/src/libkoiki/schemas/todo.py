@@ -1,5 +1,5 @@
 # src/schemas/todo.py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from datetime import datetime
 
@@ -21,11 +21,10 @@ class TodoUpdate(BaseModel):
 
 # --- Response Schema ---
 class TodoResponse(TodoBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int = Field(..., description="Unique ID of the ToDo item")
     is_completed: bool = Field(..., description="Completion status")
     owner_id: int = Field(..., description="ID of the user who owns this ToDo")
     created_at: datetime = Field(..., description="Timestamp when the ToDo was created")
     updated_at: datetime = Field(..., description="Timestamp when the ToDo was last updated")
-
-    class Config:
-        from_attributes = True # SQLAlchemyモデルインスタンスから変換できるようにする

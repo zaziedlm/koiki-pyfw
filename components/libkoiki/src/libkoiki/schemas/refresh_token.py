@@ -1,5 +1,5 @@
 # src/schemas/refresh_token.py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from datetime import datetime
 
@@ -16,6 +16,8 @@ class TokenPairResponse(BaseModel):
 
 class RefreshTokenInfo(BaseModel):
     """リフレッシュトークン情報（管理用）"""
+    model_config = ConfigDict(from_attributes=True)
+
     id: int = Field(..., description="Refresh token ID")
     user_id: int = Field(..., description="Owner user ID")
     expires_at: datetime = Field(..., description="Expiration timestamp")
@@ -23,6 +25,3 @@ class RefreshTokenInfo(BaseModel):
     device_info: Optional[str] = Field(None, description="Device information")
     created_at: datetime = Field(..., description="Creation timestamp")
     last_used_at: Optional[datetime] = Field(None, description="Last used timestamp")
-    
-    class Config:
-        from_attributes = True

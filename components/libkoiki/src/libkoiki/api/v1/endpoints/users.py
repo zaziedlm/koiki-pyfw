@@ -197,7 +197,7 @@ async def update_user_by_id(
         update_fields=get_log_field_names(user_in),
     )
     # is_superuser の変更など、特別な権限チェックが必要な場合がある
-    if 'is_superuser' in user_in.dict(exclude_unset=True) and not current_admin.is_superuser:
+    if 'is_superuser' in user_in.model_dump(exclude_unset=True) and not current_admin.is_superuser:
         logger.warning("Non-superuser attempting to change superuser status", admin_user_id=current_admin.id, target_user_id=user_id)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only superusers can change superuser status")
 

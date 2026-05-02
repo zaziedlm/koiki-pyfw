@@ -145,7 +145,7 @@ class UserService:
         hashed_password = get_password_hash(user_in.password)
 
         # ORMモデルインスタンスを作成
-        user_data = user_in.dict(
+        user_data = user_in.model_dump(
             exclude={"password"}
         )  # スキーマから辞書へ (パスワード除外)
         user_data["hashed_password"] = hashed_password
@@ -210,7 +210,7 @@ class UserService:
             raise ResourceNotFoundException(resource_name="User", resource_id=user_id)
 
         # 更新データを用意 (Pydanticスキーマから exclude_unset=True で)
-        update_data = user_in.dict(exclude_unset=True)
+        update_data = user_in.model_dump(exclude_unset=True)
 
         # パスワード更新がある場合
         if "password" in update_data and update_data["password"]:
