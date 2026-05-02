@@ -462,6 +462,8 @@ uv run --locked alembic -c components/koiki_ref_app/alembic.ini current
 
 優先度: `P4`
 
+状態: 完了
+
 ### 目的
 
 IDE の pytest 検出対象と CI の検証対象のズレを減らす。
@@ -489,6 +491,24 @@ IDE の pytest 検出対象と CI の検証対象のズレを減らす。
 $env:UV_CACHE_DIR='.uv-cache-codex'
 $env:DEBUG='true'
 uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent_guidance components/koiki_ref_app/tests tests/integration/services -m "not db_integration"
+```
+
+### 対応結果
+
+- `.vscode/settings.json` の `python.testing.pytestArgs` を root `tests` のみから、現行の component tests と root 側 agent / service tests を含む範囲へ拡張した
+- VSCode の既定収集から `db_integration` を除外するため、pytest args に `-m "not db_integration"` を追加した
+- `docs/dev/test-guide.md` に VSCode Test Explorer の既定収集範囲と、同条件の CLI collect-only コマンドを追記した
+
+### 実施済み検証
+
+```powershell
+$env:UV_CACHE_DIR='.uv-cache-codex'
+$env:DEBUG='true'
+uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent_guidance components/koiki_ref_app/tests tests/integration/services -m "not db_integration"
+  210/247 tests collected, 37 deselected
+
+uv lock --check
+  Resolved 87 packages in 2ms
 ```
 
 ## 9. `DM-08` pip-audit 検出依存更新
