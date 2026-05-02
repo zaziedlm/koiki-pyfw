@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import AnyHttpUrl, Field, PostgresDsn, validator
-from typing import List, Optional, Union, Dict, Any
+from pydantic import AnyHttpUrl, Field, field_validator, model_validator
+from typing import List, Optional, Union
 
 class Settings(BaseSettings):
     # 既存の設定...
@@ -60,26 +60,26 @@ class Settings(BaseSettings):
     # レート制限設定
     RATE_LIMIT_PER_SECOND: int = 10
 
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
         elif isinstance(v, (list, str)):
             return v
-        raise ValueError(v)    @validator("DATABASE_URL", pre=True)
-    def assemble_db_url(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
-        if isinstance(v, str):
-            return v
-            
+        raise ValueError(v)
+
+    @model_validator(mode="after")
+    def assemble_db_url(self) -> "Settings":
+        if self.DATABASE_URL:
+            return self
+
         # PostgreSQLのURLを構築
-        user = values.get("POSTGRES_USER")
-        password = values.get("POSTGRES_PASSWORD")
-        host = values.get("POSTGRES_SERVER")
-        port = values.get("POSTGRES_PORT", 5432)
-        db = values.get("POSTGRES_DB", "")
-        
-        # PostgreSQL接続URI
-        return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}"
+        self.DATABASE_URL = (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env",

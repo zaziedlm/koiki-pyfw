@@ -2,8 +2,7 @@
 """
 セキュリティ関連の設定値を集約管理
 """
-from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LoginSecurityConfig(BaseModel):
@@ -42,6 +41,8 @@ class LoginSecurityConfig(BaseModel):
 
 class SecurityConfig(BaseModel):
     """セキュリティ全般の設定"""
+
+    model_config = ConfigDict()
     
     # ログインセキュリティ設定
     login_security: LoginSecurityConfig = Field(default_factory=LoginSecurityConfig)
@@ -67,10 +68,6 @@ class SecurityConfig(BaseModel):
     enable_device_tracking: bool = Field(default=True, description="デバイス追跡を有効化")
     max_devices_per_user: int = Field(default=5, description="ユーザーあたりの最大デバイス数")
     
-    class Config:
-        env_prefix = "SECURITY_"
-        case_sensitive = False
-
 
 # グローバル設定インスタンス（環境変数から自動読み込み）
 security_config = SecurityConfig()
@@ -89,6 +86,6 @@ def get_security_config() -> SecurityConfig:
 def update_config(**kwargs) -> None:
     """設定値を動的に更新（テスト用）"""
     global security_config
-    current_dict = security_config.dict()
+    current_dict = security_config.model_dump()
     current_dict.update(kwargs)
     security_config = SecurityConfig(**current_dict)
