@@ -395,6 +395,8 @@ uv lock --check
 
 優先度: `P3`
 
+状態: 完了
+
 ### 目的
 
 Alembic path 不一致と、ローカル実行時の `db` hostname 解決失敗を避ける。
@@ -429,6 +431,31 @@ $env:DEBUG='true'
 $env:DATABASE_URL='postgresql+asyncpg://koiki_user:koiki_password@localhost:5432/koiki_todo_db'
 uv run --locked alembic -c components/koiki_ref_app/alembic.ini current
 uv run --locked alembic -c components/koiki_ref_app/alembic.ini heads
+```
+
+### 対応結果
+
+- `components/koiki_ref_app/alembic.ini` の fallback URL を host 側実行で解決できる `localhost` に変更した
+- `alembic.ini` に、実行時は `env.py` が `Settings.DATABASE_URL` で上書きすること、Docker 内では `DATABASE_URL` に `db` host を明示することをコメントで補足した
+- `components/koiki_ref_app/alembic/env.py` の `DATABASE_URL` 未設定エラーを、現行標準コマンドと host 使い分けが分かる文言へ変更した
+- `docs/dev/db-integration-testing.md` に Alembic の標準実行例と host 側 / Docker 内の DB host 使い分けを追加した
+- `docs/saml/SAML_SETUP.md` と `docs/saml/saml-env-config-guide.md` の migration 手順を `uv run --locked alembic -c components/koiki_ref_app/alembic.ini ...` と `localhost` 前提へ更新した
+- `scripts/start-local-dev.ps1` は既に `localhost` と component 側 `alembic.ini` を使っていたため、変更不要と判断した
+
+### 実施済み検証
+
+```powershell
+$env:UV_CACHE_DIR='.uv-cache-codex'
+$env:DATABASE_URL='postgresql+asyncpg://koiki_user:koiki_password@localhost:5432/koiki_todo_db'
+$env:DEBUG='true'
+uv run --locked alembic -c components/koiki_ref_app/alembic.ini heads
+  20260228001 (head)
+
+uv lock --check
+  Resolved 87 packages in 1ms
+
+uv run --locked alembic -c components/koiki_ref_app/alembic.ini current
+  20260228001 (head)
 ```
 
 ## 8. `DM-07` VSCode pytest 導線整合
