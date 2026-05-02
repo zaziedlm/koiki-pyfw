@@ -1,7 +1,9 @@
 from libkoiki.core.config import Settings
 
 
-def test_database_url_is_built_from_postgres_settings_when_missing():
+def test_database_url_is_built_from_postgres_settings_when_missing(monkeypatch):
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+
     settings = Settings(
         _env_file=None,
         POSTGRES_USER="test_user",
