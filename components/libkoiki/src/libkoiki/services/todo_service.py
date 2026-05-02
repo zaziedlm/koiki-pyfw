@@ -37,7 +37,7 @@ class TodoService:
         )
         self.repository.set_session(db) # リポジトリにセッションを設定
 
-        todo_data = todo_in.dict()
+        todo_data = todo_in.model_dump()
         todo_data['owner_id'] = owner_id # 所有者IDを設定
         new_todo = TodoModel(**todo_data) # ORMモデルインスタンスを作成
 

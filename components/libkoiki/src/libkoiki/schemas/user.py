@@ -1,5 +1,5 @@
 # src/schemas/user.py
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -7,21 +7,19 @@ from datetime import datetime
 # RoleResponseSimple / PermissionResponseSimple を先に定義 (または import .role / .permission)
 
 class PermissionResponseSimple(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     description: Optional[str] = None
 
-    class Config:
-        from_attributes = True
-
 class RoleResponseSimple(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     description: Optional[str] = None
     # permissions: List[PermissionResponseSimple] = [] # ロールに紐づく権限も表示する場合
-
-    class Config:
-        from_attributes = True
 
 
 # --- Base Schemas ---
@@ -37,7 +35,7 @@ class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=100, description="User's password (min 8 chars)")
 
     # Pydanticレベルでの簡単なパスワード検証 (複雑性チェックはサービス層で行う)
-    # @validator('password')
+    # 必要になった場合は field_validator でサービス層より軽い入力制約を追加する
     # def password_validation(cls, v):
     #     if len(v) < 8:
     #         raise ValueError('Password must be at least 8 characters long')
@@ -59,14 +57,13 @@ class UserUpdate(BaseModel):
 
 # --- Response Schemas ---
 class UserResponse(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int = Field(..., description="Unique ID of the user")
     is_superuser: bool = Field(..., description="Whether the user has superuser privileges")
     created_at: datetime = Field(..., description="Timestamp when the user was created")
     updated_at: datetime = Field(..., description="Timestamp when the user was last updated")
     roles: List[RoleResponseSimple] = Field([], description="List of roles assigned to the user") # ロール情報を含める
-
-    class Config:
-        from_attributes = True # SQLAlchemyモデルから変換可能にする
 
 # 詳細情報を含むレスポンススキーマ (必要に応じて)
 # class UserDetailResponse(UserResponse):

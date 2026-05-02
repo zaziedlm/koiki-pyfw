@@ -234,6 +234,8 @@ uv run --locked pytest --collect-only components/libkoiki/tests -m "not db_integ
 
 優先度: `P2`
 
+状態: `完了`
+
 ### 目的
 
 Pydantic class-based `Config` deprecation warning を解消する。
@@ -268,9 +270,55 @@ $env:DEBUG='true'
 uv run --locked pytest components/libkoiki/tests components/koiki_ref_app/tests -m "not db_integration"
 ```
 
+### 実施結果
+
+- libkoiki schema の class-based `Config` を `ConfigDict(from_attributes=True)` へ移行した
+  - `user.py`
+  - `todo.py`
+  - `role.py`
+  - `permission.py`
+  - `refresh_token.py`
+- koiki_ref_app schema の `json_schema_extra` を `ConfigDict(json_schema_extra=...)` へ移行した
+  - `sso.py`
+  - `saml.py`
+- `business_clock.py` の `@validator("base_timezone")` を `@field_validator("base_timezone")` へ移行した
+- `business_clock.py` の `model_validator(mode="after")` を Pydantic v2 の instance method style に寄せた
+- schema 配下の active な `class Config` / `@validator` は残っていない
+- collect-only の warning summary から Pydantic schema config / validator deprecation が消えた
+
+検証結果:
+
+```text
+rg -n "class Config|@validator" components/libkoiki/src/libkoiki/schemas components/koiki_ref_app/src/koiki_ref_app/schemas -S
+  active definition なし
+
+uv run --locked python -c "import libkoiki.schemas.user, ...; print('schemas ok')"
+  schemas ok
+
+uv run --locked pytest components/koiki_ref_app/tests/unit/app/services/test_business_clock_service.py components/koiki_ref_app/tests/unit/app/services/test_sso_service.py components/koiki_ref_app/tests/unit/app/services/test_saml_service.py components/koiki_ref_app/tests/unit/app/test_sso_auth_logging.py components/koiki_ref_app/tests/unit/app/test_saml_auth_logging.py
+  60 passed
+
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_user_service.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/libkoiki/tests/unit/libkoiki/services/test_auth_service.py components/libkoiki/tests/unit/libkoiki/services/test_auth_service_comprehensive.py
+  27 passed
+  既存の transaction mock RuntimeWarning と `user_service.py` の `.dict()` deprecation は残る
+
+uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent_guidance components/koiki_ref_app/tests tests/integration/services -m "not db_integration"
+  210/247 tests collected, 37 deselected
+
+uv lock --check
+  成功
+```
+
+残 warning:
+
+- `user_service.py` などの `.dict()` deprecation: `DM-05` 対象
+- transaction test mock の coroutine warning: 本タスク外
+
 ## 6. `DM-05` .dict() 呼び出し移行
 
 優先度: `P2`
+
+状態: `完了`
 
 ### 目的
 
@@ -304,6 +352,44 @@ $env:UV_CACHE_DIR='.uv-cache-codex'
 $env:DEBUG='true'
 uv run --locked pytest components/libkoiki/tests/unit/libkoiki/test_input_logging.py components/libkoiki/tests/unit/libkoiki/services/test_user_service.py components/libkoiki/tests/unit/libkoiki/services/test_login_security_service.py
 ```
+
+### 実施結果
+
+- Pydantic model が明確な `.dict()` 呼び出しを `.model_dump()` へ移行した
+  - `components/libkoiki/src/libkoiki/repositories/base.py`
+  - `components/libkoiki/src/libkoiki/services/user_service.py`
+  - `components/libkoiki/src/libkoiki/services/todo_service.py`
+  - `components/libkoiki/src/libkoiki/api/v1/endpoints/users.py`
+- `core.logging.get_log_field_names()` の `.dict()` は Pydantic v1 互換 fallback として残した
+  - 同 helper はすでに `model_dump()` を優先している
+  - `.dict()` fallback は `model_dump()` を持たない旧 Pydantic 互換オブジェクト向け
+- 実コード上の残存 `.dict()` は `core.logging.py` の fallback のみに限定された
+- 対象テストで Pydantic `.dict()` deprecation は出なくなった
+
+検証結果:
+
+```text
+rg -n "\.dict\(" components/libkoiki/src components/koiki_ref_app/src -S
+  components/libkoiki/src/libkoiki/core/logging.py の Pydantic v1 fallback のみ
+
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/test_input_logging.py components/libkoiki/tests/unit/libkoiki/services/test_user_service.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/koiki_ref_app/tests/unit/app/services/test_todo_service.py
+  21 passed, 1 skipped
+  既存の transaction mock RuntimeWarning は残る
+
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_auth_service.py components/libkoiki/tests/unit/libkoiki/services/test_auth_service_comprehensive.py
+  17 passed
+  既存の transaction mock RuntimeWarning は残る
+
+uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent_guidance components/koiki_ref_app/tests tests/integration/services -m "not db_integration"
+  210/247 tests collected, 37 deselected
+
+uv lock --check
+  成功
+```
+
+残 warning:
+
+- transaction test mock の coroutine warning: 本タスク外
 
 ## 7. `DM-06` Alembic / DB host 導線補強
 

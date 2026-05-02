@@ -1,5 +1,5 @@
 # src/schemas/permission.py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -19,22 +19,20 @@ class PermissionUpdate(BaseModel):
 # --- Response Schemas ---
 # 他のスキーマから参照されるシンプルなレスポンス
 class PermissionResponseSimple(BaseModel): # user.py, role.py で定義済みだが、こちらにも定義
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     description: Optional[str] = None
 
-    class Config:
-        from_attributes = True
-
 # 完全な情報を含むレスポンス
 class PermissionResponse(PermissionBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int = Field(..., description="Unique ID of the permission")
     created_at: datetime
     updated_at: datetime
     # roles: List["RoleResponseSimple"] = [] # この権限を持つロール一覧 (必要なら)
-
-    class Config:
-        from_attributes = True
 
 # --- PermissionResponse の Forward Ref を解決 ---
 # from .role import RoleResponseSimple # __init__.pyで解決されるはず

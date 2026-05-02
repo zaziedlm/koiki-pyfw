@@ -105,7 +105,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             update_data = obj_in
         else:
             # exclude_unset=True で Pydantic スキーマで未指定のフィールドを無視
-            update_data = obj_in.dict(exclude_unset=True)
+            update_data = obj_in.model_dump(exclude_unset=True)
 
         logger.debug(
             f"Updating {self.model.__name__}",
