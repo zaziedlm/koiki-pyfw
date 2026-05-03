@@ -5,6 +5,7 @@
 関連計画:
 
 - `docs/dev/deferred-maintenance-plan.ja.md`
+- `docs/dev/dm08-dm10-security-task-plan.ja.md`
 
 ## 1. タスク一覧
 
@@ -20,6 +21,7 @@
 | `DM-08` | P5 | security | `pip-audit` 検出依存を更新する | 単独 |
 | `DM-09` | P5 | security | Bandit false positive 方針を整理する | 単独 |
 | `DM-10` | P5 | security | SAML metadata XML parser を hardening する | 単独 |
+| `DM-11` | P5 | security | password hashing backend を `passlib` から `bcrypt` 直利用へ移行する | 単独 |
 
 ## 2. `DM-01` Settings.DATABASE_URL 組み立て復旧
 
@@ -515,6 +517,12 @@ uv lock --check
 
 優先度: `P5`
 
+状態: `完了`
+
+詳細実施計画:
+
+- `docs/dev/dm08-dm10-security-task-plan.ja.md`
+
 ### 目的
 
 `pip-audit` で検出済みの依存脆弱性を解消する。
@@ -548,9 +556,101 @@ uv lock --check
 uv run --locked pytest --collect-only components/libkoiki/tests components/koiki_ref_app/tests tests -m "not db_integration"
 ```
 
+### 実施結果
+
+実行日: 2026-05-03
+
+更新前の `pip-audit` 結果:
+
+- `pip 26.0.1`: `CVE-2026-3219`
+- `PyJWT 2.11.0`: `CVE-2026-32597`, fixed in `2.12.0`
+- `pytest 8.4.2`: `CVE-2025-71176`, fixed in `9.0.3`
+- `starlette 0.46.2`: `CVE-2025-54121`, fixed in `0.47.2`
+- `starlette 0.46.2`: `CVE-2025-62727`, fixed in `0.49.1`
+
+対応:
+
+- root `pyproject.toml` と `components/libkoiki/pyproject.toml` の dependency range を更新した
+  - `fastapi>=0.136.1,<0.137.0`
+  - `PyJWT[crypto]>=2.12.0,<2.13.0`
+  - `bcrypt>=4.0.1,<4.1.0`
+  - `pytest>=9.0.3,<9.1.0`
+  - `pytest-asyncio>=1.3.0,<1.4.0`
+- `uv.lock` を更新した
+  - `fastapi 0.115.14 -> 0.136.1`
+  - `starlette 0.46.2 -> 0.52.1`
+  - `PyJWT 2.11.0 -> 2.12.1`
+  - `bcrypt 4.3.0 -> 4.0.1`
+  - `pytest 8.4.2 -> 9.0.3`
+  - `pytest-asyncio 1.0.0 -> 1.3.0`
+  - `annotated-doc 0.0.4` が `fastapi` の dependency として追加された
+- コンテナ操作ログ点検で見つかった `passlib 1.7.4` / `bcrypt 4.1+` 互換 warning に対応した
+  - `passlib 1.7.4` は `bcrypt.__about__.__version__` を参照する
+  - `bcrypt 4.1+` では `__about__` がなく、ログイン時に `(trapped) error reading bcrypt version` traceback が出る
+  - 現行実装を維持し、`bcrypt` を `4.0.1` 系に固定して warning を解消した
+  - この対応は DM-08 の脆弱性対応中に見つかったログ品質問題への暫定対応であり、長期方針としては `passlib` 依存を見直す
+
+更新後の `pip-audit` 結果:
+
+- `PyJWT` / `pytest` / `starlette` の検出は解消
+- `bcrypt 4.0.1` 固定による新規検出はなし
+- 残件は `pip 26.0.1` の `CVE-2026-3219` のみ
+- `pip` の `CVE-2026-3219` は `pip-audit` 結果上 `Fix Versions` が空で、アプリケーション runtime dependency ではなく監査実行環境側 dependency として残件扱い
+- workspace package の `koiki-ref-app` / `libkoiki` は PyPI 上にないため `pip-audit` の skip reason として表示される
+
+検証結果:
+
+```text
+$env:UV_CACHE_DIR='.uv-cache-codex'
+$env:DEBUG='true'
+
+uv lock --check
+  成功
+
+uv sync --locked --group dev --group test --group security
+  成功
+
+uv run --locked pip-audit
+  pip 26.0.1 CVE-2026-3219 の 1 件のみ残存
+
+uv run --locked python -c "from libkoiki.core.security import get_password_hash, verify_password; ..."
+  hash / verify 成功
+  passlib / bcrypt 由来 traceback なし
+
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_user_service.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/libkoiki/tests/unit/libkoiki/services/test_auth_service.py components/libkoiki/tests/unit/libkoiki/services/test_auth_service_comprehensive.py
+  27 passed
+  既存の transaction mock RuntimeWarning は残る
+
+uv run --locked pytest --collect-only components/libkoiki/tests components/koiki_ref_app/tests tests -m "not db_integration"
+  249/286 tests collected, 37 deselected
+
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_auth_service.py components/libkoiki/tests/unit/libkoiki/services/test_auth_service_comprehensive.py
+  17 passed
+  既存の transaction mock RuntimeWarning は残る
+
+uv run --locked pytest components/koiki_ref_app/tests/unit/app/services/test_saml_service.py components/koiki_ref_app/tests/unit/app/services/test_sso_service.py
+  38 passed
+
+uv run --locked pytest tests/unit/test_pyjwt_migration.py
+  33 passed
+  PyJWT 2.12.1 の短い HMAC test key に対する InsecureKeyLengthWarning は残る
+
+uv run --locked pytest components/libkoiki/tests components/koiki_ref_app/tests -m "not db_integration"
+  196 passed, 1 skipped, 11 deselected
+  既存の transaction mock RuntimeWarning と FastAPI / Starlette 更新に伴う HTTP_422_UNPROCESSABLE_ENTITY deprecation warning は残る
+```
+
+### 後続タスク
+
+- `DM-11`: `passlib 1.7.4` が古く、`bcrypt 4.1+` 以降の API 変更に追従していないため、v0.7.0 の土台整備として password hashing backend を `bcrypt` 直利用へ移行する
+
 ## 10. `DM-09` Bandit false positive 方針整理
 
 優先度: `P5`
+
+詳細実施計画:
+
+- `docs/dev/dm08-dm10-security-task-plan.ja.md`
 
 ### 目的
 
@@ -585,6 +685,10 @@ uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/s
 
 優先度: `P5`
 
+詳細実施計画:
+
+- `docs/dev/dm08-dm10-security-task-plan.ja.md`
+
 ### 目的
 
 外部 SAML metadata XML を扱う箇所を、標準 `xml.etree.ElementTree` からより安全な parser に寄せる。
@@ -617,7 +721,94 @@ uv run --locked pytest components/koiki_ref_app/tests/unit/app/services/test_sam
 uv run --locked bandit -r components/koiki_ref_app/src/koiki_ref_app/services/saml_metadata_loader.py
 ```
 
-## 12. 推奨実行順
+## 12. `DM-11` password hashing backend の passlib 脱却
+
+優先度: `P5`
+
+状態: `未着手`
+
+### 目的
+
+`libkoiki.core.security` の password hashing backend を `passlib` 依存から `bcrypt` 直利用へ移行し、古い `passlib 1.7.4` と `bcrypt` の互換問題を根本解消する。
+
+### 判断経緯
+
+`DM-08` の依存脆弱性対応後、コンテナ実行ログでログイン時に次の warning / traceback が確認された。
+
+```text
+(trapped) error reading bcrypt version
+AttributeError: module 'bcrypt' has no attribute '__about__'
+```
+
+原因:
+
+- 現行実装は `libkoiki.core.security` で `passlib.context.CryptContext(schemes=["bcrypt"])` を使っている
+- `passlib 1.7.4` は `2020` 年リリースで止まっている
+- `passlib 1.7.4` は bcrypt backend 初期化時に `bcrypt.__about__.__version__` を参照する
+- `bcrypt 4.1+` では `__about__` が削除されているため、ログイン時に traceback が出る
+
+`DM-08` ではセキュリティ依存更新の差分を広げすぎないため、暫定的に `bcrypt>=4.0.1,<4.1.0` へ固定し、warning を解消した。
+
+ただし、この固定は根本対応ではない。`bcrypt` を古い互換範囲に留めるより、password hashing の薄い境界である `get_password_hash()` / `verify_password()` を `bcrypt` 直利用へ置き換える方が、v0.7.0 以降の保守性が高い。
+
+### 対象
+
+- `components/libkoiki/src/libkoiki/core/security.py`
+- `components/libkoiki/src/libkoiki/services/user_service.py`
+- `components/libkoiki/tests/unit/libkoiki/services/test_user_service.py`
+- `components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py`
+- 必要に応じて auth / login security 関連テスト
+- root `pyproject.toml`
+- `components/libkoiki/pyproject.toml`
+- `uv.lock`
+
+### 作業
+
+- `libkoiki.core.security.get_password_hash()` を `bcrypt.hashpw()` / `bcrypt.gensalt()` ベースへ置き換える
+- `libkoiki.core.security.verify_password()` を `bcrypt.checkpw()` ベースへ置き換える
+- 既存の `$2b$...` bcrypt hash が検証できることを確認する
+- invalid hash / 破損 hash で例外が外へ漏れず、認証失敗として扱われることを確認する
+- `user_service.authenticate_user()` の存在しないユーザー向け dummy hash による timing protection を維持する
+- `passlib[bcrypt]` dependency を削除する
+- `bcrypt` dependency は `4.x` の現行互換範囲へ戻す
+
+### 完了条件
+
+- `passlib` が runtime dependency から消えている
+- `get_password_hash()` が `$2b$` 形式の bcrypt hash を生成する
+- `verify_password()` が既存 `$2b$` hash を検証できる
+- ユーザー作成 / パスワード更新 / ログインの既存挙動が維持される
+- 存在しないユーザーや invalid hash の認証失敗時にも timing protection が維持される
+- コンテナログで `passlib/handlers/bcrypt.py` 由来 traceback が発生しない
+
+### 検証
+
+```powershell
+$env:UV_CACHE_DIR='.uv-cache-codex'
+$env:DEBUG='true'
+uv lock --check
+uv run --locked python -c "from libkoiki.core.security import get_password_hash, verify_password; h=get_password_hash('TestPass123@'); print(h.startswith('$2b$'), verify_password('TestPass123@', h))"
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_user_service.py components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py components/libkoiki/tests/unit/libkoiki/services/test_auth_service.py components/libkoiki/tests/unit/libkoiki/services/test_auth_service_comprehensive.py
+uv run --locked pytest components/libkoiki/tests components/koiki_ref_app/tests -m "not db_integration"
+uv run --locked pip-audit
+```
+
+コンテナ確認:
+
+```powershell
+.\start-docker.ps1 unified-prod-build
+.\start-docker.ps1 unified-prod
+docker logs koiki_app_prod_unified
+```
+
+確認観点:
+
+- password login が成功する
+- タスク管理アプリ操作が成功する
+- `passlib` / `bcrypt` 互換 traceback が出ない
+- `bcrypt` の新規 `pip-audit` 検出がない
+
+## 13. 推奨実行順
 
 1. `DM-01`
 2. `DM-02`
@@ -629,11 +820,12 @@ uv run --locked bandit -r components/koiki_ref_app/src/koiki_ref_app/services/sa
 8. `DM-08`
 9. `DM-09`
 10. `DM-10`
+11. `DM-11`
 
 `DM-01` と `DM-02` は、他タスクの前に小さく処理する。
 `DM-03` から `DM-05` は Pydantic v2 互換性としてまとめて扱えるが、差分が大きくなる場合は schema / service / logging に分ける。
 
-## 13. 共通 NG 条件
+## 14. 共通 NG 条件
 
 - import error
 - lock mismatch
