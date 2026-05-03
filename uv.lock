@@ -821,11 +821,15 @@ name = "koiki-ref-app"
 version = "0.6.1"
 source = { editable = "components/koiki_ref_app" }
 dependencies = [
+    { name = "defusedxml" },
     { name = "libkoiki" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "libkoiki", editable = "components/libkoiki" }]
+requires-dist = [
+    { name = "defusedxml", specifier = ">=0.7.1,<0.8.0" },
+    { name = "libkoiki", editable = "components/libkoiki" },
+]
 
 [[package]]
 name = "libkoiki"

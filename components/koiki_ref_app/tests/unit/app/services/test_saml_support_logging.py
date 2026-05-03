@@ -70,6 +70,46 @@ class TestSamlSupportLogging:
         assert "error" not in error_kwargs
 
     @pytest.mark.asyncio
+    async def test_metadata_loader_rejects_entity_declaration(
+        self,
+        metadata_loader_module,
+    ):
+        loader = metadata_loader_module.SAMLMetadataLoader(
+            metadata_url="https://idp.example.com/metadata.xml"
+        )
+        metadata_loader_module.logger = MagicMock()
+
+        class DummyResponse:
+            text = """<?xml version="1.0"?>
+<!DOCTYPE EntityDescriptor [
+  <!ENTITY secret SYSTEM "file:///etc/passwd">
+]>
+<EntityDescriptor entityID="&secret;" />
+"""
+
+            def raise_for_status(self):
+                return None
+
+        class DummyClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, exc_type, exc, tb):
+                return False
+
+            async def get(self, *args, **kwargs):
+                return DummyResponse()
+
+        metadata_loader_module.httpx.AsyncClient = MagicMock(return_value=DummyClient())
+
+        with pytest.raises(ValueError):
+            await loader.get_metadata_xml(force_refresh=True)
+
+        error_kwargs = metadata_loader_module.logger.error.call_args.kwargs
+        assert error_kwargs["error_type"] == "EntitiesForbidden"
+        assert "error" not in error_kwargs
+
+    @pytest.mark.asyncio
     async def test_metadata_loader_validate_metadata_logs_error_type_only(
         self,
         metadata_loader_module,

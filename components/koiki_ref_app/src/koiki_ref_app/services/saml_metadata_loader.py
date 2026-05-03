@@ -1,13 +1,14 @@
 # app/services/saml_metadata_loader.py
 """SAML IdPメタデータ動的取得サービス"""
 
-import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 from urllib.parse import urlparse
 
+import defusedxml.ElementTree as ET
 import httpx
 import structlog
+from defusedxml.common import DefusedXmlException
 
 from libkoiki.core.logging import get_error_type_name
 
@@ -69,6 +70,17 @@ class SAMLMetadataLoader:
                 url=self.metadata_url,
             )
 
+    def _parse_metadata_xml(self, metadata_xml: str) -> Any:
+        """SAML metadata XMLを安全なparserで解析する"""
+        try:
+            return ET.fromstring(metadata_xml)
+        except (ET.ParseError, DefusedXmlException) as e:
+            logger.error(
+                "Invalid XML in SAML metadata",
+                error_type=get_error_type_name(e),
+            )
+            raise ValueError(f"Invalid SAML metadata XML: {e}") from e
+
     async def get_metadata_xml(self, force_refresh: bool = False) -> str:
         """
         IdPメタデータXMLを取得（キャッシュあり）
@@ -111,15 +123,7 @@ class SAMLMetadataLoader:
 
             metadata_xml = response.text
 
-            # 簡易的なXML検証
-            try:
-                ET.fromstring(metadata_xml)
-            except ET.ParseError as e:
-                logger.error(
-                    "Invalid XML in SAML metadata",
-                    error_type=get_error_type_name(e),
-                )
-                raise ValueError(f"Invalid SAML metadata XML: {e}")
+            self._parse_metadata_xml(metadata_xml)
 
             # キャッシュ更新
             self._cached_metadata = metadata_xml
@@ -162,7 +166,7 @@ class SAMLMetadataLoader:
 
         # メタデータから証明書を抽出
         metadata_xml = await self.get_metadata_xml(force_refresh)
-        root = ET.fromstring(metadata_xml)
+        root = self._parse_metadata_xml(metadata_xml)
 
         certificates = {}
 
@@ -206,7 +210,7 @@ class SAMLMetadataLoader:
     async def get_idp_entity_id(self) -> str:
         """IdPのエンティティIDを取得"""
         metadata_xml = await self.get_metadata_xml()
-        root = ET.fromstring(metadata_xml)
+        root = self._parse_metadata_xml(metadata_xml)
 
         entity_id = root.get("entityID")
         if not entity_id:
@@ -225,7 +229,7 @@ class SAMLMetadataLoader:
             SSO service URL または None
         """
         metadata_xml = await self.get_metadata_xml()
-        root = ET.fromstring(metadata_xml)
+        root = self._parse_metadata_xml(metadata_xml)
 
         # バインディングURN
         binding_urns = {
