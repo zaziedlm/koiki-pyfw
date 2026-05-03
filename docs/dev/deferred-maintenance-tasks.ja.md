@@ -685,6 +685,8 @@ uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/s
 
 優先度: `P5`
 
+状態: `実装・ローカル検証済み`
+
 詳細実施計画:
 
 - `docs/dev/dm08-dm10-security-task-plan.ja.md`
@@ -706,6 +708,13 @@ uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/s
 - `ET.fromstring` と XML parse error handling を置き換える
 - 既存 logging の `error_type` 方針を維持する
 
+### 実施結果
+
+- `defusedxml.ElementTree` を採用し、SAML metadata XML parse を hardening した
+- `koiki_ref_app` の runtime dependency として `defusedxml>=0.7.1,<0.8.0` を明示した
+- DOCTYPE / external entity declaration を含む metadata が `EntitiesForbidden` として拒否されるテストを追加した
+- Keycloak コンテナを SAML IdP とした unified prod 構成で、metadata 取得、証明書抽出、SAML ログイン、タスク管理操作が成功することを確認した
+
 ### 完了条件
 
 - 外部 XML parse が hardening される
@@ -720,6 +729,14 @@ $env:DEBUG='true'
 uv run --locked pytest components/koiki_ref_app/tests/unit/app/services/test_saml_support_logging.py components/koiki_ref_app/tests/unit/app/services/test_saml_service.py
 uv run --locked bandit -r components/koiki_ref_app/src/koiki_ref_app/services/saml_metadata_loader.py
 ```
+
+実施済み結果:
+
+- `uv lock --check`: 成功
+- 対象 pytest: `31 passed`
+- 対象 Bandit: `No issues identified`
+- ローカル Keycloak SAML IdP によるブラウザログイン確認: 成功
+- `Invalid XML in SAML metadata`、`EntitiesForbidden`、`ParseError`、`No signing certificates found`、`Traceback`: なし
 
 ## 12. `DM-11` password hashing backend の passlib 脱却
 
@@ -818,12 +835,14 @@ docker logs koiki_app_prod_unified
 6. `DM-06`
 7. `DM-07`
 8. `DM-08`
-9. `DM-09`
-10. `DM-10`
-11. `DM-11`
+9. `DM-10`
+10. `DM-11`
+11. `DM-09`
 
 `DM-01` と `DM-02` は、他タスクの前に小さく処理する。
 `DM-03` から `DM-05` は Pydantic v2 互換性としてまとめて扱えるが、差分が大きくなる場合は schema / service / logging に分ける。
+`DM-08` は runtime 依存の脆弱性監査結果を優先して先行対応済み。
+`DM-08` 後は `DM-10`、`DM-11`、`DM-09` の順に進める。
 
 ## 14. 共通 NG 条件
 
