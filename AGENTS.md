@@ -12,7 +12,8 @@ Read these files first:
 
 1. `docs/agent/boundaries.md`
 2. `docs/agent/architecture.md`
-3. `docs/agent/testing.md`
+3. `docs/agent/environment.md`
+4. `docs/agent/testing.md`
 
 Read these when relevant:
 
