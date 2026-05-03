@@ -44,6 +44,18 @@ CI と同じ lockfile 固定の確認をしたい場合:
 uv sync --locked
 ```
 
+ローカルで開発・テスト用の依存まで lockfile に合わせる場合:
+
+```powershell
+uv sync --locked --group dev --group test
+```
+
+`pip-audit` や `bandit` などのセキュリティ検証も実行する場合:
+
+```powershell
+uv sync --locked --group dev --group test --group security
+```
+
 ### 3. ローカル component の取り込み
 
 追加の `pip install -e` は不要です。
