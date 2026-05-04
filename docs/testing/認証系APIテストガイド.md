@@ -4,6 +4,16 @@
 **対象フレームワーク**: KOIKI-FW v0.6.0  
 **テストフレームワーク**: pytest + FastAPI TestClient + pytest-asyncio  
 
+## 現行 v0.7 構成での読み方
+
+本書には v0.6 系の記録が含まれますが、現行のテスト配置は次を正規導線として扱います。
+
+- framework tests: `components/libkoiki/tests/`
+- reference app tests: `components/koiki_ref_app/tests/`
+- cross-cutting / e2e / agent guidance tests: root `tests/`
+
+本文中の root `libkoiki/` や root `app/` 前提に見える記述は履歴的な説明として読み、現行作業では `components/*` 配下の path を優先してください。
+
 ## 概要
 
 このガイドでは、KOIKI-FWにおける認証系APIのテスト実行方法と、テストの書き方について説明します。本フレームワークでは、**ユニットテスト**と**統合テスト**の2層構造で、効率的で保守性の高いテスト環境を提供しています。
