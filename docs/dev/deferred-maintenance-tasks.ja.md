@@ -1150,6 +1150,10 @@ rg --files components/libkoiki/src components/koiki_ref_app/src | rg "todo|route
 
 状態: `未着手`
 
+計画文書:
+
+- `docs/dev/dm15-agent-guidance-skills-consistency.ja.md`
+
 ### 目的
 
 現在の v0.7 開発版を `v0.7.0` として扱うため、ソースコード上の version metadata と release docs を整える。
@@ -1232,6 +1236,21 @@ Codex、Claude Code、GitHub Copilot などの AI agent が、同じ repository 
 - Agent Skills の trigger / expected usage と、現行 repository boundary の整合を確認する
 - 重複文書や古い path 参照があれば、現行正本と履歴資料のどちらかに分類する
 - 大きな Skill 実体変更やファイル移動が必要な場合は、別 PR に分ける
+
+初回 PR 方針:
+
+- まず計画文書で guidance surface、canonical skill、wrapper、Copilot instructions、検証方法を棚卸しする
+- 既存 skill 名は変更しない
+- 新 skill はすぐに増やさない
+- skill 実体の大改修や maintainer / template split は、実 runtime smoke の結果や downstream 具体例が揃ってから別 PR で扱う
+
+別 PR として残す候補:
+
+- `DM-15-A`: DM-14 ownership policy の skill routing 反映
+- `DM-15-B`: prompt catalog / smoke checklist の拡充
+- `DM-15-C`: repository-side contract test の強化
+- `DM-15-D`: real runtime smoke result の記録方式整備
+- `DM-15-E`: 新 skill / role split の要否判断
 
 ### 完了条件
 
