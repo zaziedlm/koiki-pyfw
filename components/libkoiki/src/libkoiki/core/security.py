@@ -1,9 +1,9 @@
 # src/core/security.py
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, Union, Annotated # Annotated をインポート
+import bcrypt
 import jwt
 from jwt.exceptions import InvalidTokenError
-from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
@@ -25,7 +25,7 @@ import hashlib
 logger = structlog.get_logger(__name__)
 
 # --- パスワードハッシュ化 ---
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+BCRYPT_ROUNDS = 12
 
 # --- OAuth2 スキーマ ---
 # tokenUrl は認証エンドポイントの相対パス
@@ -56,12 +56,23 @@ def create_access_token(subject: Union[str, Any], expires_delta: Optional[timede
 # --- パスワード検証 ---
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """平文パスワードとハッシュ化されたパスワードを比較検証します"""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        password_bytes = plain_password.encode("utf-8")
+        hash_bytes = hashed_password.encode("utf-8")
+        return bcrypt.checkpw(password_bytes, hash_bytes)
+    except (ValueError, TypeError) as e:
+        logger.warning(
+            "Password verification failed due to invalid hash format",
+            error_type=get_error_type_name(e),
+        )
+        return False
 
 # --- パスワードハッシュ化 ---
 def get_password_hash(password: str) -> str:
     """パスワードをハッシュ化します"""
-    return pwd_context.hash(password)
+    password_bytes = password.encode("utf-8")
+    hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt(rounds=BCRYPT_ROUNDS))
+    return hashed.decode("utf-8")
 
 # --- トークンからユーザーを取得 (依存性注入用) ---
 async def get_user_from_token(

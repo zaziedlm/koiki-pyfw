@@ -742,7 +742,7 @@ uv run --locked bandit -r components/koiki_ref_app/src/koiki_ref_app/services/sa
 
 優先度: `P5`
 
-状態: `未着手`
+状態: `実装・コンテナ検証済み`
 
 ### 目的
 
@@ -772,6 +772,7 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 
 - `components/libkoiki/src/libkoiki/core/security.py`
 - `components/libkoiki/src/libkoiki/services/user_service.py`
+- `components/libkoiki/tests/unit/core/test_security_password_hashing.py`
 - `components/libkoiki/tests/unit/libkoiki/services/test_user_service.py`
 - `components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py`
 - 必要に応じて auth / login security 関連テスト
@@ -788,6 +789,24 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 - `user_service.authenticate_user()` の存在しないユーザー向け dummy hash による timing protection を維持する
 - `passlib[bcrypt]` dependency を削除する
 - `bcrypt` dependency は `4.x` の現行互換範囲へ戻す
+
+### 実施結果
+
+- `libkoiki.core.security` の password hashing backend を `passlib.context.CryptContext` から `bcrypt` 直利用へ移行した
+  - `get_password_hash()` は `bcrypt.hashpw()` / `bcrypt.gensalt(rounds=12)` を使用する
+  - `verify_password()` は `bcrypt.checkpw()` を使用する
+  - invalid hash / 破損 hash は例外を外へ漏らさず `False` を返す
+- `user_service.authenticate_user()` の存在しないユーザー向け dummy hash timing protection を維持するテストを追加した
+- `components/libkoiki/tests/unit/core/test_security_password_hashing.py` を追加し、次を確認した
+  - `$2b$` bcrypt hash の生成
+  - 正しい password の検証成功
+  - 誤った password の検証失敗
+  - 既存 `$2b$` hash の検証互換
+  - invalid hash / 破損 hash で `False` を返すこと
+- root `pyproject.toml` と `components/libkoiki/pyproject.toml` から `passlib[bcrypt]` を削除した
+- `bcrypt` dependency を `bcrypt>=4.3.0,<5.0.0` に更新した
+  - `5.0.0` は 72 bytes 超過 password の扱いが変わるため、今回の移行では自動採用しない
+- `uv.lock` を更新し、`passlib 1.7.4` が削除され、`bcrypt 4.3.0` が解決された
 
 ### 完了条件
 
@@ -809,6 +828,68 @@ uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_use
 uv run --locked pytest components/libkoiki/tests components/koiki_ref_app/tests -m "not db_integration"
 uv run --locked pip-audit
 ```
+
+実施済み結果:
+
+- `uv lock --check`: 成功
+- `uv sync --locked --group dev --group test --group security`: 成功
+  - `passlib==1.7.4` が uninstall された
+- `uv run --locked python -c "import importlib.util; print(importlib.util.find_spec('passlib'))"`
+  - `None`
+- `uv run --locked python -c "from libkoiki.core.security import get_password_hash, verify_password; h=get_password_hash('TestPass123@'); print(h.startswith('$2b$'), verify_password('TestPass123@', h), verify_password('WrongPass123@', h))"`
+  - `True True False`
+- 対象ユニットテスト:
+  - `components/libkoiki/tests/unit/core/test_security_password_hashing.py`
+  - `components/libkoiki/tests/unit/libkoiki/services/test_user_service.py`
+  - `components/libkoiki/tests/unit/libkoiki/services/test_user_service_simple.py`
+  - `components/libkoiki/tests/unit/libkoiki/services/test_auth_service.py`
+  - `components/libkoiki/tests/unit/libkoiki/services/test_auth_service_comprehensive.py`
+  - 結果: `34 passed`
+- 非 DB component テスト:
+  - `uv run --locked pytest components/libkoiki/tests components/koiki_ref_app/tests -m "not db_integration"`
+  - 結果: `204 passed, 1 skipped, 11 deselected`
+- `uv run --locked pip-audit`
+  - `pip 26.0.1 / CVE-2026-3219` のみ残存
+  - `bcrypt` の新規検出なし
+
+既存テストでは `AsyncMock` と transaction helper の組み合わせによる `RuntimeWarning` が残るが、DM-11 の password hashing 移行による失敗ではない。
+
+### コンテナ確認結果
+
+ローカル unified prod 構成で、次を実行した。
+
+```powershell
+.\start-docker.ps1 unified-prod-build
+.\start-docker.ps1 unified-prod
+```
+
+ブラウザ操作で次を確認した。
+
+- 通常 password login: 成功
+- タスク管理操作: 成功
+- 新規ユーザー登録 -> password login: 成功
+- OIDC / SSO login: 成功
+- SAML login: 成功
+
+パスワード変更は FastAPI Swagger UI 経由の導線のみで、prod container では Swagger UI が非表示のため未確認。
+
+アプリコンテナログ確認結果:
+
+- `Login successful`
+- `User registered successfully`
+- `SSO login successful`
+- `SAML login successful`
+- `/api/v1/auth/me`、`/api/v1/todos`、`/api/v1/todos` 更新系 request が成功
+
+次の DM-11 関連ログは確認されなかった。
+
+- `passlib`
+- `error reading bcrypt version`
+- `passlib/handlers/bcrypt.py`
+- `Traceback`
+- `Password verification failed`
+
+残る `InsecureKeyLengthWarning` は `JWT_SECRET` が HS256 推奨長 32 bytes 未満であることによる既知警告であり、DM-11 の password hashing backend 移行とは別件として扱う。
 
 コンテナ確認:
 
