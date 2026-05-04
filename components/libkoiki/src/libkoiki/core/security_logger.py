@@ -20,20 +20,25 @@ SECURITY_EVENT_AUTHENTICATION_BLOCKED_LOCKOUT = (
 SECURITY_EVENT_AUTHENTICATION_SUCCEEDED_AFTER_RISK_CHECK = (
     "authentication_succeeded_after_risk_check"
 )
-SECURITY_EVENT_REFRESH_TOKEN_REJECTED = "refresh_token_rejected"
+# Security event names are log labels, not secrets.
+SECURITY_EVENT_REFRESH_TOKEN_REJECTED = "refresh_token_rejected"  # nosec B105
 SECURITY_EVENT_PASSWORD_RESET_REQUESTED_EXISTING_USER = (
-    "password_reset_requested_existing_user"
+    # Security event names are log labels, not secrets.
+    "password_reset_requested_existing_user"  # nosec B105
 )
-SECURITY_EVENT_PASSWORD_RESET_COMPLETED = "password_reset_completed"
+# Security event names are log labels, not secrets.
+SECURITY_EVENT_PASSWORD_RESET_COMPLETED = "password_reset_completed"  # nosec B105
 SECURITY_EVENT_PASSWORD_RESET_REJECTED_INVALID_TOKEN = (
-    "password_reset_rejected_invalid_token"
+    # Security event names are log labels, not secrets.
+    "password_reset_rejected_invalid_token"  # nosec B105
 )
 SECURITY_EVENT_SSO_LOGIN_FAILED = "sso_login_failed"
 SECURITY_EVENT_SSO_LOGIN_SUCCEEDED = "sso_login_succeeded"
 SECURITY_EVENT_SAML_LOGIN_FAILED = "saml_login_failed"
 SECURITY_EVENT_SAML_LOGIN_SUCCEEDED = "saml_login_succeeded"
 SECURITY_EVENT_TOKEN_REUSE_OR_INTEGRITY_VIOLATION_DETECTED = (
-    "token_reuse_or_integrity_violation_detected"
+    # Security event names are log labels, not secrets.
+    "token_reuse_or_integrity_violation_detected"  # nosec B105
 )
 SECURITY_EVENT_SUSPICIOUS_ACTIVITY_DETECTED = "suspicious_activity_detected"
 SECURITY_EVENT_RATE_LIMIT_EXCEEDED_SECURITY_SENSITIVE_ENDPOINT = (

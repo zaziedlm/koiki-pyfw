@@ -418,12 +418,9 @@ def clear_request_context():
 
 def get_request_context() -> Dict[str, Any]:
     """現在のリクエストコンテキストを安全に取得する"""
-    try:
-        context = request_context.get()
-        if isinstance(context, dict):
-            return context.copy()
-    except Exception:
-        pass
+    context = request_context.get()
+    if isinstance(context, dict):
+        return context.copy()
     return {}
 
 # リクエスト情報をログに追加するプロセッサ
@@ -431,21 +428,18 @@ def add_request_info(logger, method_name, event_dict):
     """リクエスト情報をログに追加する安全なプロセッサ"""
     if not isinstance(event_dict, dict):
         return event_dict
-    try:
-        ctx = request_context.get()
-        if ctx:
-            # 辞書の浅いコピーをマージ（深いコピーではない）
-            for k, v in ctx.items():
-                event_dict[f"request.{k}"] = v
-    except Exception:
-        pass
+    ctx = request_context.get()
+    if isinstance(ctx, dict):
+        # 辞書の浅いコピーをマージ（深いコピーではない）
+        for k, v in ctx.items():
+            event_dict[f"request.{k}"] = v
     return event_dict
 
 # カスタムプロセッサ（すべて防御的コーディング）
 def add_timestamp(logger, method_name, event_dict):
     """タイムスタンプを追加する安全なプロセッサ"""
     import datetime
-    from zoneinfo import ZoneInfo
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
     if not isinstance(event_dict, dict):
         return event_dict
     try:
@@ -453,7 +447,7 @@ def add_timestamp(logger, method_name, event_dict):
         if settings.LOG_TIMEZONE != "UTC":
             try:
                 tz = ZoneInfo(settings.LOG_TIMEZONE)
-            except Exception:
+            except (ValueError, ZoneInfoNotFoundError):
                 pass  # Fallback to UTC on error
         
         event_dict["timestamp"] = datetime.datetime.now(tz).isoformat()

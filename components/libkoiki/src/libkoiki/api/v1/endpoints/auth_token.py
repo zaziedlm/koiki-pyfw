@@ -68,7 +68,6 @@ async def refresh_token(
     return TokenWithRefresh(
         access_token=access_token,
         refresh_token=new_refresh_token or refresh_data.refresh_token,
-        token_type="bearer",
         expires_in=expires_in
     )
 

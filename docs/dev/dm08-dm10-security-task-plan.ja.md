@@ -147,6 +147,69 @@ uv run --locked pytest components/libkoiki/tests components/koiki_ref_app/tests 
 
 Bandit の検出結果を、コード修正すべき実リスクと false positive に分ける。
 
+### 実施結果
+
+実行日: 2026-05-04
+
+更新前:
+
+- `High`: 0
+- `Medium`: 0
+- `Low`: 12
+
+Low 12 件の内訳:
+
+- `B106`: OAuth2 `token_type="bearer"` 4 件
+  - secret ではなく token type 定数
+  - `TokenWithRefresh` schema の default で表現できるため、endpoint 側の明示指定を削除した
+- `B105`: security event name 定数 5 件
+  - secret ではなく security log の event type label
+  - 局所 `# nosec B105` と直前コメントで理由を記録した
+- `B110`: logging fallback の `try/except/pass` 3 件
+  - `request_context.get()` 周辺は broad exception handling を外し、`dict` 判定へ整理した
+  - timezone fallback は `ValueError` / `ZoneInfoNotFoundError` に例外型を絞った
+
+更新後:
+
+- `High`: 0
+- `Medium`: 0
+- `Low`: 0
+- 局所 `# nosec B105`: 5 件
+
+広域除外や Bandit plugin 全体除外は行っていない。
+`# nosec` は security event name の false positive に限定した。
+
+検証結果:
+
+```text
+uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src --severity-level low
+  No issues identified.
+  Low: 0
+  Medium: 0
+  High: 0
+
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_auth_service.py components/libkoiki/tests/unit/libkoiki/services/test_auth_service_comprehensive.py components/koiki_ref_app/tests/unit/app/services/test_sso_service.py components/koiki_ref_app/tests/unit/app/services/test_saml_service.py
+  55 passed
+
+uv run --locked pytest components/libkoiki/tests/unit/core/test_logging_sanitizer.py components/libkoiki/tests/unit/libkoiki/test_input_logging.py
+  38 passed, 1 skipped
+```
+
+既存の `AsyncMock` と transaction helper の組み合わせによる `RuntimeWarning` は残るが、DM-09 の Bandit false positive 整理による失敗ではない。
+
+コンテナ確認:
+
+```text
+unified prod container build / run: 成功
+ブラウザ password login: 成功
+ブラウザ OIDC SSO login: 成功
+ブラウザ SAML login: 成功
+タスク管理操作: 成功
+アプリコンテナログ点検: Traceback / ResponseValidationError / ValidationError / Internal Server Error / Invalid token response / Password verification failed なし
+```
+
+残る `InsecureKeyLengthWarning` は `JWT_SECRET` が HS256 推奨長 32 bytes 未満であることによる既知警告であり、DM-09 の Bandit false positive 整理とは別件として扱う。
+
 ### 実施手順
 
 1. JSON と通常出力で現状を取得する。

@@ -201,7 +201,6 @@ async def login_for_access_token(
     return TokenWithRefresh(
         access_token=access_token,
         refresh_token=refresh_token,
-        token_type="bearer",
         expires_in=expires_in,
     )
 
