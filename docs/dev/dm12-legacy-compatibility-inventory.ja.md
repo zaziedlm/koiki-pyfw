@@ -296,7 +296,9 @@ uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent
 
 着手順序:
 
-- `DM-12-B` 完了後、先に `DM-13` として v0.7.0 release preparation を実施する
+- `DM-12-B` 完了後、先に `DM-14` として API ownership / sample feature boundary policy を整理する
+- `DM-14` 後、`DM-15` として Agent guidance / Skills consistency を整理する
+- `DM-15` 後、`DM-13` として v0.7.0 release preparation を実施する
 - `DM-13` で version metadata と release docs を整理してから、`app.main:app` 互換終了判断へ進む
 - release / versioning と compatibility wrapper の削除判断を同一 PR に混ぜない
 
@@ -365,8 +367,10 @@ KOIKI Framework
 
 この棚卸しにより、DM-12-A / DM-12-B 実施後に残る後続 PR 候補は次である。
 
-1. `DM-13`: v0.7.0 release preparation
-2. `DM-12-C`: `app.main:app` 互換終了判断
+1. `DM-14`: API ownership / sample feature boundary policy
+2. `DM-15`: Agent guidance / Skills consistency review
+3. `DM-13`: v0.7.0 release preparation
+4. `DM-12-C`: `app.main:app` 互換終了判断
 
 root `libkoiki/setup.py` は、現行 dependency と矛盾し、`passlib[bcrypt]` を含むため、DM-12-A で先行削除した。
 現行 docs の旧導線整理は、DM-12-B で履歴資料を残しつつ正規導線注記を追加した。

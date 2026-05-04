@@ -24,6 +24,8 @@
 | `DM-11` | P5 | security | password hashing backend を `passlib` から `bcrypt` 直利用へ移行する | 単独 |
 | `DM-12` | P4 | cleanup/docs | v0.7 新規参加者向けに legacy / compatibility 残骸を棚卸しする | 棚卸し単独、削除は別 PR |
 | `DM-13` | P4 | release/docs | v0.7.0 release preparation と version / release docs を整える | 単独 |
+| `DM-14` | P4 | architecture/docs | API ownership / sample feature boundary policy を整理する | 単独 |
+| `DM-15` | P4 | agent/docs | Agent guidance / Skills consistency を整理する | 単独 |
 
 ## 2. `DM-01` Settings.DATABASE_URL 組み立て復旧
 
@@ -1087,7 +1089,62 @@ uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent
 - 削除判断は棚卸し PR とは分け、別 PR で小さく扱う
 - セキュリティ残タスク `DM-09` と混ぜない
 
-## 14. `DM-13` v0.7.0 release preparation
+## 14. `DM-14` API ownership / sample feature boundary policy
+
+優先度: `P4`
+
+状態: `方針文書作成済み`
+
+方針文書:
+
+- `docs/dev/dm14-api-ownership-boundary-policy.ja.md`
+
+### 目的
+
+v0.7 以降の API 実装で、`components/libkoiki/`、`components/koiki_ref_app/`、`apps/` のどこに何を置くかを場当たりにしない。
+
+特に Todo タスク管理 API のように、サンプルとして有用だが業務 API にも見える機能について、framework 層に置く条件と reference app 層に置く条件を明確にする。
+
+### 判断経緯
+
+現行 Todo API は、model / schema / repository / service / endpoint が主に `components/libkoiki/` 側にあり、`koiki_ref_app` は `libkoiki` router を include して参照アプリとして利用している。
+
+これは「reference app 固有の業務機能」というより「libkoiki に含まれる framework sample / starter capability」として動作している。
+
+ただし、この位置づけを明文化しないと、今後の新規 business API も `libkoiki` に置いてよいと誤解される恐れがある。
+
+### 対象
+
+- `docs/dev/dm14-api-ownership-boundary-policy.ja.md`
+- `docs/agent/boundaries.md`
+- 必要に応じて `docs/agent/app.md` / `docs/agent/libkoiki.md`
+
+### 実施結果
+
+- API ownership policy を文書化した
+- `components/libkoiki/` に置ける API の条件を整理した
+- `components/koiki_ref_app/` に置く API の条件を整理した
+- `apps/` に置く API の条件を整理した
+- Todo API は当面 `libkoiki` の `framework sample / starter capability` として維持する方針を明記した
+- Todo のコード移動や router 構成変更は、このタスクでは行わない方針にした
+- `docs/agent/boundaries.md` に API ownership の短い判断ルールを追加した
+
+### 完了条件
+
+- API ownership policy が文書化されている
+- Todo API の現状位置づけが `framework sample / starter capability` として説明されている
+- 新規 business API を安易に `libkoiki` へ置かない方針が明記されている
+- Todo のコード移動や router 変更をこの PR で行わないことが明記されている
+- 後続判断候補が整理されている
+
+### 検証
+
+```powershell
+rg -n "todo|todos|Todo" components/libkoiki/src components/koiki_ref_app/src components/libkoiki/tests components/koiki_ref_app/tests docs/agent README.md -S
+rg --files components/libkoiki/src components/koiki_ref_app/src | rg "todo|router|dependencies|app_factory|asgi"
+```
+
+## 15. `DM-13` v0.7.0 release preparation
 
 優先度: `P4`
 
@@ -1145,7 +1202,51 @@ uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent
 
 必要に応じて、コンテナ build / run 後に health response の version 表示も確認する。
 
-## 15. 推奨実行順
+## 16. `DM-15` Agent guidance / Skills consistency review
+
+優先度: `P4`
+
+状態: `未着手`
+
+### 目的
+
+Codex、Claude Code、GitHub Copilot などの AI agent が、同じ repository boundary / API ownership / task routing を参照できるように、agent guidance と Skills 相当の導線を一貫して整理する。
+
+`DM-14` で API ownership / sample feature boundary policy を整理したため、その方針を agent-facing docs / instructions / skills へどう反映するかを、次タスクとして扱う。
+
+### 対象候補
+
+- `AGENTS.md`
+- `docs/agent/`
+- `docs/agent/skills/`
+- `.github/copilot-instructions.md`
+- `.github/instructions/*.instructions.md`
+- Claude Code 向けに残っている guidance / skills 相当の導線
+- `docs/dev/agent-skill-checklist.md`
+
+### 作業
+
+- `docs/agent/*` と `.github/*instructions*` の役割分担を確認する
+- Codex / Claude Code / GitHub Copilot が、`components/libkoiki/`、`components/koiki_ref_app/`、`apps/` の境界を同じように判断できるか確認する
+- `DM-14` の API ownership policy を agent-facing guidance へ反映する範囲を決める
+- Agent Skills の trigger / expected usage と、現行 repository boundary の整合を確認する
+- 重複文書や古い path 参照があれば、現行正本と履歴資料のどちらかに分類する
+- 大きな Skill 実体変更やファイル移動が必要な場合は、別 PR に分ける
+
+### 完了条件
+
+- agent guidance の正本と補助資料の役割が説明できる
+- Codex / Claude Code / GitHub Copilot で API ownership と作業境界の判断が大きくずれない
+- `DM-14` の方針が agent-facing guidance へ反映されるか、後続対象として明確化されている
+- v0.7.0 release preparation 前に、AI agent 向け導線の一貫性が確認されている
+
+### 検証
+
+```powershell
+rg -n "components/libkoiki|components/koiki_ref_app|apps/|app/|Todo|API ownership|Skills|Copilot|Claude|Codex" AGENTS.md docs/agent .github docs/dev/agent-skill-checklist.md -S
+```
+
+## 17. 推奨実行順
 
 1. `DM-01`
 2. `DM-02`
@@ -1159,17 +1260,20 @@ uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent
 10. `DM-11`
 11. `DM-09`
 12. `DM-12`
-13. `DM-13`
-14. `DM-12-C`
+13. `DM-14`
+14. `DM-15`
+15. `DM-13`
+16. `DM-12-C`
 
 `DM-01` と `DM-02` は、他タスクの前に小さく処理する。
 `DM-03` から `DM-05` は Pydantic v2 互換性としてまとめて扱えるが、差分が大きくなる場合は schema / service / logging に分ける。
 `DM-08` は runtime 依存の脆弱性監査結果を優先して先行対応済み。
 `DM-08` 後は `DM-10`、`DM-11`、`DM-09` の順に進める。
 `DM-12` は削除系・導線整理系のため、`DM-09` のセキュリティ整理後に棚卸しから開始する。
-`DM-12-B` 完了後は、`app.main:app` 互換終了判断である `DM-12-C` へ進む前に、`DM-13` で v0.7.0 release preparation を整理する。
+`DM-12-B` 完了後は、`DM-14` で API ownership / sample feature boundary policy を整理し、続けて `DM-15` で agent guidance / Skills consistency を確認してから `DM-13` の v0.7.0 release preparation へ進む。
+`DM-12-C` の `app.main:app` 互換終了判断は、`DM-13` 後に扱う。
 
-## 16. 共通 NG 条件
+## 18. 共通 NG 条件
 
 - import error
 - lock mismatch
