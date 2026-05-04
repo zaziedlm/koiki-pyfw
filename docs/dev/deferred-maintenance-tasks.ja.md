@@ -980,7 +980,7 @@ docker logs koiki_app_prod_unified
 
 優先度: `P4`
 
-状態: `棚卸し作成済み`
+状態: `棚卸し作成済み / DM-12-A 実施済み`
 
 棚卸し結果:
 
@@ -1042,10 +1042,11 @@ v0.7 では、現行の正規実装は `components/libkoiki/` と `components/ko
 - `apps/` は downstream 案件固有 backend API 実装の予約領域として維持する方針を確認した
 - Docker / Compose / local dev script は `koiki_ref_app.asgi:app` を標準導線としていることを確認した
 - `app.main:app` や旧 root `libkoiki/` の docs 参照は、履歴資料と現行手順を分けて後続 docs cleanup で扱う方針にした
+- DM-12-A として root `libkoiki/setup.py` を削除し、unified prod コンテナ build / run、password login、タスク管理の作成 / 更新、コンテナログ確認で動作影響がないことを確認した
 
 後続 PR 候補:
 
-1. root `libkoiki/setup.py` 削除
+1. root `libkoiki/setup.py` 削除: 実施済み
 2. 現行 docs の旧導線整理
 3. `app.main:app` 互換終了判断
 4. ローカル artifact 清掃は Git PR ではなく作業環境側で扱う

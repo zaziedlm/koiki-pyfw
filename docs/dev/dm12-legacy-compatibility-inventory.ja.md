@@ -43,7 +43,7 @@ v0.7 から初めて開発に参加するメンバーが、現行実装の場所
 | root `app/main.py` | `koiki_ref_app.asgi.app` を re-export | `互換維持` | 実装正本ではない | docs では新規導線として扱わない |
 | root `app/__init__.py` | `components/*/src` を `sys.path` に追加し、namespace path を拡張 | `互換維持` / `要追加検証` | legacy import 対応として維持 | `app.main:app` 互換終了時に撤去可否を判断 |
 | root `main.py` | 存在しない | `対応不要` | root cleanup 済み | 旧参照が現行 docs に戻らないよう監視 |
-| root `libkoiki/setup.py` | Git 管理下に残存。旧 dependency に `passlib[bcrypt]` を含む | `削除候補` | 現行 package metadata と矛盾し、混乱リスクが高い | 単独 PR で削除候補 |
+| root `libkoiki/setup.py` | Git 管理下に残存していた。旧 dependency に `passlib[bcrypt]` を含んでいた | `削除済み` | 現行 package metadata と矛盾し、混乱リスクが高いため削除した | DM-12-A で対応済み |
 | root `libkoiki/` 配下生成物 | `__pycache__`, `libkoiki.egg-info` などがローカルに存在 | `ローカル artifact` | Git 管理外。PR 対象ではない | ローカル環境で清掃。必要なら `.gitignore` 確認 |
 | `apps/` | `README.md` のみ存在 | `互換維持` / `予約領域` | downstream app 用の意図ある予約領域 | README の説明を維持。workspace member にはしない |
 | root `tests/` | e2e / db integration / agent guidance tests が存在 | `互換維持` | component tests ではない cross-cutting tests として維持 | README / test guide の説明を継続 |
@@ -102,7 +102,7 @@ from koiki_ref_app.asgi import app
 
 ### 4.3 root `libkoiki/`
 
-Git 管理下で残っているファイル:
+DM-12 棚卸し時点で Git 管理下に残っていたファイル:
 
 ```text
 libkoiki/setup.py
@@ -124,15 +124,22 @@ libkoiki/libkoiki.egg-info/
 
 判断:
 
-- `libkoiki/setup.py` は削除候補
+- `libkoiki/setup.py` は削除対象
 - 現行正本 `components/libkoiki/` と混同されるリスクが高い
 - `passlib[bcrypt]` を含むため、DM-11 後の方針とも矛盾する
 - ローカル生成物は Git PR では扱わず、必要に応じて作業環境で清掃する
 
+DM-12-A 実施結果:
+
+- `libkoiki/setup.py` を削除した
+- 削除前に `git ls-files libkoiki` で Git 管理対象が `libkoiki/setup.py` のみであることを確認した
+- `rg "libkoiki/setup.py|passlib\[bcrypt\]"` で、削除対象以外の `passlib[bcrypt]` 参照が履歴・計画 docs であることを確認した
+- root `libkoiki/` 配下のローカル生成物は Git 管理外のため、この PR では削除しない
+- unified prod コンテナを build / run し、ブラウザで password login とタスク管理の作成 / 更新が成功することを確認した
+- アプリコンテナログで `setup.py` / `libkoiki/setup.py` / `No such file or directory` / `ModuleNotFoundError` / `ImportError` / `Traceback` / `ERROR` / `CRITICAL` が出ていないことを確認した
+
 後続対応:
 
-- `libkoiki/setup.py` 削除 PR を小さく切る
-- 削除前に `git ls-files libkoiki` と `rg "libkoiki/setup.py"` を再確認する
 - ローカル生成物は Git 管理外であることを確認し、必要なら `.gitignore` の対象を確認する
 
 ### 4.4 `apps/`
@@ -220,6 +227,8 @@ tests/unit/test_pyjwt_migration.py
 
 ### DM-12-A: root `libkoiki/setup.py` 削除
 
+状態: `対応済み`
+
 目的:
 
 - 現行 `components/libkoiki/` と混同される旧 package metadata を削除する
@@ -228,6 +237,14 @@ tests/unit/test_pyjwt_migration.py
 対象:
 
 - `libkoiki/setup.py`
+
+実施結果:
+
+- root `libkoiki/setup.py` を削除した
+- root `libkoiki/` に残る Git 管理対象はなくなった
+- root `libkoiki/` 配下の `__pycache__` / `libkoiki.egg-info` は Git 管理外 artifact として扱う
+- unified prod コンテナ build / run、password login、タスク管理の作成 / 更新で動作影響がないことを確認した
+- コンテナログで `libkoiki/setup.py` 削除に起因する import / file missing error がないことを確認した
 
 事前確認:
 
@@ -326,10 +343,9 @@ KOIKI Framework
 
 初回 DM-12 PR では、削除や entrypoint 変更は行わない。
 
-この棚卸しにより、直近で切る価値が高い後続 PR は次である。
+この棚卸しにより、DM-12-A 実施後に残る後続 PR 候補は次である。
 
-1. root `libkoiki/setup.py` 削除
-2. 現行 docs の旧導線整理
-3. `app.main:app` 互換終了判断
+1. 現行 docs の旧導線整理
+2. `app.main:app` 互換終了判断
 
-特に root `libkoiki/setup.py` は、現行 dependency と矛盾し、`passlib[bcrypt]` を含むため、混乱リスクが最も高い。
+root `libkoiki/setup.py` は、現行 dependency と矛盾し、`passlib[bcrypt]` を含むため、DM-12-A で先行削除した。
