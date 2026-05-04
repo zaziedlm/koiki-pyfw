@@ -26,6 +26,16 @@ Place code in `components/koiki_ref_app/` when it is:
 - an application-level composition of existing framework capabilities
 - tied to current SSO, SAML, or business feature behavior for this project
 
+## API Ownership
+
+Framework APIs in `components/libkoiki/` must be reusable framework capabilities or explicitly documented starter/sample capabilities.
+
+Application APIs in `components/koiki_ref_app/` should own project-specific workflows, integrations, and UI-facing application behavior.
+
+Downstream or customer-specific APIs should start under `apps/` unless they are clearly reusable framework behavior or reference-app starter behavior.
+
+The current Todo API is treated as a `libkoiki` starter/sample capability. Do not use it as precedent for putting new business-specific APIs into `components/libkoiki/`.
+
 ## Decision Heuristic
 
 When deciding where a change belongs, ask:
