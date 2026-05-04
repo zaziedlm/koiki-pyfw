@@ -980,7 +980,11 @@ docker logs koiki_app_prod_unified
 
 優先度: `P4`
 
-状態: `未着手`
+状態: `棚卸し作成済み`
+
+棚卸し結果:
+
+- `docs/dev/dm12-legacy-compatibility-inventory.ja.md`
 
 ### 目的
 
@@ -1026,6 +1030,25 @@ v0.7 では、現行の正規実装は `components/libkoiki/` と `components/ko
 - `app/` や `app.main` 参照は、compatibility wrapper として維持が必要かを確認する
 - ルート `libkoiki/` は、現行 `components/libkoiki/` と混同されるため、参照有無と削除可否を確認する
 - README / docs / agent docs で、新規開発者が最初に見るべき正規導線を明確にする
+
+### 実施結果
+
+- legacy / compatibility 要素の棚卸し表を `docs/dev/dm12-legacy-compatibility-inventory.ja.md` に作成した
+- root `app/` は `app.main:app` 互換 wrapper として維持する方針を確認した
+- root `main.py` は既に存在しないことを確認した
+- Git 管理下の root `libkoiki/` は `libkoiki/setup.py` のみであることを確認した
+- root `libkoiki/setup.py` は旧 dependency に `passlib[bcrypt]` を含み、現行 `components/libkoiki/` と混同されるため削除候補とした
+- root `libkoiki/` 配下の `__pycache__` / `libkoiki.egg-info` は Git 管理外のローカル artifact として扱う方針にした
+- `apps/` は downstream 案件固有 backend API 実装の予約領域として維持する方針を確認した
+- Docker / Compose / local dev script は `koiki_ref_app.asgi:app` を標準導線としていることを確認した
+- `app.main:app` や旧 root `libkoiki/` の docs 参照は、履歴資料と現行手順を分けて後続 docs cleanup で扱う方針にした
+
+後続 PR 候補:
+
+1. root `libkoiki/setup.py` 削除
+2. 現行 docs の旧導線整理
+3. `app.main:app` 互換終了判断
+4. ローカル artifact 清掃は Git PR ではなく作業環境側で扱う
 
 ### 完了条件
 
