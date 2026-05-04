@@ -1,5 +1,11 @@
 # SAML環境変数設定クイックリファレンス
 
+## 現行 v0.7 構成での読み方
+
+現行 KOIKI-FW リポジトリ内の SAML backend 実装は `components/koiki_ref_app/src/koiki_ref_app/` 配下にあります。
+Python import 例では `koiki_ref_app.*` を正規導線として使用します。
+古い資料や移植先向け説明に残る `app.*` は、root `app/` 互換 wrapper または移植先プロジェクト例として扱ってください。
+
 ## 🎯 証明書取得戦略の選び方
 
 ### 推奨設定（本番環境）
@@ -206,7 +212,7 @@ aS1zYW1sMB4XDTI1MDkzMDEzNDEyM1oXDTM1MDkzMDEzNDMwM1owFTETMBEGA1UE
 
 Pythonコンソールで確認:
 ```python
-from app.core.saml_config import SAMLSettings
+from koiki_ref_app.core.saml_config import SAMLSettings
 
 settings = SAMLSettings()
 print(f"Strategy: {settings.SAML_CERT_FETCH_STRATEGY}")

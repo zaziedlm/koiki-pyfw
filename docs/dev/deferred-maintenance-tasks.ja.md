@@ -23,6 +23,7 @@
 | `DM-10` | P5 | security | SAML metadata XML parser を hardening する | 単独 |
 | `DM-11` | P5 | security | password hashing backend を `passlib` から `bcrypt` 直利用へ移行する | 単独 |
 | `DM-12` | P4 | cleanup/docs | v0.7 新規参加者向けに legacy / compatibility 残骸を棚卸しする | 棚卸し単独、削除は別 PR |
+| `DM-13` | P4 | release/docs | v0.7.0 release preparation と version / release docs を整える | 単独 |
 
 ## 2. `DM-01` Settings.DATABASE_URL 組み立て復旧
 
@@ -980,7 +981,7 @@ docker logs koiki_app_prod_unified
 
 優先度: `P4`
 
-状態: `棚卸し作成済み / DM-12-A 実施済み`
+状態: `棚卸し作成済み / DM-12-A・DM-12-B 実施済み`
 
 棚卸し結果:
 
@@ -1043,11 +1044,12 @@ v0.7 では、現行の正規実装は `components/libkoiki/` と `components/ko
 - Docker / Compose / local dev script は `koiki_ref_app.asgi:app` を標準導線としていることを確認した
 - `app.main:app` や旧 root `libkoiki/` の docs 参照は、履歴資料と現行手順を分けて後続 docs cleanup で扱う方針にした
 - DM-12-A として root `libkoiki/setup.py` を削除し、unified prod コンテナ build / run、password login、タスク管理の作成 / 更新、コンテナログ確認で動作影響がないことを確認した
+- DM-12-B として SAML / testing / auth security 記録 docs に現行 v0.7 構成注記を追加し、現行作業では `components/libkoiki/`、`components/koiki_ref_app/`、`koiki_ref_app.*` を優先することを明確化した
 
 後続 PR 候補:
 
 1. root `libkoiki/setup.py` 削除: 実施済み
-2. 現行 docs の旧導線整理
+2. 現行 docs の旧導線整理: 実施済み
 3. `app.main:app` 互換終了判断
 4. ローカル artifact 清掃は Git PR ではなく作業環境側で扱う
 
@@ -1085,7 +1087,65 @@ uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent
 - 削除判断は棚卸し PR とは分け、別 PR で小さく扱う
 - セキュリティ残タスク `DM-09` と混ぜない
 
-## 14. 推奨実行順
+## 14. `DM-13` v0.7.0 release preparation
+
+優先度: `P4`
+
+状態: `未着手`
+
+### 目的
+
+現在の v0.7 開発版を `v0.7.0` として扱うため、ソースコード上の version metadata と release docs を整える。
+
+`DM-12-B` は旧導線の誤読防止を目的とする docs cleanup であり、`DM-13` は release / versioning を目的とする別タスクとして扱う。
+
+### 判断経緯
+
+DM-12-B の docs 整理中に、現行コードや release docs に `0.6.1` / `v0.6.0` が残っていることを確認した。
+
+ソースコード上の実バージョン値は v0.7.0 リリース準備として更新対象である。一方で、`docs/releases/KOIKI-FW_0.6.0.md`、`docs/releases/KOIKI-FW_0.6.1.md`、`docs/design_kkfw_0.6.0.md` などは履歴資料であり、機械的に `v0.7` へ置換しない。
+
+また、`DM-12-C` の `app.main:app` 互換終了判断は、v0.7.0 として公開する version / release note の整理後に実施した方が、リリース判断と互換判断を分離しやすい。
+
+### 対象候補
+
+- root `pyproject.toml`
+- `components/libkoiki/pyproject.toml`
+- `components/koiki_ref_app/pyproject.toml`
+- `components/libkoiki/src/libkoiki/__init__.py`
+- `components/koiki_ref_app/src/koiki_ref_app/app_factory.py`
+- `uv.lock`
+- `README.md`
+- `docs/releases/KOIKI-FW_0.7.0.md`
+
+### 作業
+
+- ソースコード上の `0.6.1` version metadata を `0.7.0` へ更新する
+- FastAPI metadata / health response の version 表示を `0.7.0` へ更新する
+- `uv lock` 更新要否を確認する
+- `docs/releases/KOIKI-FW_0.7.0.md` を新規作成する
+- README の v0.6 強調を v0.7 現行説明へ更新する
+- 履歴資料の `v0.6.0` / `v0.6.1` 記述は原則維持し、必要な場合のみ履歴資料注記を追加する
+
+### 完了条件
+
+- runtime / package metadata が `0.7.0` として整合している
+- `KOIKI-FW_0.7.0.md` が v0.7 の主要変更点を説明している
+- 履歴資料を機械的に書き換えていない
+- v0.7.0 release preparation と legacy compatibility cleanup の責務が混ざっていない
+
+### 検証
+
+```powershell
+uv lock --check
+uv run --locked python -c "import libkoiki; print(libkoiki.__version__)"
+uv run --locked python -c "from koiki_ref_app.asgi import app; print(app.version)"
+uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent_guidance components/koiki_ref_app/tests tests/integration/services -m "not db_integration"
+```
+
+必要に応じて、コンテナ build / run 後に health response の version 表示も確認する。
+
+## 15. 推奨実行順
 
 1. `DM-01`
 2. `DM-02`
@@ -1099,14 +1159,17 @@ uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent
 10. `DM-11`
 11. `DM-09`
 12. `DM-12`
+13. `DM-13`
+14. `DM-12-C`
 
 `DM-01` と `DM-02` は、他タスクの前に小さく処理する。
 `DM-03` から `DM-05` は Pydantic v2 互換性としてまとめて扱えるが、差分が大きくなる場合は schema / service / logging に分ける。
 `DM-08` は runtime 依存の脆弱性監査結果を優先して先行対応済み。
 `DM-08` 後は `DM-10`、`DM-11`、`DM-09` の順に進める。
 `DM-12` は削除系・導線整理系のため、`DM-09` のセキュリティ整理後に棚卸しから開始する。
+`DM-12-B` 完了後は、`app.main:app` 互換終了判断である `DM-12-C` へ進む前に、`DM-13` で v0.7.0 release preparation を整理する。
 
-## 15. 共通 NG 条件
+## 16. 共通 NG 条件
 
 - import error
 - lock mismatch

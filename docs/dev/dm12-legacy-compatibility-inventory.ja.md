@@ -257,6 +257,8 @@ uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent
 
 ### DM-12-B: 現行 docs の旧導線整理
 
+状態: `対応済み`
+
 目的:
 
 - 新規メンバーが現行手順として旧 root `libkoiki/` や `app.main:app` を読まないようにする
@@ -274,11 +276,29 @@ uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent
 - 履歴資料は残す
 - 現行手順として見える箇所には注意書きまたは現行パスを追記する
 
+実施結果:
+
+- `docs/saml/SAML_MIGRATION_GUIDE.md` に、v0.6 系 root `app/` / `libkoiki/` 前提を含む移植資料であることを明記した
+- `docs/saml/saml-env-config-guide.md` に、現行 SAML backend 実装は `components/koiki_ref_app/src/koiki_ref_app/` 配下であることを明記し、import 例を `koiki_ref_app.core.saml_config` に更新した
+- `docs/saml/saml-certificate-strategies.md` に、現行 SAML backend 実装の正規 path を明記し、コード例を `koiki_ref_app.services.saml_certificate_manager` に更新した
+- `docs/testing/認証系APIテストガイド.md` に、現行テスト配置として `components/libkoiki/tests/`、`components/koiki_ref_app/tests/`、root `tests/` の役割を追記した
+- `docs/authentication-api-security-fixes.md` に、v0.6 系の対応記録であり、本文中の `libkoiki/...` path は履歴として扱うことを追記した
+- `docs/authentication-api-guide.md` は既に現行構成注記があるため、今回の追加修正対象外とした
+- 履歴資料の旧 path 本文は大きく書き換えず、現行作業で優先すべき正規導線を注記する方針に留めた
+
 ### DM-12-C: `app.main:app` 互換終了判断
+
+状態: `DM-13 後に着手`
 
 目的:
 
 - root `app/` wrapper をいつまで残すか判断する
+
+着手順序:
+
+- `DM-12-B` 完了後、先に `DM-13` として v0.7.0 release preparation を実施する
+- `DM-13` で version metadata と release docs を整理してから、`app.main:app` 互換終了判断へ進む
+- release / versioning と compatibility wrapper の削除判断を同一 PR に混ぜない
 
 事前確認:
 
@@ -343,9 +363,10 @@ KOIKI Framework
 
 初回 DM-12 PR では、削除や entrypoint 変更は行わない。
 
-この棚卸しにより、DM-12-A 実施後に残る後続 PR 候補は次である。
+この棚卸しにより、DM-12-A / DM-12-B 実施後に残る後続 PR 候補は次である。
 
-1. 現行 docs の旧導線整理
-2. `app.main:app` 互換終了判断
+1. `DM-13`: v0.7.0 release preparation
+2. `DM-12-C`: `app.main:app` 互換終了判断
 
 root `libkoiki/setup.py` は、現行 dependency と矛盾し、`passlib[bcrypt]` を含むため、DM-12-A で先行削除した。
+現行 docs の旧導線整理は、DM-12-B で履歴資料を残しつつ正規導線注記を追加した。
