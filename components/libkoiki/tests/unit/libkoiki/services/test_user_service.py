@@ -165,6 +165,34 @@ class TestUserService:
         
         # エラーメッセージを確認
         assert "already registered" in str(exc_info.value)
+
+    @patch('libkoiki.services.user_service.get_login_security_config')
+    @patch('libkoiki.services.user_service.verify_password')
+    @pytest.mark.asyncio
+    async def test_authenticate_user_not_found_uses_dummy_hash(
+        self,
+        mock_verify_password,
+        mock_get_login_security_config,
+        user_service,
+        mock_db_session,
+    ):
+        """存在しないユーザーでもdummy hashで検証し、タイミング保護を維持する"""
+        mock_get_login_security_config.return_value = MagicMock(min_response_time=0)
+        user_service.repository.get_by_email = AsyncMock(return_value=None)
+
+        result = await user_service.authenticate_user(
+            "missing@example.com",
+            "TestPass123@",
+            mock_db_session,
+        )
+
+        assert result is None
+        user_service.repository.set_session.assert_called_once_with(mock_db_session)
+        user_service.repository.get_by_email.assert_called_once_with("missing@example.com")
+        mock_verify_password.assert_called_once()
+        plain_password, dummy_hash = mock_verify_password.call_args.args
+        assert plain_password == "TestPass123@"
+        assert dummy_hash.startswith("$2b$")
     
     @patch('libkoiki.services.user_service.get_password_hash')
     @patch('libkoiki.services.user_service.check_password_complexity')
