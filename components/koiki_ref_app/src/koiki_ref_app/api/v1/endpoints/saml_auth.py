@@ -238,7 +238,6 @@ async def saml_login(
         return TokenWithRefresh(
             access_token=access_token,
             refresh_token=refresh_token,
-            token_type="bearer",
             expires_in=expires_in,
         )
 

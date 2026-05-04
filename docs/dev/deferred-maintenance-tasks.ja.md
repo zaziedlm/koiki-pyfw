@@ -649,6 +649,8 @@ uv run --locked pytest components/libkoiki/tests components/koiki_ref_app/tests 
 
 優先度: `P5`
 
+状態: `実装・ローカル検証済み`
+
 詳細実施計画:
 
 - `docs/dev/dm08-dm10-security-task-plan.ja.md`
@@ -669,6 +671,38 @@ uv run --locked pytest components/libkoiki/tests components/koiki_ref_app/tests 
 - false positive は理由を明記して `# nosec` または設定除外を検討する
 - 実リスクがあるものはコード修正に回す
 
+### 実施結果
+
+実行日: 2026-05-04
+
+更新前の Bandit 結果:
+
+- `High`: 0
+- `Medium`: 0
+- `Low`: 12
+
+Low 検出の分類:
+
+- `B106 hardcoded_password_funcarg`: OAuth2 `token_type="bearer"` 4 件
+  - secret ではなく token type 定数
+  - `TokenWithRefresh` schema に `token_type = "bearer"` の default があるため、endpoint 側の明示指定を削除して解消した
+- `B105 hardcoded_password_string`: security event name 定数 5 件
+  - secret ではなく security log の event type label
+  - 対象行へ局所 `# nosec B105` を付与し、直前コメントで理由を記録した
+- `B110 try_except_pass`: logging fallback 3 件
+  - `request_context.get()` 周辺は broad `try/except/pass` を外し、`dict` 判定で安全に扱う形へ変更した
+  - timezone fallback は `Exception` ではなく `ValueError` / `ZoneInfoNotFoundError` に絞った
+
+更新後の Bandit 結果:
+
+- `High`: 0
+- `Medium`: 0
+- `Low`: 0
+- 局所 `# nosec B105`: 5 件
+
+広域除外や plugin 全体除外は行っていない。
+`# nosec` は security event name の false positive に限定した。
+
 ### 完了条件
 
 - Bandit の残件がレビュー可能な粒度に減る
@@ -681,6 +715,41 @@ uv run --locked pytest components/libkoiki/tests components/koiki_ref_app/tests 
 $env:UV_CACHE_DIR='.uv-cache-codex'
 uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src --severity-level medium
 ```
+
+実施済み結果:
+
+```text
+uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src --severity-level low
+  No issues identified.
+  Low: 0
+  Medium: 0
+  High: 0
+  Total potential issues skipped due to specifically being disabled: 5
+
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/test_input_logging.py components/libkoiki/tests/unit/libkoiki/services/test_auth_service.py components/libkoiki/tests/unit/libkoiki/services/test_auth_service_comprehensive.py components/koiki_ref_app/tests/unit/app/services/test_sso_service.py components/koiki_ref_app/tests/unit/app/services/test_saml_service.py
+  65 passed, 1 skipped
+
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/services/test_auth_service.py components/libkoiki/tests/unit/libkoiki/services/test_auth_service_comprehensive.py components/koiki_ref_app/tests/unit/app/services/test_sso_service.py components/koiki_ref_app/tests/unit/app/services/test_saml_service.py
+  55 passed
+
+uv run --locked pytest components/libkoiki/tests/unit/core/test_logging_sanitizer.py components/libkoiki/tests/unit/libkoiki/test_input_logging.py
+  38 passed, 1 skipped
+```
+
+既存の `AsyncMock` と transaction helper の組み合わせによる `RuntimeWarning` は残るが、DM-09 の Bandit false positive 整理による失敗ではない。
+
+コンテナ確認:
+
+```text
+unified prod container build / run: 成功
+ブラウザ password login: 成功
+ブラウザ OIDC SSO login: 成功
+ブラウザ SAML login: 成功
+タスク管理操作: 成功
+アプリコンテナログ点検: Traceback / ResponseValidationError / ValidationError / Internal Server Error / Invalid token response / Password verification failed なし
+```
+
+残る `InsecureKeyLengthWarning` は `JWT_SECRET` が HS256 推奨長 32 bytes 未満であることによる既知警告であり、DM-09 の Bandit false positive 整理とは別件として扱う。
 
 ## 11. `DM-10` SAML metadata XML parser hardening
 
