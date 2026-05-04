@@ -1,6 +1,6 @@
 # 先送り保守事項 タスク分解
 
-最終更新: 2026-05-02
+最終更新: 2026-05-04
 
 関連計画:
 
@@ -22,6 +22,7 @@
 | `DM-09` | P5 | security | Bandit false positive 方針を整理する | 単独 |
 | `DM-10` | P5 | security | SAML metadata XML parser を hardening する | 単独 |
 | `DM-11` | P5 | security | password hashing backend を `passlib` から `bcrypt` 直利用へ移行する | 単独 |
+| `DM-12` | P4 | cleanup/docs | v0.7 新規参加者向けに legacy / compatibility 残骸を棚卸しする | 棚卸し単独、削除は別 PR |
 
 ## 2. `DM-01` Settings.DATABASE_URL 組み立て復旧
 
@@ -906,7 +907,92 @@ docker logs koiki_app_prod_unified
 - `passlib` / `bcrypt` 互換 traceback が出ない
 - `bcrypt` の新規 `pip-audit` 検出がない
 
-## 13. 推奨実行順
+## 13. `DM-12` v0.7 legacy / compatibility 棚卸し
+
+優先度: `P4`
+
+状態: `未着手`
+
+### 目的
+
+v0.7 から初めて開発に参加するメンバーが、現行実装の場所と過去互換のために残っている場所を誤認しないようにする。
+
+過去 v0.6 系のプロジェクト構造や移行経緯から残っている legacy / compatibility 要素を棚卸しし、削除・維持・正規導線への置換を判断できる状態にする。
+
+### 判断経緯
+
+v0.7 では、現行の正規実装は `components/libkoiki/` と `components/koiki_ref_app/` に分離されている。
+
+一方で、ルート `app/` は legacy import / entrypoint の compatibility wrapper として意図的に残っている。さらに、過去構造由来のルート `libkoiki/` など、現行の正規導線と混同されやすいフォルダーや参照が残っている可能性がある。
+
+これらをいきなり削除すると、Docker 起動、既存 import、運用手順、外部参照を壊す恐れがある。そのため、DM-12 では削除から始めず、まず棚卸し表を作成して判断根拠を残す。
+
+### 対象候補
+
+- ルート `app/`
+- ルート `libkoiki/`
+- ルート `main.py`
+- ルート `apps/`
+- ルート `tests/` と component 配下 tests の関係
+- legacy import / compatibility shim
+- `sys.path` 追加や import path 調整
+- Docker / Compose / entrypoint / start script の `app.main` 参照
+- README / docs / agent docs / `.github` 内の旧パス参照
+- v0.6 系の履歴説明が、現行手順として読めてしまうドキュメント
+
+### 作業
+
+- 現行 v0.7 の正規導線を明文化する
+  - framework: `components/libkoiki/`
+  - reference app backend: `components/koiki_ref_app/`
+  - frontend: `frontend/`
+  - local setup: `docs/dev/local_setup.md`
+- legacy / compatibility 要素を検索し、棚卸し表を作成する
+- 各要素を次の分類へ振り分ける
+  - `削除候補`
+  - `互換維持`
+  - `正規導線へ置換`
+  - `履歴資料として残す`
+  - `要追加検証`
+- `app/` や `app.main` 参照は、compatibility wrapper として維持が必要かを確認する
+- ルート `libkoiki/` は、現行 `components/libkoiki/` と混同されるため、参照有無と削除可否を確認する
+- README / docs / agent docs で、新規開発者が最初に見るべき正規導線を明確にする
+
+### 完了条件
+
+- legacy / compatibility 要素の棚卸し表が作成されている
+- `app/`、`libkoiki/`、`main.py`、`apps/`、旧 import、Docker/docs の `app.main` 参照について、削除・維持・置換の暫定判断が記録されている
+- いきなり削除しない方針が明記されている
+- 削除や entrypoint 変更が必要な場合、別 PR として切り出す方針が記録されている
+- 新規メンバー向けに、v0.7 の正規開発対象が `components/libkoiki/` と `components/koiki_ref_app/` であることが明確になっている
+
+### 検証
+
+棚卸し時の確認例:
+
+```powershell
+rg -n "app\.main|from app|import app|libkoiki/|components/libkoiki|koiki_ref_app|sys.path|PYTHONPATH" . -S
+rg --files app libkoiki apps tests .github docs docker scripts
+git ls-files app libkoiki apps tests .github docs
+```
+
+削除・entrypoint 変更を別 PR で実施する場合は、少なくとも次を確認する。
+
+```powershell
+uv lock --check
+uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent_guidance components/koiki_ref_app/tests tests/integration/services -m "not db_integration"
+.\start-docker.ps1 unified-prod-build
+.\start-docker.ps1 unified-prod
+```
+
+### 注意
+
+- DM-12 の初回 PR では、原則として削除や entrypoint 変更を行わない
+- ルート `app/` は現時点で compatibility wrapper として扱われているため、削除判断には Docker / import / docs の横断確認が必要
+- 削除判断は棚卸し PR とは分け、別 PR で小さく扱う
+- セキュリティ残タスク `DM-09` と混ぜない
+
+## 14. 推奨実行順
 
 1. `DM-01`
 2. `DM-02`
@@ -919,13 +1005,15 @@ docker logs koiki_app_prod_unified
 9. `DM-10`
 10. `DM-11`
 11. `DM-09`
+12. `DM-12`
 
 `DM-01` と `DM-02` は、他タスクの前に小さく処理する。
 `DM-03` から `DM-05` は Pydantic v2 互換性としてまとめて扱えるが、差分が大きくなる場合は schema / service / logging に分ける。
 `DM-08` は runtime 依存の脆弱性監査結果を優先して先行対応済み。
 `DM-08` 後は `DM-10`、`DM-11`、`DM-09` の順に進める。
+`DM-12` は削除系・導線整理系のため、`DM-09` のセキュリティ整理後に棚卸しから開始する。
 
-## 14. 共通 NG 条件
+## 15. 共通 NG 条件
 
 - import error
 - lock mismatch
