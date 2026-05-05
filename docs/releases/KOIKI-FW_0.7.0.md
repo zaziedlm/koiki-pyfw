@@ -30,6 +30,7 @@ KOIKI-FW v0.7.0 は、v0.6 系で整備した認証・監査・Todo sample 基�
 - SAML metadata XML parser を hardening
 - `pip-audit` / Bandit の検出結果と false positive 方針を整理
 - Pydantic v2 deprecation 対応を進め、schema / settings / `.dict()` 周辺の warning を削減
+- release final check で frontend runtime dependency の `next` と `axios` を更新し、production audit の critical / high を解消
 
 ### Developer experience
 
@@ -86,14 +87,21 @@ Confirm:
 
 - container health
 - password login
-- Todo list / create / update
+- Todo list / create / update / completion toggle / delete
 - backend logs without import/runtime errors
 - `/health` reports version `0.7.0`
+
+Final release check evidence is tracked in:
+
+- `docs/dev/v0.7.0-final-release-check-plan.ja.md`
+- `docs/dev/v0.7.0-final-release-check-results.ja.md`
 
 ## Related Documents
 
 - `docs/design_kkfw_0.7.0.md`
 - `docs/dev/deferred-maintenance-tasks.ja.md`
+- `docs/dev/v0.7.0-final-release-check-plan.ja.md`
+- `docs/dev/v0.7.0-final-release-check-results.ja.md`
 - `docs/dev/dm12-legacy-compatibility-inventory.ja.md`
 - `docs/dev/dm14-api-ownership-boundary-policy.ja.md`
 - `docs/dev/dm15-agent-guidance-skills-consistency.ja.md`

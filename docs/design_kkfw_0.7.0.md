@@ -86,7 +86,7 @@ root `app/` は compatibility wrapper です。
 
 現時点では `app.main:app` 互換を維持しますが、実装の正本ではありません。新規実装は `components/libkoiki/` または `components/koiki_ref_app/` に置きます。
 
-`app.main:app` の互換終了判断は、v0.7.0 release preparation 後の `DM-12-C` で扱います。
+`app.main:app` は `DM-12-C` で確認済みであり、v0.7.0 では互換維持と判断しています。互換終了は v0.7.x 以降で外部利用状況を見て再判断します。
 
 ### 3.4 `apps/`
 
@@ -294,7 +294,7 @@ v0.7.0 で履歴資料として残すもの:
 - `docs/dev/deferred-maintenance-tasks.ja.md`
 - component package source under `components/`
 
-`app.main:app` 互換終了判断は v0.7.0 release preparation 後に別タスクとして扱います。
+`app.main:app` 互換終了判断は `DM-12-C` で確認済みであり、v0.7.0 では互換維持とします。
 
 ## 13. Developer Checklist
 
