@@ -22,6 +22,8 @@ Use these skills when the task already matches a known work type and you want co
 ## Notes
 
 - Shared cross-cutting guidance remains in `docs/agent/`.
+- API ownership follows `docs/agent/boundaries.md`: reusable framework behavior belongs in `components/libkoiki/`, reference-app behavior belongs in `components/koiki_ref_app/`, and downstream customer-specific APIs start under `apps/`.
+- The current Todo API is a `libkoiki` framework sample / starter capability, not precedent for placing new business APIs in `components/libkoiki/`.
 - Skill-specific metadata lives in each skill's `agents/openai.yaml`.
 - Claude Code discovery wrappers live under `.claude/skills/`.
 - `docs/agent/skills/` remains the canonical source for skill content.

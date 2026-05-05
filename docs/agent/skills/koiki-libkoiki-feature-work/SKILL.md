@@ -1,6 +1,6 @@
 ---
 name: koiki-libkoiki-feature-work
-description: Use when adding or modifying reusable framework capabilities under components/libkoiki/, including shared API patterns, services, repositories, schemas, configuration, security, and infrastructure behavior.
+description: Use when adding or modifying reusable framework capabilities under components/libkoiki/, including shared API patterns, starter/sample capabilities, services, repositories, schemas, configuration, security, and infrastructure behavior.
 ---
 
 # KOIKI libkoiki Feature Work
@@ -34,6 +34,8 @@ This skill aligns with future maintainer framework work. It should continue to o
 ## Guardrails
 
 - do not place business-specific rules in `components/libkoiki/`
+- only keep API behavior in `components/libkoiki/` when it is reusable framework behavior or an explicit starter/sample capability
+- treat Todo as the current starter/sample exception, not as precedent for new business-specific APIs
 - do not bypass the service layer with endpoint-specific data logic unless an existing pattern already does so
 - do not introduce new cross-cutting mechanisms if an existing core module already owns that concern
 

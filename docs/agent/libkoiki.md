@@ -27,6 +27,7 @@ Typical areas include:
 It should contain:
 
 - reusable API behavior
+- explicit starter/sample API behavior
 - shared authentication and authorization behavior
 - configuration and infrastructure concerns
 - shared persistence and schema patterns
@@ -45,6 +46,8 @@ A change belongs in `components/libkoiki/` when it is:
 - better expressed as a shared service, schema, repository, or core utility
 
 If reusability is unclear, prefer keeping the change out of `components/libkoiki/` until the abstraction is justified.
+
+The current Todo API is treated as a framework sample / starter capability. Do not use it as precedent for adding new business-specific APIs to `components/libkoiki/`.
 
 ## Working Rules
 
@@ -84,6 +87,7 @@ Before finishing a framework change, check:
 Avoid:
 
 - introducing project-specific business rules into shared code
+- treating starter/sample APIs as placement precedent for new business APIs
 - creating new base abstractions before confirming existing patterns are insufficient
 - duplicating functionality already owned by another framework module
 - forcing `components/koiki_ref_app/` to work around a shared change with unnecessary duplication

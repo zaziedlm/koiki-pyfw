@@ -1,6 +1,6 @@
 ---
 name: koiki-app-feature-work
-description: Implement business-specific backend changes under components/koiki_ref_app/, including endpoints, services, repositories, models, schemas, and project-specific integrations.
+description: Implement reference-application business backend changes under components/koiki_ref_app/, including endpoints, services, repositories, models, schemas, and project-specific integrations.
 ---
 
 # KOIKI app Feature Work
