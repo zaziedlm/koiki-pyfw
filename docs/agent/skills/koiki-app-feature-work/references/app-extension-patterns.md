@@ -13,7 +13,7 @@ Use this reference when the `koiki-app-feature-work` skill needs a compact remin
 
 Primary source material comes from:
 
-- `docs/design_kkfw_0.6.0.md` sections on application implementation examples
+- `docs/design_kkfw_0.7.0.md` sections on reference application implementation and API ownership
 - current `components/koiki_ref_app/` implementation
 - shared agent docs in `docs/agent/`
 

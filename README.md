@@ -2,9 +2,9 @@
 
 これは、Python (FastAPI) を用いたエンタープライズ向けWebアプリケーション構築のための、堅牢な基盤フレームワーク「KOIKI-FW」をベースにしたプロジェクトテンプレートです。
 
-現在は `v0.7` に向けた再編作業中で、バックエンドは `components/libkoiki` と `components/koiki_ref_app` を中心とした構成へ移行しています。
+現在は `v0.7.0` として、バックエンドを `components/libkoiki` と `components/koiki_ref_app` を中心とした構成へ整理しています。
 
-詳細は `docs/design_kkfw_0.6.0.md` と `docs/dev/` 配下の再編計画を参照してください。
+詳細は `docs/design_kkfw_0.7.0.md` と `docs/dev/` 配下の保守タスク記録を参照してください。
 
 ## 特徴
 
@@ -13,8 +13,8 @@
 *   **非同期処理**: 高パフォーマンスな非同期処理。
 *   **型安全性**: Pydantic と型ヒントによる開発効率と安全性の向上。
 *   **テスト容易性**: 依存性注入による容易なテスト実装。
-*   **🆕 v0.6.0 強化されたセキュリティ**: JWT認証, リフレッシュトークン, パスワードリセット, ログイン試行制限, RBAC, レートリミット等。
-*   **🆕 v0.6.0 認証系API**: modular認証システム（基本認証、パスワード管理、トークン管理）。
+*   **v0.7.0 構成整理**: reusable framework (`components/libkoiki`) と reference application (`components/koiki_ref_app`) の責務を明確化。
+*   **認証・セキュリティ基盤**: JWT認証, リフレッシュトークン, パスワードリセット, ログイン試行制限, RBAC, レートリミット等。
 *   **監視・ロギング**: 構造化ログ, 監査ログ, Prometheus連携。
 *   **継続的インテグレーション**: GitHub Actionsによる自動テスト、コード品質チェックの導入。
 
@@ -133,7 +133,7 @@ GitHub Actionsによる自動テストパイプラインが設定されており
 - root `app/` は互換導線を維持するための wrapper です。
 - `apps/` は downstream の案件固有コードのための予約領域です。
 
-詳細な構成と機能説明は `docs/design_kkfw_0.6.0.md` を参照してください。
+詳細な構成と機能説明は `docs/design_kkfw_0.7.0.md` を参照してください。
 
 ## 🔒 Fork・利用に関するご案内
 
