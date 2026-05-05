@@ -13,7 +13,7 @@ Use this reference when the `koiki-libkoiki-feature-work` skill needs a compact 
 
 Primary source material comes from:
 
-- `docs/design_kkfw_0.6.0.md` sections on config, DI, models, schemas, repositories, and services
+- `docs/design_kkfw_0.7.0.md` sections on reusable framework implementation and API ownership
 - current `components/libkoiki/` implementation
 - shared agent docs in `docs/agent/`
 

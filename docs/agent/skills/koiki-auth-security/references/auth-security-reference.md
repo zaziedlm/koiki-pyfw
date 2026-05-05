@@ -13,7 +13,7 @@ Use this reference when the `koiki-auth-security` skill needs a compact reminder
 
 Primary source material comes from:
 
-- `docs/design_kkfw_0.6.0.md` sections on auth, security, logging, monitoring, and RBAC
+- `docs/design_kkfw_0.7.0.md` sections on auth, security, logging, monitoring, and RBAC
 - current auth, SSO, and SAML implementation under `components/libkoiki/` and `components/koiki_ref_app/`
 - shared agent docs in `docs/agent/`
 

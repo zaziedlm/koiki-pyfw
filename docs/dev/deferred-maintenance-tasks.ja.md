@@ -1148,11 +1148,12 @@ rg --files components/libkoiki/src components/koiki_ref_app/src | rg "todo|route
 
 優先度: `P4`
 
-状態: `未着手`
+状態: `実施中 / DM-13-A〜DM-13-D 対応中`
 
 計画文書:
 
-- `docs/dev/dm15-agent-guidance-skills-consistency.ja.md`
+- `docs/releases/KOIKI-FW_0.7.0.md`
+- `docs/design_kkfw_0.7.0.md`
 
 ### 目的
 
@@ -1181,12 +1182,40 @@ DM-12-B の docs 整理中に、現行コードや release docs に `0.6.1` / `v
 
 ### 作業
 
+#### DM-13-A: version metadata / FastAPI version / release note 骨子
+
 - ソースコード上の `0.6.1` version metadata を `0.7.0` へ更新する
-- FastAPI metadata / health response の version 表示を `0.7.0` へ更新する
-- `uv lock` 更新要否を確認する
-- `docs/releases/KOIKI-FW_0.7.0.md` を新規作成する
-- README の v0.6 強調を v0.7 現行説明へ更新する
-- 履歴資料の `v0.6.0` / `v0.6.1` 記述は原則維持し、必要な場合のみ履歴資料注記を追加する
+- FastAPI metadata / health response / root response の version 表示を `0.7.0` へ更新する
+- `uv.lock` を更新する
+- `docs/releases/KOIKI-FW_0.7.0.md` の骨子を作成する
+
+#### DM-13-B: `docs/design_kkfw_0.7.0.md` 新規作成
+
+- `docs/design_kkfw_0.6.0.md` は履歴資料として維持する
+- v0.7.0 の正規構成、layered architecture、API ownership、Todo sample 方針、testing、agent guidance を新規文書へまとめる
+- 開発エンジニアが現行構成を判断する入口として扱える内容にする
+
+#### DM-13-C: README / docs の v0.7 現行導線整理
+
+- README の v0.6 強調を v0.7.0 現行説明へ更新する
+- `docs/architecture.md` / `docs/api-spec.md` を `docs/design_kkfw_0.7.0.md` への入口にする
+- agent skill reference docs と testing guide の現行 design doc 参照を更新する
+- 履歴資料の `v0.6.0` / `v0.6.1` 記述は原則維持する
+
+#### DM-13-D: release note 完成
+
+- `docs/releases/KOIKI-FW_0.7.0.md` に主要変更点、compatibility notes、migration notes、validation を記録する
+- `DM-12-C` の `app.main:app` 互換終了判断を release preparation とは分離して残す
+
+### 実施結果
+
+- root `pyproject.toml`、`components/libkoiki/pyproject.toml`、`components/koiki_ref_app/pyproject.toml` を `0.7.0` へ更新した
+- `components/libkoiki/src/libkoiki/__init__.py` の `__version__` を `0.7.0` へ更新した
+- `components/koiki_ref_app/src/koiki_ref_app/app_factory.py` の FastAPI metadata、`/health`、`/` response version を `0.7.0` へ更新した
+- `uv.lock` を更新し、`koiki-pyfw`、`koiki-ref-app`、`libkoiki` の locked version を `0.7.0` へ揃えた
+- `docs/design_kkfw_0.7.0.md` を新規作成した
+- `docs/releases/KOIKI-FW_0.7.0.md` を新規作成した
+- README、`docs/architecture.md`、`docs/api-spec.md`、agent skill references、testing quick guide の現行導線を `docs/design_kkfw_0.7.0.md` へ更新した
 
 ### 完了条件
 
@@ -1205,6 +1234,22 @@ uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent
 ```
 
 必要に応じて、コンテナ build / run 後に health response の version 表示も確認する。
+
+実施済み結果:
+
+```text
+uv lock --check
+  成功
+
+uv run --locked python -c "import libkoiki; print(libkoiki.__version__)"
+  0.7.0
+
+uv run --locked python -c "from koiki_ref_app.asgi import app; print(app.version)"
+  0.7.0
+
+uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent_guidance components/koiki_ref_app/tests tests/integration/services -m "not db_integration"
+  222/259 tests collected, 37 deselected
+```
 
 ## 16. `DM-15` Agent guidance / Skills consistency review
 
