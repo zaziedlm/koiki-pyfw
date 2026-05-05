@@ -26,6 +26,7 @@
 | `DM-13` | P4 | release/docs | v0.7.0 release preparation と version / release docs を整える | 単独 |
 | `DM-14` | P4 | architecture/docs | API ownership / sample feature boundary policy を整理する | 単独 |
 | `DM-15` | P4 | agent/docs | Agent guidance / Skills consistency を整理する | 単独 |
+| `DM-16` | P4 | release/validation | v0.7.0 release final check / tag preparation の観点を整理する | 単独 |
 
 ## 2. `DM-01` Settings.DATABASE_URL 組み立て復旧
 
@@ -1148,7 +1149,7 @@ rg --files components/libkoiki/src components/koiki_ref_app/src | rg "todo|route
 
 優先度: `P4`
 
-状態: `実施中 / DM-13-A〜DM-13-D 対応中`
+状態: `完了 / DM-13-A〜DM-13-D 実施済み`
 
 計画文書:
 
@@ -1342,7 +1343,95 @@ Codex、Claude Code、GitHub Copilot などの AI agent が、同じ repository 
 rg -n "components/libkoiki|components/koiki_ref_app|apps/|app/|Todo|API ownership|Skills|Copilot|Claude|Codex" AGENTS.md docs/agent .github docs/dev/agent-skill-checklist.md -S
 ```
 
-## 17. 推奨実行順
+## 17. `DM-16` v0.7.0 release final check / tag preparation
+
+優先度: `P4`
+
+状態: `計画作成済み`
+
+計画文書:
+
+- `docs/dev/v0.7.0-final-release-check-plan.ja.md`
+- `docs/dev/v0.7.0-final-release-check-results.ja.md`
+
+### 目的
+
+`DM-13` で v0.7.0 release preparation は完了したが、実際に tag / GitHub release を切る前に release candidate としての品質を多面的に確認する。
+
+このタスクでは、clean checkout、version metadata、runtime smoke、container build/run、release note、security/dependency audit、tag 作成判断を最終確認観点として整理する。
+
+### 判断経緯
+
+DM-13 までで version metadata、FastAPI metadata、release note、README、v0.7.0 design doc は整備済みである。
+
+一方で、tag / release は repository 上の文書整備だけではなく、clean な作業状態、実 runtime、container、UI smoke、logs、security/dependency 残件、known warning の扱いまで確認してから判断した方が安全である。
+
+また、Todo API の最終配置判断は、v0.7.0 では `libkoiki` の sample router / starter capability として明示維持する。当初方針どおり、v0.7.0 直前に app layer へ移動したり optional router 化したりせず、release final check の一確認項目として扱う。
+
+### 対象
+
+- `docs/dev/v0.7.0-final-release-check-plan.ja.md`
+- `docs/releases/KOIKI-FW_0.7.0.md`
+- `docs/design_kkfw_0.7.0.md`
+- `README.md`
+- `docs/agent/`
+- `apps/README.md`
+- runtime metadata / container / UI smoke / logs
+
+### 作業
+
+- final check の必須観点と任意観点を分ける
+- Todo API を `libkoiki` sample router として維持する判断を release 前確認に組み込む
+- `/health` と `/` の version 表示確認を明示する
+- container build / run / login / Todo UI smoke / logs review を必須確認に含める
+- `pip-audit` / Bandit / known warning の確認方針を整理する
+- tag / GitHub release は topic branch ではなく release 対象 commit から作成する方針を明記する
+- final check 実行結果を PR comment、release note、または `docs/dev/` の結果記録に残す方針を決める
+
+### 完了条件
+
+- final check plan が文書化されている
+- Todo API の v0.7.0 配置判断が `libkoiki` sample router 維持として明確になっている
+- release blocker と follow-up の切り分け観点がある
+- tag / GitHub release 作成前の必須確認が明確になっている
+- optional / follow-up 残件が release blocker とは別に記録されている
+
+### 検証
+
+計画文書作成時:
+
+```powershell
+git diff --check
+```
+
+final check 実行時:
+
+```powershell
+uv lock --check
+uv run --locked python -c "import libkoiki; print(libkoiki.__version__)"
+uv run --locked python -c "from koiki_ref_app.asgi import app; print(app.version)"
+uv run --locked pytest tests/unit/agent_guidance
+uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent_guidance components/koiki_ref_app/tests tests/integration/services -m "not db_integration"
+.\start-docker.ps1 unified-prod-build
+.\start-docker.ps1 unified-prod
+```
+
+container 起動後:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/health
+Invoke-RestMethod http://localhost:8000/
+```
+
+確認:
+
+- `/health` が version `0.7.0` を返す
+- password login が成功する
+- Todo list / create / update / complete / delete が成功する
+- container logs に import error / startup error / unexpected 5xx がない
+- Todo API sample router 維持判断に docs / code / agent guidance の矛盾がない
+
+## 18. 推奨実行順
 
 1. `DM-01`
 2. `DM-02`
@@ -1360,6 +1449,7 @@ rg -n "components/libkoiki|components/koiki_ref_app|apps/|app/|Todo|API ownershi
 14. `DM-15`
 15. `DM-13`
 16. `DM-12-C`
+17. `DM-16`
 
 `DM-01` と `DM-02` は、他タスクの前に小さく処理する。
 `DM-03` から `DM-05` は Pydantic v2 互換性としてまとめて扱えるが、差分が大きくなる場合は schema / service / logging に分ける。
@@ -1369,8 +1459,9 @@ rg -n "components/libkoiki|components/koiki_ref_app|apps/|app/|Todo|API ownershi
 `DM-12-B` 完了後は、`DM-14` で API ownership / sample feature boundary policy を整理し、続けて `DM-15` で agent guidance / Skills consistency を確認してから `DM-13` の v0.7.0 release preparation へ進む。
 `DM-12-C` の `app.main:app` 互換終了判断は、`DM-13` 後に確認し、v0.7.0 では互換維持とする。
 root `app/` へ新規実装は追加せず、標準 ASGI entrypoint は `koiki_ref_app.asgi:app` とする。
+`DM-16` は tag / GitHub release の前に実施し、Todo API は v0.7.0 では `libkoiki` sample router として維持する判断を最終確認に含める。
 
-## 18. 共通 NG 条件
+## 19. 共通 NG 条件
 
 - import error
 - lock mismatch
