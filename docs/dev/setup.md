@@ -7,7 +7,7 @@ uv sync
 uv run uvicorn koiki_ref_app.asgi:app --reload
 ```
 
-互換導線として `app.main:app` も残っています。
+互換導線として `app.main:app` も残っていますが、新規起動手順では `koiki_ref_app.asgi:app` を使います。
 
 ```bash
 uv run --locked uvicorn koiki_ref_app.asgi:app --reload
