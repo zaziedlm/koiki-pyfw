@@ -61,7 +61,7 @@ dependencies = [
     # Supporting Libraries
     "anyio>=4.9.0,<5.0.0",                  # Async I/O support
     "limits>=5.4.0,<5.5.0",                 # Rate limiting support
-    "tzdata>=2024.2,<2026.0",               # IANA timezone database (required for zoneinfo on Windows/containers)
+    "tzdata>=2026.2,<2027.0",               # IANA timezone database (required for zoneinfo on Windows/containers)
     
     # Local Workspace Dependencies
     "libkoiki",
