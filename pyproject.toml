@@ -55,7 +55,7 @@ dependencies = [
     "prometheus-fastapi-instrumentator>=7.1.0,<7.2.0", # Updated monitoring instrumentation
     
     # Caching & Performance
-    "redis>=6.2.0,<6.3.0",                  # Updated Redis client (major version)
+    "redis>=7.4.0,<7.5.0",                  # Updated Redis client (major version)
     "slowapi>=0.1.8,<0.2.0",                # Current range (stable API)
     
     # Supporting Libraries
