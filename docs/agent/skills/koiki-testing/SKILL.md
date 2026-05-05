@@ -1,6 +1,6 @@
 ---
 name: koiki-testing
-description: Use when adding, updating, or validating tests for libkoiki/ or app/, including unit, integration, fixture, and CI-scope decisions.
+description: Use when adding, updating, or validating tests for components/libkoiki/ or components/koiki_ref_app/, including unit, integration, fixture, and CI-scope decisions.
 ---
 
 # KOIKI Testing
@@ -12,6 +12,10 @@ Use this skill when implementing tests or deciding the correct test scope.
 - choose the smallest test level that proves the change
 - keep framework and application test intent separated
 - align changes with current fixture and CI behavior
+
+## Future Role Alignment
+
+This skill remains cross-cutting across future maintainer and template skill families. Test scope decisions should continue to follow the changed responsibility rather than the future skill taxonomy.
 
 ## Workflow
 
@@ -40,3 +44,4 @@ Use this skill when implementing tests or deciding the correct test scope.
 - `docs/agent/libkoiki.md`
 - `docs/agent/app.md`
 - `docs/agent/auth-security.md`
+- `docs/agent/skills/future-role-alignment.md`

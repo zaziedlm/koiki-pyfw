@@ -2,10 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    # branches: [main, develop]
-    branches: [master, develop, dev/*, feature/*, bugfix/*]
+    branches: [main, dev/v0.7, support/0.6, topic/*, feature/*]
   pull_request:
-    branches: [master, develop]
+    branches: [main, dev/v0.7, support/0.6]
 
 jobs:
   build-and-test:
@@ -40,51 +39,37 @@ jobs:
         with:
           python-version: "3.11.7"
 
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 - --version 2.1.0
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure Poetry 2.x
-        run: |
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          poetry config cache-dir ~/.cache/pypoetry
-          poetry config installer.parallel true
-          poetry config installer.max-workers 10
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
 
-      - name: Verify pyproject.toml & poetry.lock consistency
+      - name: Verify uv lockfile consistency
         run: |
-          poetry check --lock
+          uv lock --check
 
-      - name: Install dependencies (Poetry 2.x optimized)
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      - name: Install dependencies
         run: |
-          # Poetry 2.x: Install main and dev dependencies with parallel processing
-          poetry install --only=main --no-root
-          poetry install --only=dev --no-root
+          uv sync --locked --group dev --group test
 
-      - name: Install project in development mode
+      - name: Run libkoiki unit tests
         run: |
-          poetry install --no-root
-          # Poetry 2.x: Verify installation
-          poetry env info
-
-      - name: Run tests with coverage (Poetry 2.x)
-        run: |
-          # Poetry 2.x: Use dependency groups for testing
-          poetry run pytest --cov=app --cov=libkoiki --cov-report=term-missing --cov-report=html \
-            tests/unit/app/ \
+          # libkoiki 単独セッション: koiki_ref_app の ORM bootstrap と分離してマッパー汚染を防止
+          uv run --locked pytest --cov=libkoiki --cov-report= \
+            components/libkoiki/tests/ \
             tests/unit/agent_guidance/
-          # Poetry 2.x: Additional environment check
-          poetry show --tree --only=main
+
+      - name: Run koiki_ref_app and integration tests with coverage
+        run: |
+          # 別セッション: bootstrap_orm() が UserModel.sso_links を安全に追加できる
+          # db_integration は Docker / 手動確認向けに分離し、標準CIから除外する
+          uv run --locked pytest --cov=koiki_ref_app --cov=libkoiki --cov-append \
+            --cov-report=term-missing --cov-report=html \
+            -m "not db_integration" \
+            components/koiki_ref_app/tests/ \
+            tests/integration/services/
+          uv tree --locked
 
       - name: Upload HTML coverage report (optional)
         if: ${{ env.ACT != 'true' }}

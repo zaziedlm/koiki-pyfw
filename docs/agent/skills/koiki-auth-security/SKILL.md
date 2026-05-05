@@ -1,6 +1,6 @@
 ---
 name: koiki-auth-security
-description: Use when working on authentication, authorization, RBAC, token flows, security monitoring, SSO, or SAML-related behavior across libkoiki/ and app/.
+description: Use when working on authentication, authorization, RBAC, token flows, security monitoring, SSO, or SAML-related behavior across components/libkoiki/ and components/koiki_ref_app/.
 ---
 
 # KOIKI Auth and Security
@@ -16,6 +16,10 @@ This skill applies to:
 - login and password flows
 - security logging and monitoring
 - SSO and SAML integration
+
+## Future Role Alignment
+
+This skill remains cross-cutting across future maintainer and template skill families. Auth and security work often spans `components/libkoiki`, `components/koiki_ref_app`, and frontend/browser flows, so it should not be split prematurely.
 
 ## Workflow
 
@@ -46,3 +50,4 @@ This skill applies to:
 - `docs/agent/libkoiki.md`
 - `docs/agent/app.md`
 - `references/auth-security-reference.md`
+- `docs/agent/skills/future-role-alignment.md`

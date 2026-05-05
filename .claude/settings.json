@@ -1,10 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(poetry run pytest:*)",
-      "Bash(poetry:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv run:*)",
       "Bash(alembic:*)",
-      "Bash(poetry run alembic:*)",
       "Bash(docker build:*)",
       "Bash(DOCKER_BUILDKIT=1 docker build:*)",
       "Bash(docker-compose:*)",

@@ -1603,7 +1603,7 @@ await audit_service.log_authentication_event(
 
 - **[認証系API完全ガイド](docs/authentication-api-guide.md)**: 認証システムの詳細な実装ガイド
 - **[セキュリティ強化対応記録](docs/authentication-api-security-fixes.md)**: セキュリティ改善の記録と対応履歴  
-- **[認証系APIテストガイド](認証系APIテストガイド.md)**: 認証システムのテスト方法とベストプラクティス
+- **[認証系APIテストガイド](testing/認証系APIテストガイド.md)**: 認証システムのテスト方法とベストプラクティス
 
 ---
 

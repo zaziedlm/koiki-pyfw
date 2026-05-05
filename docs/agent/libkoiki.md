@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines how to work in `libkoiki/`, the reusable framework layer of this repository.
+This document defines how to work in `components/libkoiki/`, the reusable framework layer of this repository.
 
 Use this document when adding or changing shared backend capabilities that should remain reusable beyond the current application.
 
@@ -10,23 +10,24 @@ Use this document when adding or changing shared backend capabilities that shoul
 
 Typical areas include:
 
-- `libkoiki/api/`
-- `libkoiki/core/`
-- `libkoiki/db/`
-- `libkoiki/models/`
-- `libkoiki/schemas/`
-- `libkoiki/repositories/`
-- `libkoiki/services/`
-- `libkoiki/events/`
-- `libkoiki/tasks/`
+- `components/libkoiki/src/libkoiki/api/`
+- `components/libkoiki/src/libkoiki/core/`
+- `components/libkoiki/src/libkoiki/db/`
+- `components/libkoiki/src/libkoiki/models/`
+- `components/libkoiki/src/libkoiki/schemas/`
+- `components/libkoiki/src/libkoiki/repositories/`
+- `components/libkoiki/src/libkoiki/services/`
+- `components/libkoiki/src/libkoiki/events/`
+- `components/libkoiki/src/libkoiki/tasks/`
 
 ## Role of libkoiki
 
-`libkoiki/` is the shared backend framework layer.
+`components/libkoiki/` is the shared backend framework layer.
 
 It should contain:
 
 - reusable API behavior
+- explicit starter/sample API behavior
 - shared authentication and authorization behavior
 - configuration and infrastructure concerns
 - shared persistence and schema patterns
@@ -37,14 +38,16 @@ It should not become a container for business-specific rules.
 
 ## Placement Rules
 
-A change belongs in `libkoiki/` when it is:
+A change belongs in `components/libkoiki/` when it is:
 
 - reusable across multiple applications
 - part of the framework contract
 - independent of this project's specific business workflow
 - better expressed as a shared service, schema, repository, or core utility
 
-If reusability is unclear, prefer keeping the change out of `libkoiki/` until the abstraction is justified.
+If reusability is unclear, prefer keeping the change out of `components/libkoiki/` until the abstraction is justified.
+
+The current Todo API is treated as a framework sample / starter capability. Do not use it as precedent for adding new business-specific APIs to `components/libkoiki/`.
 
 ## Working Rules
 
@@ -70,7 +73,7 @@ Do not put non-trivial business logic directly into endpoint or repository code 
 
 ## Compatibility Rules
 
-Changes in `libkoiki/` may affect `app/` and tests indirectly.
+Changes in `components/libkoiki/` may affect `components/koiki_ref_app/`, compatibility wrappers, and tests indirectly.
 
 Before finishing a framework change, check:
 
@@ -84,9 +87,10 @@ Before finishing a framework change, check:
 Avoid:
 
 - introducing project-specific business rules into shared code
+- treating starter/sample APIs as placement precedent for new business APIs
 - creating new base abstractions before confirming existing patterns are insufficient
 - duplicating functionality already owned by another framework module
-- forcing `app/` to work around a shared change with unnecessary duplication
+- forcing `components/koiki_ref_app/` to work around a shared change with unnecessary duplication
 
 ## Validation Standard
 
@@ -96,4 +100,4 @@ This often includes:
 
 - unit tests for local shared behavior
 - integration tests when DB, auth, middleware, or DI wiring is affected
-- application-level verification when `app/` composes the changed framework behavior
+- application-level verification when `components/koiki_ref_app/` composes the changed framework behavior

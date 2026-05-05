@@ -1,4 +1,4 @@
 interface:
   display_name: "KOIKI App Feature Work"
-  short_description: "Implement project-specific app layer changes."
-  default_prompt: "Use $koiki-app-feature-work to implement this KOIKI application feature in app/."
+  short_description: "Implement reference-app business layer changes."
+  default_prompt: "Use $koiki-app-feature-work to implement this KOIKI application feature in components/koiki_ref_app/."

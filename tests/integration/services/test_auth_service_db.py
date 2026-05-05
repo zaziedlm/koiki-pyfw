@@ -4,10 +4,11 @@ from unittest.mock import patch
 from datetime import datetime, timezone, timedelta
 
 from libkoiki.schemas.user import UserCreate
-from libkoiki.core.exceptions import ValidationException
+from libkoiki.core.exceptions import AuthenticationException, ValidationException
 
 
 @pytest.mark.integration
+@pytest.mark.db_integration
 class TestAuthServiceDatabase:
     """認証サービス データベース統合テスト"""
     
@@ -99,7 +100,7 @@ class TestAuthServiceDatabase:
         assert new_access_token is not None
         assert new_refresh_token is not None
         assert expires_in > 0
-        assert new_access_token != initial_access_token  # 新しいアクセストークン
+        assert new_refresh_token != initial_refresh_token  # ローテーションで新しいリフレッシュトークン
     
     @pytest.mark.asyncio
     async def test_refresh_access_token_invalid_token(
@@ -111,13 +112,13 @@ class TestAuthServiceDatabase:
         auth_service = test_services["auth_service"]
         
         # 無効なリフレッシュトークンでテスト
-        result = await auth_service.refresh_access_token(
-            refresh_token="invalid_refresh_token",
-            db=test_db_session
-        )
-        
-        # 結果検証
-        assert result is None
+        with pytest.raises(AuthenticationException) as exc_info:
+            await auth_service.refresh_access_token(
+                refresh_token="invalid_refresh_token",
+                db=test_db_session
+            )
+
+        assert "Invalid refresh token format" in str(exc_info.value)
     
     @patch('libkoiki.services.user_service.check_password_complexity')
     @pytest.mark.asyncio

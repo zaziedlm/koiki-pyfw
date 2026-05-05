@@ -3,36 +3,41 @@
 ## 基本構造
 ```
 プロジェクトルート/
-├── app/                     # アプリケーション固有のコード (拡張用)
-├── libkoiki/                # フレームワークコアライブラリ (主要機能実装済み)
-├── alembic/                 # DBマイグレーションスクリプト
-├── tests/                   # テストコード (unit, integration)
+├── components/
+│   ├── libkoiki/            # reusable framework package
+│   └── koiki_ref_app/       # reference application package
+├── app/                     # compatibility wrapper
+├── tests/                   # root-level shared / integration tests
 ├── docs/                    # プロジェクトドキュメント
 └── ops/                     # 運用・テストスクリプト
 ```
 
-## libkoiki フレームワーク（メイン実装）
-- **`core/`**: 設定、ログ、セキュリティ、ミドルウェア、エラーハンドリング + 認証デコレーター
-- **`api/v1/endpoints/`**: モジュラーAPIエンドポイント
+## components/libkoiki フレームワーク
+- **`src/libkoiki/core/`**: 設定、ログ、セキュリティ、ミドルウェア、エラーハンドリング + 認証デコレーター
+- **`src/libkoiki/api/v1/endpoints/`**: モジュラーAPIエンドポイント
   - 認証系: `auth.py`, `auth_basic.py`, `auth_password.py`, `auth_token.py`
   - セキュリティ: `security_monitor.py` (v0.6.0新機能)
   - 機能系: `users.py`, `todos.py`
-- **`models/`**: SQLAlchemy ORMモデル
+- **`src/libkoiki/models/`**: SQLAlchemy ORMモデル
   - コア: `User`, `Todo`, `Role`, `Permission`
   - v0.6.0認証: `RefreshTokenModel`, `LoginAttemptModel`, `PasswordResetModel`
-- **`repositories/`**: データアクセス層（Repository パターン）
-- **`services/`**: ビジネスロジック層
+- **`src/libkoiki/repositories/`**: データアクセス層（Repository パターン）
+- **`src/libkoiki/services/`**: ビジネスロジック層
   - v0.6.0認証: `AuthService`, `PasswordResetService`, `LoginSecurityService`
-- **`schemas/`**: Pydantic バリデーションモデル
-- **`db/`**: データベースセッション管理
-- **`events/`**: イベント配信・ハンドリング（Redis-based）
-- **`tasks/`**: Celeryタスク定義
-- **`utils/`**: ユーティリティ関数
+- **`src/libkoiki/schemas/`**: Pydantic バリデーションモデル
+- **`src/libkoiki/db/`**: データベースセッション管理
+- **`src/libkoiki/events/`**: イベント配信・ハンドリング（Redis-based）
+- **`src/libkoiki/tasks/`**: Celeryタスク定義
+- **`src/libkoiki/utils/`**: ユーティリティ関数
 
-## app ディレクトリ（拡張レイヤー）
-- libkoikiを基盤とした、アプリケーション固有の実装用
-- 同じレイヤードアーキテクチャパターンに従う
-- `main.py`: アプリケーションエントリポイント
+## components/koiki_ref_app 参照アプリケーション
+- libkoikiを基盤とした reference app 実装用
+- app 固有 bootstrap、SSO/SAML、todo などの参照ドメインを持つ
+- ASGI 正本は `koiki_ref_app.asgi:app`
+
+## app ディレクトリ
+- 旧 `app.main:app` 向けの互換 wrapper
+- 新規実装の正本として扱わない
 
 ## アーキテクチャパターン
 - **レイヤードアーキテクチャ**: API → サービス → リポジトリ → モデル

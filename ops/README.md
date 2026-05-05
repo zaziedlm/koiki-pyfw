@@ -2,6 +2,8 @@
 
 このディレクトリには、KOIKI-FWのセキュリティ監視APIおよび権限管理システムのテスト環境が含まれています。
 
+現在のバックエンド正本は `components/libkoiki` と `components/koiki_ref_app` にあり、root `app/` は互換 wrapper として維持されています。`ops` 配下の手順はこの新構造を前提に読んでください。
+
 ## 📁 ディレクトリ構造
 
 ```
@@ -16,7 +18,6 @@ ops/
 │   └── run_tests.sh                 # クロスプラットフォームランチャー
 ├── tests/
 │   └── test_security_api.py         # APIテストスクリプト
-├── requirements.txt                 # 依存関係
 └── README.md                        # このファイル
 ```
 
@@ -26,10 +27,10 @@ ops/
 
 ```bash
 # プロジェクトルートから一発実行
-./run_security_test.sh test
+./ops/scripts/run_tests.sh test
 
 # 初回実行（セットアップ付き）
-./run_security_test.sh setup
+./ops/scripts/run_tests.sh setup
 ```
 
 ### 📋 従来の方法（opsディレクトリから）
@@ -57,7 +58,7 @@ docker-compose up -d && cd ops && bash scripts/security_test_manager.sh test
 ### 🎯 推奨方法（全OS共通）
 ```bash
 # プロジェクトルートから（最も簡単）
-./run_security_test.sh test
+./ops/scripts/run_tests.sh test
 ```
 
 ### 📋 従来方法（OS別）
@@ -106,16 +107,16 @@ bash scripts/security_test_manager.sh test
 
 ```bash
 # ヘルプ表示
-./run_security_test.sh help
+./ops/scripts/run_tests.sh help
 
 # セキュリティ環境セットアップ（初回実行時）
-./run_security_test.sh setup
+./ops/scripts/run_tests.sh setup
 
 # セキュリティAPIテスト実行
-./run_security_test.sh test
+./ops/scripts/run_tests.sh test
 
 # 統合テスト実行
-./run_security_test.sh test-full
+./ops/scripts/run_tests.sh test-full
 ```
 
 ### 📋 従来方法（opsディレクトリから）
@@ -138,13 +139,13 @@ bash scripts/security_test_manager.sh test-full
 
 | 目的 | 推奨方法（ルートから） | 従来方法（opsから） | Windows PowerShell | 説明 |
 |------|---------------------|------------------|-------------------|------|
-| ヘルプ | `./run_security_test.sh help` | `bash scripts/security_test_manager.sh help` | `.\scripts\security_test_manager.ps1 help` | 利用可能なコマンド表示 |
-| セットアップ | `./run_security_test.sh setup` | `bash scripts/security_test_manager.sh setup` | `.\scripts\security_test_manager.ps1 setup` | 権限データとテストユーザー作成 |
-| テスト実行 | `./run_security_test.sh test` | `bash scripts/security_test_manager.sh test` | `.\scripts\security_test_manager.ps1 test` | セキュリティAPIテスト |
-| 統合テスト | `./run_security_test.sh test-full` | `bash scripts/security_test_manager.sh test-full` | `.\scripts\security_test_manager.ps1 test-full` | 全てのAPIテスト |
-| ログ確認 | `./run_security_test.sh logs` | `bash scripts/security_test_manager.sh logs` | `.\scripts\security_test_manager.ps1 logs` | アプリケーションログ表示 |
-| DB確認 | `./run_security_test.sh db-check` | `bash scripts/security_test_manager.sh db-check` | `.\scripts\security_test_manager.ps1 db-check` | データベース内容確認 |
-| リセット | `./run_security_test.sh reset` | `bash scripts/security_test_manager.sh reset` | `.\scripts\security_test_manager.ps1 reset` | 全データ削除と再セットアップ |
+| ヘルプ | `./ops/scripts/run_tests.sh help` | `bash scripts/security_test_manager.sh help` | `.\scripts\security_test_manager.ps1 help` | 利用可能なコマンド表示 |
+| セットアップ | `./ops/scripts/run_tests.sh setup` | `bash scripts/security_test_manager.sh setup` | `.\scripts\security_test_manager.ps1 setup` | 権限データとテストユーザー作成 |
+| テスト実行 | `./ops/scripts/run_tests.sh test` | `bash scripts/security_test_manager.sh test` | `.\scripts\security_test_manager.ps1 test` | セキュリティAPIテスト |
+| 統合テスト | `./ops/scripts/run_tests.sh test-full` | `bash scripts/security_test_manager.sh test-full` | `.\scripts\security_test_manager.ps1 test-full` | 全てのAPIテスト |
+| ログ確認 | `./ops/scripts/run_tests.sh logs` | `bash scripts/security_test_manager.sh logs` | `.\scripts\security_test_manager.ps1 logs` | アプリケーションログ表示 |
+| DB確認 | `./ops/scripts/run_tests.sh db-check` | `bash scripts/security_test_manager.sh db-check` | `.\scripts\security_test_manager.ps1 db-check` | データベース内容確認 |
+| リセット | `./ops/scripts/run_tests.sh reset` | `bash scripts/security_test_manager.sh reset` | `.\scripts\security_test_manager.ps1 reset` | 全データ削除と再セットアップ |
 
 ## 🔧 従来のMakefileからの移行
 

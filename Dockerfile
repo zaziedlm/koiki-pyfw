@@ -1,7 +1,7 @@
 # Dockerfile - Multi-stage build for FastAPI backend
 
 # ---------------------
-# Base stage with Poetry and dependencies
+# Base stage with uv and dependencies
 # ---------------------
 FROM python:3.11-slim AS base
 
@@ -17,47 +17,31 @@ RUN apt-get update && \
 ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
     SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 
-# Poetry 2.x: Optimized environment variables for performance and caching
-ENV POETRY_VERSION=2.1.0 \
-    POETRY_HOME=/opt/poetry \
-    POETRY_VENV_CREATE=false \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_CACHE_DIR=/opt/poetry-cache \
-    POETRY_INSTALLER_PARALLEL=true \
-    POETRY_INSTALLER_MAX_WORKERS=10 \
-    PATH="$POETRY_HOME/bin:$PATH" \
+COPY --from=ghcr.io/astral-sh/uv:0.11.7 /uv /uvx /usr/local/bin/
+
+ENV UV_CACHE_DIR=/opt/uv-cache \
+    UV_LINK_MODE=copy \
+    PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on
 
-# poetryのインストール
-RUN curl -sSL https://install.python-poetry.org | python3 - --version $POETRY_VERSION \
-    && ln -s $POETRY_HOME/bin/poetry /usr/local/bin/poetry \
-    && poetry --version
+RUN uv --version
 
 WORKDIR /app
 
-# Poetry 2.x: Copy dependency files for better Docker layer caching
-COPY pyproject.toml poetry.lock README.md ./
+# uv: Copy dependency files for better Docker layer caching
+COPY pyproject.toml uv.lock README.md ./
 
-# アプリケーションコードのコピー (libkoikiはローカル依存のため先にコピー)
+# アプリケーションコードのコピー (component 構成)
 COPY ./app ./app
-COPY ./libkoiki ./libkoiki
-COPY ./alembic ./alembic
-COPY ./alembic.ini /app/alembic.ini
-COPY ./main.py ./
+COPY ./components ./components
 COPY ./ops ./ops
 
-# Poetry 2.x: Install all dependencies (including dev)
-RUN mkdir -p $POETRY_CACHE_DIR \
-    && poetry config virtualenvs.create false \
-    && poetry config installer.parallel true \
-    && poetry config installer.max-workers 10 \
-    && poetry check --lock \
-    && poetry install --no-interaction --no-ansi --no-root \
-    && poetry cache clear --all pypi
+# uv: Install all dependencies used by the development image
+RUN mkdir -p $UV_CACHE_DIR \
+    && uv sync --locked --group dev --group test --no-editable
 
 # docker-entrypoint.shをコピーして実行権限を付与
 COPY docker-entrypoint.sh ./
@@ -71,8 +55,8 @@ FROM base AS dev
 # セキュリティ強化: 非rootユーザーの作成
 RUN adduser --disabled-password --gecos "" appuser
 
-# alembic/versionsディレクトリの作成と所有者変更
-RUN mkdir -p /app/alembic/versions && chown -R appuser:appuser /app
+# Alembic versionsディレクトリの作成と所有者変更
+RUN mkdir -p /app/components/koiki_ref_app/alembic/versions && chown -R appuser:appuser /app
 
 # 非rootユーザーに切り替え
 USER appuser
@@ -84,7 +68,7 @@ ENTRYPOINT ["/app/docker-entrypoint.sh"]
 EXPOSE 8000
 
 # デフォルトコマンド (docker-compose で上書き可能)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "koiki_ref_app.asgi:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 # ---------------------
 # Production stage
@@ -101,6 +85,7 @@ RUN apt-get update && \
 
 ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
     SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+    PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
@@ -109,14 +94,10 @@ WORKDIR /app
 # セキュリティ強化: 非rootユーザーの作成
 RUN adduser --disabled-password --gecos "" appuser
 
-# Copy only necessary files from base stage
-COPY --from=base /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=base /usr/local/bin /usr/local/bin
 COPY --from=base /app /app
-COPY --from=base /app/alembic.ini /app/alembic.ini
 
-# alembic/versionsディレクトリの作成と所有者変更
-RUN mkdir -p /app/alembic/versions && chown -R appuser:appuser /app
+# Alembic versionsディレクトリの作成と所有者変更
+RUN mkdir -p /app/components/koiki_ref_app/alembic/versions && chown -R appuser:appuser /app
 
 # 非rootユーザーに切り替え
 USER appuser
@@ -132,4 +113,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 EXPOSE 8000
 
 # デフォルトコマンド (docker-compose で上書き可能)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "koiki_ref_app.asgi:app", "--host", "0.0.0.0", "--port", "8000"]

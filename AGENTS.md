@@ -12,7 +12,8 @@ Read these files first:
 
 1. `docs/agent/boundaries.md`
 2. `docs/agent/architecture.md`
-3. `docs/agent/testing.md`
+3. `docs/agent/environment.md`
+4. `docs/agent/testing.md`
 
 Read these when relevant:
 
@@ -22,16 +23,18 @@ Read these when relevant:
 
 ## Core Rules
 
-- Keep reusable framework behavior in `libkoiki/`.
-- Keep business-specific behavior in `app/`.
+- Keep reusable framework behavior in `components/libkoiki/`.
+- Keep reference application and business-specific behavior in `components/koiki_ref_app/`.
+- Treat root `app/` as a compatibility wrapper unless explicitly maintaining legacy imports.
 - Prefer current implementation over historical design notes when they conflict.
 - Follow the existing layered structure unless there is a strong reason not to.
 - Validate changes at the smallest scope that proves the behavior.
 
 ## Directory Intent
 
-- `libkoiki/`: shared backend framework
-- `app/`: current application-specific backend code
+- `components/libkoiki/`: shared backend framework
+- `components/koiki_ref_app/`: current reference application backend code
+- `app/`: compatibility wrapper
 - `frontend/`: frontend code
 - `tests/`: unit and integration validation
 

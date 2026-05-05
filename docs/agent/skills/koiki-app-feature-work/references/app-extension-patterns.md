@@ -4,22 +4,22 @@ Use this reference when the `koiki-app-feature-work` skill needs a compact remin
 
 ## Focus Areas
 
-- project-specific API and service wiring under `app/`
-- reuse of `libkoiki/` capabilities before adding framework changes
-- current `app/api/v1/` and `app/main.py` composition style
+- project-specific API and service wiring under `components/koiki_ref_app/`
+- reuse of `components/libkoiki/` capabilities before adding framework changes
+- current `components/koiki_ref_app/src/koiki_ref_app/api/v1/` and `components/koiki_ref_app/src/koiki_ref_app/main.py` composition style
 - business-specific SSO, SAML, and domain logic placement
 
 ## Source Material
 
 Primary source material comes from:
 
-- `docs/design_kkfw_0.6.0.md` sections on application implementation examples
-- current `app/` implementation
+- `docs/design_kkfw_0.7.0.md` sections on reference application implementation and API ownership
+- current `components/koiki_ref_app/` implementation
 - shared agent docs in `docs/agent/`
 
 ## Practical Reminder
 
-Before changing `app/`, confirm both of these:
+Before changing `components/koiki_ref_app/`, confirm both of these:
 
 - the behavior is actually project-specific
-- the feature cannot be solved cleanly by composing existing `libkoiki/` behavior alone
+- the feature cannot be solved cleanly by composing existing `components/libkoiki/` behavior alone

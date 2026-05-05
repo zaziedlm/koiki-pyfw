@@ -30,7 +30,7 @@
 
 ```bash
 # 1. バックエンドサーバーの起動（別ターミナル）
-python main.py
+uv run --locked uvicorn koiki_ref_app.asgi:app --host 0.0.0.0 --port 8000 --reload
 
 # 2. フロントエンドサーバーの起動（別ターミナル）
 cd frontend
@@ -51,10 +51,10 @@ npm run dev
 #### スクリプト実行
 ```bash
 # 実行権限を付与（初回のみ）
-chmod +x test_csrf.sh
+chmod +x scripts/test_csrf.sh
 
 # テスト実行
-./test_csrf.sh
+./scripts/test_csrf.sh
 ```
 
 または
@@ -223,7 +223,7 @@ POST /api/auth/login 403 in 1986ms
 ### ファイル構成
 ```
 ops/tests/test_csrf_validation.py  # メインテストスクリプト
-test_csrf.sh                       # 実行用シェルスクリプト
+scripts/test_csrf.sh               # 実行用シェルスクリプト
 docs/csrf-testing-guide.md        # このガイド
 ```
 

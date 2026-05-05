@@ -33,7 +33,7 @@ They validate:
 Run:
 
 ```bash
-poetry run pytest tests/unit/agent_guidance/
+uv run --locked pytest tests/unit/agent_guidance/
 ```
 
 ### 2. Agent-routing smoke tests
@@ -58,31 +58,31 @@ For each case, record `observed_skills` in the order the runtime selected them.
 Generate a manual checklist:
 
 ```bash
-poetry run python scripts/agent_skill_smoke.py generate
+uv run --locked python scripts/agent_skill_smoke.py generate
 ```
 
 On Windows PowerShell, prefer direct UTF-8 file output to avoid console-pipeline encoding issues:
 
 ```bash
-poetry run python scripts/agent_skill_smoke.py generate --output agent-skill-checklist.md
+uv run --locked python scripts/agent_skill_smoke.py generate --output docs/dev/agent-skill-checklist.md
 ```
 
 Generate an empty results template:
 
 ```bash
-poetry run python scripts/agent_skill_smoke.py template
+uv run --locked python scripts/agent_skill_smoke.py template
 ```
 
 Windows PowerShell:
 
 ```bash
-poetry run python scripts/agent_skill_smoke.py template --output agent-skill-results.json
+uv run --locked python scripts/agent_skill_smoke.py template --output agent-skill-results.json
 ```
 
 Evaluate recorded results:
 
 ```bash
-poetry run python scripts/agent_skill_smoke.py evaluate --results agent-skill-results.json
+uv run --locked python scripts/agent_skill_smoke.py evaluate --results agent-skill-results.json
 ```
 
 ## Recommended Smoke Cases
@@ -91,12 +91,32 @@ The prompt catalog already includes the minimum representative cases:
 
 - ambiguous layer selection
 - app-specific business feature work
-- reusable `libkoiki/` framework work
+- reusable `components/libkoiki/` framework work
+- Todo as a business-specific API request that must not become `libkoiki` precedent
+- Todo as an explicit framework sample / starter maintenance request
+- downstream `apps/` API ownership classification
+- ambiguous new API ownership classification
 - auth and RBAC changes
 - app-specific SSO/SAML changes
 - framework-level security changes
 - test-scope and CI-scope decisions
 - frontend-only work that should fall back to overview first
+
+## Result Recording Policy
+
+Use `agent-skill-results.json` as the local runtime smoke result file when recording actual Codex, Claude Code, or GitHub Copilot selections.
+
+Keep that file out of version control by default. It is ignored because runtime selection can vary by agent version, local installation, and available tool integrations.
+
+Commit runtime smoke results only when they are intentionally part of a release or regression investigation. In that case, prefer a dated document under `docs/dev/` that states:
+
+- runtime and version, if known
+- date of the smoke run
+- prompt catalog revision or commit
+- selected skills in order
+- deviations from expected routing
+
+Do not treat repository-side contract tests as proof of actual runtime selection. They only prove that the catalog, metadata, and wrappers remain internally consistent.
 
 ## Change Policy
 

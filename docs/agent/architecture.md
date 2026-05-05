@@ -10,8 +10,9 @@ The main goal is to keep framework concerns, business logic, and infrastructure 
 
 Core areas in the current repository:
 
-- `libkoiki/`: reusable framework code
-- `app/`: project-specific backend code
+- `components/libkoiki/`: reusable framework code
+- `components/koiki_ref_app/`: reference application backend code
+- `app/`: compatibility wrapper for legacy imports and entrypoints
 - `frontend/`: application frontend
 - `tests/`: unit and integration tests
 - `docs/`: human-oriented design and development documentation
@@ -51,8 +52,8 @@ Before adding a new module:
 
 1. find the nearest existing pattern
 2. extend the current structure before inventing a new one
-3. keep framework behavior in `libkoiki/`
-4. keep business behavior in `app/`
+3. keep framework behavior in `components/libkoiki/`
+4. keep business behavior in `components/koiki_ref_app/`
 
 Prefer modifying an existing extension point over creating parallel structure.
 
@@ -60,9 +61,10 @@ Prefer modifying an existing extension point over creating parallel structure.
 
 In the current codebase:
 
-- framework routes are assembled under `libkoiki/api/v1/`
-- application routes are assembled under `app/api/v1/`
-- application startup and composition are centered in `app/main.py`
+- framework routes are assembled under `components/libkoiki/src/libkoiki/api/v1/`
+- reference application routes are assembled under `components/koiki_ref_app/src/koiki_ref_app/api/v1/`
+- application startup and composition are centered in `components/koiki_ref_app/src/koiki_ref_app/`
+- `app/main.py` exists as a compatibility wrapper
 
 When adding new API behavior, follow the existing router composition style already used by the project.
 

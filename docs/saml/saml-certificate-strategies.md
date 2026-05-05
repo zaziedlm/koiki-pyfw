@@ -2,6 +2,10 @@
 
 ## 概要
 
+現行 KOIKI-FW リポジトリ内の SAML backend 実装は `components/koiki_ref_app/src/koiki_ref_app/` 配下にあります。
+本文中の実装コード例では `koiki_ref_app.*` を正規導線として扱います。
+古い資料や移植先向け説明に残る `app.*` は、root `app/` 互換 wrapper または移植先プロジェクト例です。
+
 エンタープライズ環境では、お客様のSSO環境やセキュリティポリシーに応じて、
 動的メタデータ取得と静的証明書設定の両方をサポートする必要があります。
 
@@ -215,9 +219,9 @@ SAML_IDP_X509_CERT="（旧IdPの証明書）"
 ### SAMLServiceでの使用
 
 ```python
-# app/services/saml_service.py
+# components/koiki_ref_app/src/koiki_ref_app/services/saml_service.py
 
-from app.services.saml_certificate_manager import SAMLCertificateManager
+from koiki_ref_app.services.saml_certificate_manager import SAMLCertificateManager
 
 class SAMLService:
     def __init__(self, ...):

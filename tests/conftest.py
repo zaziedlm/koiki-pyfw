@@ -6,12 +6,33 @@ from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock
 
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+LIBKOIKI_SRC = os.path.join(REPO_ROOT, 'components', 'libkoiki', 'src')
+KOIKI_REF_APP_SRC = os.path.join(REPO_ROOT, 'components', 'koiki_ref_app', 'src')
+
+if LIBKOIKI_SRC not in sys.path:
+    sys.path.insert(0, LIBKOIKI_SRC)
+if KOIKI_REF_APP_SRC not in sys.path:
+    sys.path.insert(1, KOIKI_REF_APP_SRC)
+if REPO_ROOT not in sys.path:
+    sys.path.insert(2, REPO_ROOT)
+
+os.environ["APP_ENV"] = "testing"
+os.environ["DEBUG"] = "true"
+os.environ["REDIS_ENABLED"] = "false"
+os.environ["RATE_LIMIT_ENABLED"] = "false"
+
+from koiki_ref_app.bootstrap import bootstrap_orm
+
+bootstrap_orm()
 
 
 @pytest.fixture(scope="session")
@@ -29,7 +50,6 @@ def test_settings():
 
     return Settings(
         APP_ENV="testing",
-        DATABASE_URL="postgresql+asyncpg://koiki_user:koiki_password@localhost:5432/koiki_todo_db",
         DEBUG=True,
         REDIS_ENABLED=False,
     )
@@ -38,22 +58,39 @@ def test_settings():
 @pytest_asyncio.fixture(scope="session")
 async def test_engine(test_settings):
     """テスト用データベースエンジン"""
+    from koiki_ref_app.bootstrap import bootstrap_orm
+    from libkoiki.db.base import Base
+    import libkoiki.models  # noqa: F401
+    import koiki_ref_app.models  # noqa: F401
+
+    bootstrap_orm()
+
     engine = create_async_engine(
         test_settings.DATABASE_URL,
         echo=False,
-        poolclass=None,
+        poolclass=NullPool,
     )
-    
-    # テスト開始時にテーブルが存在するかチェック（既存のDBを使用）
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
     yield engine
-    
-    # テスト終了時にテーブルをクリーンアップ（必要に応じて）
+
     await engine.dispose()
 
 
 @pytest_asyncio.fixture
 async def test_db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     """テスト用データベースセッション - @transactionalデコレータと協調"""
+    from libkoiki.db.base import Base
+
+    table_names = [table.name for table in Base.metadata.sorted_tables]
+    if table_names:
+        truncate_sql = "TRUNCATE TABLE " + ", ".join(table_names) + " RESTART IDENTITY CASCADE"
+        async with test_engine.begin() as conn:
+            await conn.execute(text(truncate_sql))
+
     async_session_factory = sessionmaker(
         test_engine, class_=AsyncSession, expire_on_commit=False
     )
@@ -65,19 +102,30 @@ async def test_db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture
-def test_client(test_db_session):
+def test_client(test_engine):
     """テスト用FastAPIクライアント"""
-    from app.main import app
+    from koiki_ref_app.asgi import app
+    from libkoiki.core.rate_limiter import limiter as shared_limiter
     from libkoiki.db.session import get_db
-    
+    async_session_factory = sessionmaker(
+        test_engine, class_=AsyncSession, expire_on_commit=False
+    )
+
     async def override_get_db():
-        yield test_db_session
-    
+        async with async_session_factory() as session:
+            yield session
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
+    previous_shared_enabled = shared_limiter.enabled
+    shared_limiter.enabled = False
+
     with TestClient(app) as client:
+        if getattr(app.state, "limiter", None) is not None:
+            app.state.limiter.enabled = False
         yield client
-    
+
+    shared_limiter.enabled = previous_shared_enabled
     app.dependency_overrides.clear()
 
 
@@ -158,3 +206,24 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "unit: marks tests as unit tests (no external dependencies)"
     )
+    config.addinivalue_line(
+        "markers", "db_integration: marks tests that require live PostgreSQL and are excluded from default CI"
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    """DB統合テストは明示指定時のみ実行"""
+    run_db_integration = os.environ.get("RUN_DB_INTEGRATION", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    if run_db_integration:
+        return
+
+    skip_db = pytest.mark.skip(
+        reason="db_integration test is excluded by default; set RUN_DB_INTEGRATION=1 to run."
+    )
+    for item in items:
+        if "db_integration" in item.keywords:
+            item.add_marker(skip_db)

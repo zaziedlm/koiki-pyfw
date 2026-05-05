@@ -2,7 +2,8 @@
     "python.defaultInterpreterPath": ".venv/Scripts/python.exe",
     "python.analysis.extraPaths": [
         "${workspaceFolder}/app",
-        "${workspaceFolder}/libkoiki"
+        "${workspaceFolder}/components/libkoiki/src",
+        "${workspaceFolder}/components/koiki_ref_app/src"
     ],
     "terminal.integrated.cwd": "${workspaceFolder}",
     "python.terminal.activateEnvironment": true,
@@ -14,7 +15,12 @@
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestArgs": [
-        "tests"
+        "components/libkoiki/tests",
+        "tests/unit/agent_guidance",
+        "components/koiki_ref_app/tests",
+        "tests/integration/services",
+        "-m",
+        "not db_integration"
     ],
     "editor.formatOnSave": true,
     "[python]": {

@@ -32,7 +32,7 @@
 
 ### 1. バックエンドAPI (FastAPI)
 ```python
-# libkoiki/api/v1/endpoints/todos.py
+# components/libkoiki/src/libkoiki/api/v1/endpoints/todos.py
 @router.get("/", response_model=List[TodoResponse])
 async def get_todos(
     current_user: User = Depends(get_current_user),
@@ -115,7 +115,7 @@ docker-compose up --build -d
 
 # 個別起動
 # バックエンド
-poetry run uvicorn app.main:app --reload --port 8000
+uv run --locked uvicorn koiki_ref_app.asgi:app --reload --port 8000
 
 # フロントエンド
 cd frontend && npm run dev

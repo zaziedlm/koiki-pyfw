@@ -1,5 +1,8 @@
 # Agent Guidance Migration
 
+> Historical note:
+> This migration note records an older guidance rollout. Current canonical component entry files are under `components/libkoiki/` and `components/koiki_ref_app/`; root `app/` is a compatibility wrapper.
+
 ## Purpose
 
 This note tracks the migration from draft agent guidance to the canonical repository layout.
@@ -24,7 +27,7 @@ As of 2026-03-23, the migration status is:
 - shared guidance: `docs/agent/`
 - skills: `docs/agent/skills/`
 - Claude Code skill wrappers: `.claude/skills/`
-- root and directory entry files: `AGENTS.md`, `CLAUDE.md`, `app/AGENTS.md`, `app/CLAUDE.md`, `libkoiki/AGENTS.md`, `libkoiki/CLAUDE.md`
+- root and directory entry files: `AGENTS.md`, `CLAUDE.md`, `components/libkoiki/AGENTS.md`, `components/libkoiki/CLAUDE.md`, `components/koiki_ref_app/AGENTS.md`, `components/koiki_ref_app/CLAUDE.md`
 - GitHub Copilot guidance: `.github/copilot-instructions.md`
 - scoped Copilot instructions: `.github/instructions/*.instructions.md`
 

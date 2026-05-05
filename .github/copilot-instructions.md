@@ -2,8 +2,9 @@
 
 This repository separates reusable framework behavior from application-specific backend behavior.
 
-- `libkoiki/` is the reusable backend framework layer
-- `app/` is the current application-specific backend layer
+- `components/libkoiki/` is the reusable backend framework layer
+- `components/koiki_ref_app/` is the current reference application backend layer
+- `app/` is a compatibility wrapper
 - `frontend/` is the frontend implementation
 - `tests/` contains unit and integration validation
 
@@ -23,8 +24,10 @@ Read these when relevant:
 
 Core rules:
 
-- keep reusable framework behavior in `libkoiki/`
-- keep business-specific behavior in `app/`
+- keep reusable framework behavior in `components/libkoiki/`
+- keep business-specific behavior in `components/koiki_ref_app/`
+- start downstream or customer-specific API behavior under `apps/` unless it is clearly reusable framework behavior or reference-app starter behavior
+- treat the current Todo API as a `libkoiki` framework sample / starter capability, not as precedent for new business APIs
 - follow the existing layered structure before introducing new patterns
 - validate changes at the smallest scope that proves the behavior
 - treat historical design documents as reference material, not operational truth

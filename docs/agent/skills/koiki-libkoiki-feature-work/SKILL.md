@@ -1,6 +1,6 @@
 ---
 name: koiki-libkoiki-feature-work
-description: Use when adding or modifying reusable framework capabilities under libkoiki/, including shared API patterns, services, repositories, schemas, configuration, security, and infrastructure behavior.
+description: Use when adding or modifying reusable framework capabilities under components/libkoiki/, including shared API patterns, starter/sample capabilities, services, repositories, schemas, configuration, security, and infrastructure behavior.
 ---
 
 # KOIKI libkoiki Feature Work
@@ -11,13 +11,17 @@ Use this skill when the requested change belongs in the reusable framework layer
 
 Target directories include:
 
-- `libkoiki/api/`
-- `libkoiki/core/`
-- `libkoiki/services/`
-- `libkoiki/repositories/`
-- `libkoiki/models/`
-- `libkoiki/schemas/`
-- `libkoiki/db/`
+- `components/libkoiki/src/libkoiki/api/`
+- `components/libkoiki/src/libkoiki/core/`
+- `components/libkoiki/src/libkoiki/services/`
+- `components/libkoiki/src/libkoiki/repositories/`
+- `components/libkoiki/src/libkoiki/models/`
+- `components/libkoiki/src/libkoiki/schemas/`
+- `components/libkoiki/src/libkoiki/db/`
+
+## Future Role Alignment
+
+This skill aligns with future maintainer framework work. It should continue to own reusable `components/libkoiki` behavior until a dedicated maintainer framework skill is introduced.
 
 ## Workflow
 
@@ -29,13 +33,15 @@ Target directories include:
 
 ## Guardrails
 
-- do not place business-specific rules in `libkoiki/`
+- do not place business-specific rules in `components/libkoiki/`
+- only keep API behavior in `components/libkoiki/` when it is reusable framework behavior or an explicit starter/sample capability
+- treat Todo as the current starter/sample exception, not as precedent for new business-specific APIs
 - do not bypass the service layer with endpoint-specific data logic unless an existing pattern already does so
 - do not introduce new cross-cutting mechanisms if an existing core module already owns that concern
 
 ## Validate
 
-- affected unit tests under `tests/unit/libkoiki/`
+- affected unit tests under `components/libkoiki/tests/`
 - relevant integration coverage when behavior crosses DB, auth, or middleware boundaries
 
 ## Read Next
@@ -46,3 +52,4 @@ Target directories include:
 - `docs/agent/testing.md`
 - `docs/agent/auth-security.md`
 - `references/framework-patterns.md`
+- `docs/agent/skills/future-role-alignment.md`

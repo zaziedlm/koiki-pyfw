@@ -10,27 +10,27 @@ Use this document when the task touches tokens, login flows, permissions, SSO, S
 
 This guidance applies to changes in areas such as:
 
-- `libkoiki/core/security.py`
-- `libkoiki/core/security_config.py`
-- `libkoiki/core/security_logger.py`
-- `libkoiki/core/security_metrics.py`
-- `libkoiki/core/middleware.py`
-- `libkoiki/api/v1/endpoints/auth*.py`
-- `libkoiki/api/v1/endpoints/security_monitor.py`
-- `libkoiki/services/auth_service.py`
-- `libkoiki/services/login_security_service.py`
-- `libkoiki/services/password_reset_service.py`
-- `app/services/sso_service.py`
-- `app/services/saml_service.py`
-- `app/api/v1/endpoints/sso_auth.py`
-- `app/api/v1/endpoints/saml_auth.py`
+- `components/libkoiki/src/libkoiki/core/security.py`
+- `components/libkoiki/src/libkoiki/core/security_config.py`
+- `components/libkoiki/src/libkoiki/core/security_logger.py`
+- `components/libkoiki/src/libkoiki/core/security_metrics.py`
+- `components/libkoiki/src/libkoiki/core/middleware.py`
+- `components/libkoiki/src/libkoiki/api/v1/endpoints/auth*.py`
+- `components/libkoiki/src/libkoiki/api/v1/endpoints/security_monitor.py`
+- `components/libkoiki/src/libkoiki/services/auth_service.py`
+- `components/libkoiki/src/libkoiki/services/login_security_service.py`
+- `components/libkoiki/src/libkoiki/services/password_reset_service.py`
+- `components/koiki_ref_app/src/koiki_ref_app/services/sso_service.py`
+- `components/koiki_ref_app/src/koiki_ref_app/services/saml_service.py`
+- `components/koiki_ref_app/src/koiki_ref_app/api/v1/endpoints/sso_auth.py`
+- `components/koiki_ref_app/src/koiki_ref_app/api/v1/endpoints/saml_auth.py`
 
 ## Security Boundary
 
 Keep the security boundary explicit.
 
-- shared auth, token, permission, password, audit, and rate-limiting behavior belongs in `libkoiki/`
-- application-specific SSO, SAML, and business-auth integration belongs in `app/`
+- shared auth, token, permission, password, audit, and rate-limiting behavior belongs in `components/libkoiki/`
+- application-specific SSO, SAML, and business-auth integration belongs in `components/koiki_ref_app/`
 - do not move business-specific identity rules into shared framework code unless they are truly reusable
 
 ## Working Rules
@@ -53,7 +53,7 @@ Authorization must not depend only on UI behavior.
 
 ## SSO and SAML Rules
 
-SSO and SAML are application-facing integrations and should usually remain in `app/`.
+SSO and SAML are application-facing integrations and should usually remain in `components/koiki_ref_app/`.
 
 When working in this area:
 

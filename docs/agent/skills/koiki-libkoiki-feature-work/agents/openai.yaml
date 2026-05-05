@@ -1,4 +1,4 @@
 interface:
   display_name: "KOIKI libkoiki Feature Work"
-  short_description: "Implement reusable framework-layer changes."
-  default_prompt: "Use $koiki-libkoiki-feature-work to implement this reusable KOIKI framework change in libkoiki/."
+  short_description: "Implement reusable framework or starter/sample changes."
+  default_prompt: "Use $koiki-libkoiki-feature-work to implement this reusable KOIKI framework change in components/libkoiki/."
