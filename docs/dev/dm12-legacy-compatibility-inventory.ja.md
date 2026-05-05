@@ -288,7 +288,7 @@ uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent
 
 ### DM-12-C: `app.main:app` 互換終了判断
 
-状態: `DM-13 後に着手`
+状態: `判断済み / v0.7.0 では互換維持`
 
 目的:
 
@@ -309,6 +309,14 @@ rg -n "app\.main:app|from app.main import app|uvicorn app\.main|from app\.|impor
 uv run --locked python -c "from koiki_ref_app.asgi import app; print(app.title)"
 uv run --locked python -c "from app.main import app; print(app.title)"
 ```
+
+判断結果:
+
+- v0.7.0 では `app.main:app` 互換を維持する
+- root `app/` は compatibility wrapper としてのみ残し、新規実装は追加しない
+- 標準 ASGI entrypoint は引き続き `koiki_ref_app.asgi:app` とする
+- Docker / Compose / local dev script / tests は標準導線に寄っており、現時点で `app.main:app` へ依存していない
+- 互換終了は v0.7.x 以降で、外部利用状況と docs / scripts / tests の残存参照を再確認して判断する
 
 削除する場合:
 

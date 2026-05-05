@@ -130,7 +130,7 @@ GitHub Actionsによる自動テストパイプラインが設定されており
 
 **注意**:
 - 現在の主な実装は `components/libkoiki` と `components/koiki_ref_app` にあります。
-- root `app/` は互換導線を維持するための wrapper です。
+- root `app/` は互換導線を維持するための wrapper です。新規実装は追加しません。
 - `apps/` は downstream の案件固有コードのための予約領域です。
 
 詳細な構成と機能説明は `docs/design_kkfw_0.7.0.md` を参照してください。

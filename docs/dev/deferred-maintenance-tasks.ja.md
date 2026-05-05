@@ -1052,7 +1052,7 @@ v0.7 では、現行の正規実装は `components/libkoiki/` と `components/ko
 
 1. root `libkoiki/setup.py` 削除: 実施済み
 2. 現行 docs の旧導線整理: 実施済み
-3. `app.main:app` 互換終了判断
+3. `app.main:app` 互換終了判断: v0.7.0 では互換維持
 4. ローカル artifact 清掃は Git PR ではなく作業環境側で扱う
 
 ### 完了条件
@@ -1367,7 +1367,8 @@ rg -n "components/libkoiki|components/koiki_ref_app|apps/|app/|Todo|API ownershi
 `DM-08` 後は `DM-10`、`DM-11`、`DM-09` の順に進める。
 `DM-12` は削除系・導線整理系のため、`DM-09` のセキュリティ整理後に棚卸しから開始する。
 `DM-12-B` 完了後は、`DM-14` で API ownership / sample feature boundary policy を整理し、続けて `DM-15` で agent guidance / Skills consistency を確認してから `DM-13` の v0.7.0 release preparation へ進む。
-`DM-12-C` の `app.main:app` 互換終了判断は、`DM-13` 後に扱う。
+`DM-12-C` の `app.main:app` 互換終了判断は、`DM-13` 後に確認し、v0.7.0 では互換維持とする。
+root `app/` へ新規実装は追加せず、標準 ASGI entrypoint は `koiki_ref_app.asgi:app` とする。
 
 ## 18. 共通 NG 条件
 
