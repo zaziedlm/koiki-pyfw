@@ -57,6 +57,19 @@ Cross-cutting skills to retain:
 - auth/security guidance
 - testing guidance
 
+## Current Split Decision
+
+No new skill is added for the DM-15 follow-up.
+
+Current routing remains:
+
+- frontend-only changes start with `koiki-project-overview` because no frontend-specific skill exists yet
+- downstream `apps/` API placement starts with `koiki-project-overview` because no downstream app skill exists yet
+- reference-app backend work continues to use `koiki-app-feature-work`
+- reusable framework or explicit starter/sample work continues to use `koiki-libkoiki-feature-work`
+
+Reconsider the split only when prompt catalog or runtime smoke results show repeated routing misses that cannot be fixed by tightening existing descriptions and guardrails.
+
 ## Frontend Template Responsibility
 
 Root `frontend/` is the upstream starter frontend paired with `components/koiki_ref_app`.

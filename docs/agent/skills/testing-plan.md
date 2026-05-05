@@ -92,11 +92,31 @@ The prompt catalog already includes the minimum representative cases:
 - ambiguous layer selection
 - app-specific business feature work
 - reusable `components/libkoiki/` framework work
+- Todo as a business-specific API request that must not become `libkoiki` precedent
+- Todo as an explicit framework sample / starter maintenance request
+- downstream `apps/` API ownership classification
+- ambiguous new API ownership classification
 - auth and RBAC changes
 - app-specific SSO/SAML changes
 - framework-level security changes
 - test-scope and CI-scope decisions
 - frontend-only work that should fall back to overview first
+
+## Result Recording Policy
+
+Use `agent-skill-results.json` as the local runtime smoke result file when recording actual Codex, Claude Code, or GitHub Copilot selections.
+
+Keep that file out of version control by default. It is ignored because runtime selection can vary by agent version, local installation, and available tool integrations.
+
+Commit runtime smoke results only when they are intentionally part of a release or regression investigation. In that case, prefer a dated document under `docs/dev/` that states:
+
+- runtime and version, if known
+- date of the smoke run
+- prompt catalog revision or commit
+- selected skills in order
+- deviations from expected routing
+
+Do not treat repository-side contract tests as proof of actual runtime selection. They only prove that the catalog, metadata, and wrappers remain internally consistent.
 
 ## Change Policy
 

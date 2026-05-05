@@ -36,6 +36,44 @@ cases:
       - koiki-app-feature-work
     rationale: "再利用される共通基盤は libkoiki 側で扱う。"
 
+  - id: todo-business-api-not-framework-precedent
+    prompt: "Todo API に顧客別の承認ワークフローと案件固有ステータスを追加してください。既存 Todo が libkoiki にあるので同じ場所でよいか判断してください。"
+    expected_skills:
+      - koiki-app-feature-work
+    required_first_skill: koiki-app-feature-work
+    forbidden_skills:
+      - koiki-libkoiki-feature-work
+    rationale: "Todo は framework sample / starter capability であり、業務固有 API を libkoiki に置く前例ではない。"
+
+  - id: todo-framework-sample-maintenance
+    prompt: "libkoiki の Todo sample を、認証済みユーザー owner scoped CRUD の starter capability として保守してください。業務固有ルールは追加しません。"
+    expected_skills:
+      - koiki-libkoiki-feature-work
+    required_first_skill: koiki-libkoiki-feature-work
+    forbidden_skills:
+      - koiki-app-feature-work
+    rationale: "Todo を framework sample / starter capability として扱う保守は libkoiki feature work が第一候補。"
+
+  - id: downstream-app-specific-api
+    prompt: "特定顧客向けの請求連携 API を downstream apps/ 配下に追加するか、koiki_ref_app に入れるかを判断してから進めてください。"
+    expected_skills:
+      - koiki-project-overview
+    required_first_skill: koiki-project-overview
+    forbidden_skills:
+      - koiki-app-feature-work
+      - koiki-libkoiki-feature-work
+    rationale: "downstream apps/ に置くべき案件固有 API は専用 skill がないため、まず overview で配置判断する。"
+
+  - id: ambiguous-new-api-ownership
+    prompt: "新しいレポート API を追加したいです。複数アプリで使うか、reference app 固有か、案件固有かまだ決まっていません。"
+    expected_skills:
+      - koiki-project-overview
+    required_first_skill: koiki-project-overview
+    forbidden_skills:
+      - koiki-app-feature-work
+      - koiki-libkoiki-feature-work
+    rationale: "API ownership が未確定の新規 API は、実装 skill へ直行せず overview で layer を分類する。"
+
   - id: auth-security-change
     prompt: "JWT リフレッシュトークンの失効処理と RBAC の境界を見直したいです。セキュリティ回帰が怖いので確認してください。"
     expected_skills:

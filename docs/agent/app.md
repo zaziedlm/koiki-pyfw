@@ -33,6 +33,8 @@ It should contain:
 
 It should not duplicate framework behavior that already belongs in `components/libkoiki/`.
 
+It should also not absorb downstream customer-specific API behavior unless that behavior is intended to become reference-app starter behavior. Downstream or customer-specific APIs should start under `apps/`.
+
 ## Placement Rules
 
 A change belongs in `components/koiki_ref_app/` when it is:
@@ -80,6 +82,8 @@ Avoid:
 
 - reimplementing shared framework behavior inside `components/koiki_ref_app/`
 - pushing business-specific assumptions into `components/libkoiki/`
+- treating the current `libkoiki` Todo sample as precedent for placing new business APIs in `components/libkoiki/`
+- placing downstream customer-specific APIs in the reference app when they belong under `apps/`
 - creating parallel patterns when a nearby app module already defines the convention
 - adding unnecessary layers for a small feature
 

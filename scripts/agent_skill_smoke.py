@@ -121,9 +121,9 @@ def build_markdown_checklist(payload: dict[str, Any]) -> str:
                 f"Forbidden skills: {', '.join(case['forbidden_skills']) or '(none)'}",
                 f"Rationale: {case['rationale']}",
                 "",
-                "Observed skills: ",
-                "Pass/Fail: ",
-                "Notes: ",
+                "Observed skills:",
+                "Pass/Fail:",
+                "Notes:",
                 "",
             ]
         )
@@ -275,7 +275,7 @@ def main() -> int:
             exit_code = 0 if evaluation["passed"] else 1
 
         if args.output:
-            args.output.write_text(output_text + "\n", encoding="utf-8")
+            args.output.write_text(output_text + "\n", encoding="utf-8", newline="\n")
         else:
             print(output_text)
 

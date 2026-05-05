@@ -1210,7 +1210,7 @@ uv run --locked pytest --collect-only components/libkoiki/tests tests/unit/agent
 
 優先度: `P4`
 
-状態: `未着手`
+状態: `初回整理済み / DM-15-A〜DM-15-E 実施済み`
 
 ### 目的
 
@@ -1246,11 +1246,43 @@ Codex、Claude Code、GitHub Copilot などの AI agent が、同じ repository 
 
 別 PR として残す候補:
 
-- `DM-15-A`: DM-14 ownership policy の skill routing 反映
-- `DM-15-B`: prompt catalog / smoke checklist の拡充
-- `DM-15-C`: repository-side contract test の強化
-- `DM-15-D`: real runtime smoke result の記録方式整備
-- `DM-15-E`: 新 skill / role split の要否判断
+- `DM-15-A`: DM-14 ownership policy の skill routing 反映（実施済み）
+- `DM-15-B`: prompt catalog / smoke checklist の拡充（実施済み）
+- `DM-15-C`: repository-side contract test の強化（実施済み）
+- `DM-15-D`: real runtime smoke result の記録方式整備（実施済み）
+- `DM-15-E`: 新 skill / role split の要否判断（判断済み / 新 skill 追加なし）
+
+`DM-15-A` 実施結果:
+
+- canonical skill に `apps/` ownership と Todo sample / starter capability の routing rule を最小反映した
+- `agents/openai.yaml` と `.claude/skills/*/SKILL.md` の description を ownership 判断に追随させた
+- `.github/copilot-instructions.md`、`.github/instructions/*.instructions.md`、`docs/agent/app.md`、`docs/agent/libkoiki.md`、`docs/agent/skills/README.md` に API ownership の短い注意を追加した
+- `uv run --locked pytest tests/unit/agent_guidance` で `13 passed`
+
+`DM-15-C` 実施結果:
+
+- `tests/unit/agent_guidance/test_skill_catalog.py` に API ownership routing surface の drift 検出を追加した
+- canonical skill / OpenAI metadata / Claude wrapper / Copilot instructions / scoped GitHub instructions / shared agent docs に `apps/`、API ownership、reference-app、starter/sample などの ownership 用語が残ることを検証するようにした
+- `uv run --locked pytest tests/unit/agent_guidance` で `17 passed`
+
+`DM-15-D` 実施結果:
+
+- `docs/agent/skills/testing-plan.md` に runtime smoke result の記録方針を追加した
+- 通常は `.gitignore` 済みの `agent-skill-results.json` をローカル記録として使う方針を明記した
+- release / regression investigation で結果を残す場合は、runtime、日付、prompt catalog revision、選択 skill、期待との差分を `docs/dev/` に残す方針にした
+
+`DM-15-E` 判断結果:
+
+- DM-15 follow-up では新 skill を追加しない
+- frontend-only change と downstream `apps/` API placement は `koiki-project-overview` で分類する
+- repeated routing miss が prompt catalog または runtime smoke result で確認された場合に、frontend / downstream apps / maintainer-template split を再判断する
+
+`DM-15-B` 実施結果:
+
+- `tests/unit/agent_guidance/prompt_cases.yaml` に DM-14 由来の API ownership 判断ケースを追加した
+- `docs/dev/agent-skill-checklist.md` を prompt catalog から再生成した
+- `tests/unit/agent_guidance/test_agent_skill_smoke_script.py` の評価用 case template を追加ケースへ追随させた
+- `uv run --locked pytest tests/unit/agent_guidance` で `13 passed`
 
 ### 完了条件
 

@@ -1,6 +1,6 @@
 ---
 name: koiki-app-feature-work
-description: Use when implementing business-specific functionality under components/koiki_ref_app/, including domain endpoints, services, repositories, models, schemas, and application-specific integrations built on components/libkoiki.
+description: Use when implementing reference-application business functionality under components/koiki_ref_app/, including domain endpoints, services, repositories, models, schemas, and application-specific integrations built on components/libkoiki.
 ---
 
 # KOIKI app Feature Work
@@ -35,6 +35,8 @@ This skill aligns with future template backend work. It should remain focused on
 
 - do not reimplement generic auth, user, or infrastructure behavior that already exists in `components/libkoiki/`
 - do not push business-specific assumptions down into shared framework code
+- do not treat the existing `libkoiki` Todo sample as precedent for placing new business APIs in `components/libkoiki/`
+- do not put downstream customer-specific API behavior in the reference app unless it is intended to become starter/reference behavior
 - do not create parallel patterns if a nearby app module already establishes the local convention
 
 ## Validate
