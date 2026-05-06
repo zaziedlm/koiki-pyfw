@@ -39,8 +39,9 @@ RUN --mount=type=cache,target=/root/.npm \
 # ---------------------
 FROM deps AS build
 ENV NODE_ENV=production
+ARG FRONTEND_ENV_FILE=.env.docker
 COPY . .
-RUN cp .env.docker .env.production
+RUN cp "${FRONTEND_ENV_FILE}" .env.production
 RUN npm run build
 
 # ---------------------

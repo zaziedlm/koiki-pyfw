@@ -25,6 +25,34 @@ if [ ! -f frontend/.env.local ]; then
     echo "[INFO] Frontend .env.local created"
 fi
 
+ensure_production_env() {
+    if [ ! -f .env.production ]; then
+        echo "[WARN] .env.production not found. Creating from .env.production.example..."
+        if [ -f .env.production.example ]; then
+            cp .env.production.example .env.production
+            echo "[INFO] Please edit .env.production with production or AWS values"
+        else
+            echo "[ERROR] .env.production.example not found. Create .env.production manually."
+            exit 1
+        fi
+    fi
+
+    if [ ! -f frontend/.env.production ]; then
+        echo "[WARN] frontend/.env.production not found. Creating from template..."
+        if [ -f frontend/.env.production.example ]; then
+            cp frontend/.env.production.example frontend/.env.production
+            echo "[INFO] Please edit frontend/.env.production with production frontend values"
+        else
+            echo "[ERROR] frontend/.env.production.example not found. Create frontend/.env.production manually."
+            exit 1
+        fi
+    fi
+
+    export ENV_FILE=.env.production
+    export FRONTEND_ENV_FILE=./frontend/.env.production
+    export FRONTEND_BUILD_ENV_FILE=.env.production
+}
+
 # Function to show available commands
 show_help() {
     echo ""
@@ -188,27 +216,33 @@ case "${1:-up}" in
         ;;
     "unified-prod")
         echo "[INFO] Starting unified stack (prod profile)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod up -d
+        ensure_production_env
+        docker compose -f docker-compose.unified.yml --profile prod up -d
         ;;
     "unified-prod-build")
         echo "[INFO] Building unified stack images (prod profile)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod build --no-cache
+        ensure_production_env
+        docker compose -f docker-compose.unified.yml --profile prod build --no-cache
         ;;
     "unified-prod-down")
         echo "[INFO] Stopping unified stack (prod profile)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod down
+        ensure_production_env
+        docker compose -f docker-compose.unified.yml --profile prod down
         ;;
     "unified-prod-external")
         echo "[INFO] Starting unified stack (prod-external profile, external DB/IdP)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod-external up -d
+        ensure_production_env
+        docker compose -f docker-compose.unified.yml --profile prod-external up -d
         ;;
     "unified-prod-external-build")
         echo "[INFO] Building unified stack images (prod-external profile)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod-external build --no-cache
+        ensure_production_env
+        docker compose -f docker-compose.unified.yml --profile prod-external build --no-cache
         ;;
     "unified-prod-external-down")
         echo "[INFO] Stopping unified stack (prod-external profile)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod-external down
+        ensure_production_env
+        docker compose -f docker-compose.unified.yml --profile prod-external down
         ;;
     "unified-down")
         echo "[INFO] Stopping unified stack..."

@@ -28,6 +28,34 @@ if (-not (Test-Path "frontend\.env.local")) {
     Write-Host "[INFO] Frontend .env.local created"
 }
 
+function Ensure-ProductionEnv {
+    if (-not (Test-Path ".env.production")) {
+        Write-Host "[WARN] .env.production not found. Creating from .env.production.example..."
+        if (Test-Path ".env.production.example") {
+            Copy-Item ".env.production.example" ".env.production"
+            Write-Host "[INFO] Please edit .env.production with production or AWS values"
+        } else {
+            Write-Host "[ERROR] .env.production.example not found. Create .env.production manually."
+            exit 1
+        }
+    }
+
+    if (-not (Test-Path "frontend\.env.production")) {
+        Write-Host "[WARN] frontend .env.production not found. Creating from template..."
+        if (Test-Path "frontend\.env.production.example") {
+            Copy-Item "frontend\.env.production.example" "frontend\.env.production"
+            Write-Host "[INFO] Please edit frontend\.env.production with production frontend values"
+        } else {
+            Write-Host "[ERROR] frontend\.env.production.example not found. Create frontend\.env.production manually."
+            exit 1
+        }
+    }
+
+    $env:ENV_FILE = ".env.production"
+    $env:FRONTEND_ENV_FILE = "./frontend/.env.production"
+    $env:FRONTEND_BUILD_ENV_FILE = ".env.production"
+}
+
 function Show-Help {
     Write-Host ""
     Write-Host "Available commands:"
@@ -242,32 +270,32 @@ switch ($Command.ToLower()) {
     }
     "unified-prod" {
         Write-Host "[INFO] Starting unified stack (prod profile)..."
-        $env:ENV_FILE = ".env.production"
+        Ensure-ProductionEnv
         docker compose -f docker-compose.unified.yml --profile prod up -d
     }
     "unified-prod-build" {
         Write-Host "[INFO] Building unified stack images (prod profile)..."
-        $env:ENV_FILE = ".env.production"
+        Ensure-ProductionEnv
         docker compose -f docker-compose.unified.yml --profile prod build --no-cache
     }
     "unified-prod-down" {
         Write-Host "[INFO] Stopping unified stack (prod profile)..."
-        $env:ENV_FILE = ".env.production"
+        Ensure-ProductionEnv
         docker compose -f docker-compose.unified.yml --profile prod down
     }
     "unified-prod-external" {
         Write-Host "[INFO] Starting unified stack (prod-external profile, external DB/IdP)..."
-        $env:ENV_FILE = ".env.production"
+        Ensure-ProductionEnv
         docker compose -f docker-compose.unified.yml --profile prod-external up -d
     }
     "unified-prod-external-build" {
         Write-Host "[INFO] Building unified stack images (prod-external profile)..."
-        $env:ENV_FILE = ".env.production"
+        Ensure-ProductionEnv
         docker compose -f docker-compose.unified.yml --profile prod-external build --no-cache
     }
     "unified-prod-external-down" {
         Write-Host "[INFO] Stopping unified stack (prod-external profile)..."
-        $env:ENV_FILE = ".env.production"
+        Ensure-ProductionEnv
         docker compose -f docker-compose.unified.yml --profile prod-external down
     }
     "unified-down" {

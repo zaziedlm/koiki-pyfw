@@ -4,6 +4,7 @@
 # Builder stage
 # ---------------------
 FROM node:22-slim AS builder
+ARG FRONTEND_ENV_FILE=.env.docker
 
 # Add custom CA certificate and trust for build-time network access
 COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
@@ -26,7 +27,7 @@ RUN npm ci
 # Copy source and build
 RUN mkdir -p /app/public
 COPY . .
-RUN cp .env.docker .env.production
+RUN cp "${FRONTEND_ENV_FILE}" .env.production
 RUN npm run build
 
 # ---------------------

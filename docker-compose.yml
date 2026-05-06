@@ -1,18 +1,16 @@
 # docker-compose.yml
+name: koiki_v07
+
 services:
   db:
     image: postgres:15
-    container_name: osskk_postgres_db
+    container_name: koiki_v07_postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
-      - .env # 環境変数を参照
+      - ${ENV_FILE:-.env} # 環境変数を参照
     ports:
       - "5432:5432" # ローカルで直接DBに接続したい場合
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-koiki_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-koiki_password}
-      POSTGRES_DB: ${POSTGRES_DB:-koiki_todo_db}
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 5s
@@ -32,14 +30,14 @@ services:
       context: .
       dockerfile: Dockerfile
       target: production
-    container_name: osskk_fastapi_app
+    container_name: koiki_v07_backend
     depends_on:
       db:
         condition: service_healthy
       keycloak:
         condition: service_started
     env_file:
-      - .env
+      - ${ENV_FILE:-.env}
     ports:
       - "8000:8000"
     command: uvicorn koiki_ref_app.asgi:app --host 0.0.0.0 --port 8000 # 本番設定（リロードなし）
@@ -50,7 +48,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: runner
-    container_name: osskk_nextjs_frontend
+    container_name: koiki_v07_frontend
     depends_on:
       - app
     ports:
@@ -73,11 +71,11 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.3.5
-    container_name: osskk_keycloak
+    container_name: koiki_v07_keycloak
     command: [ "start-dev", "--import-realm" ]
+    env_file:
+      - ${ENV_FILE:-.env}
     environment:
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin
       - KC_HEALTH_ENABLED=true
       - KC_METRICS_ENABLED=true
     volumes:
@@ -97,4 +95,6 @@ services:
 
 volumes:
   postgres_data:
+    name: koiki_v07_postgres_data
   keycloak_data:
+    name: koiki_v07_keycloak_data
