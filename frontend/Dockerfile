@@ -27,7 +27,9 @@ RUN npm ci
 # Copy source and build
 RUN mkdir -p /app/public
 COPY . .
-RUN cp "${FRONTEND_ENV_FILE}" .env.production
+RUN if [ "${FRONTEND_ENV_FILE}" != ".env.production" ] && [ "${FRONTEND_ENV_FILE}" != "./.env.production" ]; then \
+    cp "${FRONTEND_ENV_FILE}" .env.production; \
+  fi
 RUN npm run build
 
 # ---------------------
