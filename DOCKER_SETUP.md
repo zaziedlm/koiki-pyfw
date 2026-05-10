@@ -73,6 +73,21 @@ Copy-Item frontend\.env.production.example frontend\.env.production
 .\start-docker.ps1 unified-prod-down    # 停止
 ```
 
+#### 初期セキュリティデータ投入
+`unified-prod` 起動後、権限・ロール・テストユーザーを投入する場合は backend コンテナ内で `ops/scripts/setup_security.py` を実行します。
+
+```powershell
+docker compose -f docker-compose.unified.yml --profile prod exec app-prod python ops/scripts/setup_security.py
+```
+
+投入内容を確認する例:
+
+```powershell
+docker compose -f docker-compose.unified.yml --profile prod exec db psql -U koiki_user -d koiki_todo_db -c "SELECT email, username, is_active, is_superuser FROM users ORDER BY email;"
+```
+
+このスクリプトは `ops/security/roles_permissions.py` に定義されたテストユーザーを作り直します。
+
 ### 本番相当（外部 DB/IdP）
 ```powershell
 # .env.production に外部DB/IdP設定を入れる
