@@ -3,7 +3,7 @@
 # ---------------------
 # Builder stage
 # ---------------------
-FROM node:22-slim AS builder
+FROM node:26-slim AS builder
 ARG FRONTEND_ENV_FILE=.env.docker
 
 # Add custom CA certificate and trust for build-time network access
@@ -35,7 +35,7 @@ RUN npm run build
 # ---------------------
 # Runtime stage
 # ---------------------
-FROM node:22-slim AS runner
+FROM node:26-slim AS runner
 
 # Add CA cert and minimal tools (wget is required by docker-compose healthcheck)
 COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
