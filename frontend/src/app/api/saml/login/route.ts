@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { setAccessTokenCookie, setRefreshTokenCookie } from '@/lib/cookie-utils';
 import { validateCSRFToken, createCSRFErrorResponse } from '@/lib/csrf-utils';
 
-const rawBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-  || `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1`;
+const rawBaseUrl = process.env.BACKEND_API_URL
+  ? `${process.env.BACKEND_API_URL}${process.env.BACKEND_API_PREFIX || '/api/v1'}`
+  : process.env.NEXT_PUBLIC_API_BASE_URL
+    || `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1`;
 const API_BASE_URL = rawBaseUrl.replace(/\/$/, '');
 
 export async function POST(request: NextRequest) {

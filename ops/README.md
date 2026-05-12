@@ -205,6 +205,29 @@ make manual-test            →  ./ops/scripts/run_tests.sh manual-test
 
 ## 📋 手動テスト手順
 
+### 0. 初期セキュリティデータ投入
+
+unified `prod` profile を使っている場合は、プロジェクトルートから次を実行します。
+
+```powershell
+.\start-docker.ps1 unified-prod
+docker compose -f docker-compose.unified.yml --profile prod exec app-prod python ops/scripts/setup_security.py
+```
+
+投入内容を確認する例:
+
+```powershell
+docker compose -f docker-compose.unified.yml --profile prod exec db psql -U koiki_user -d koiki_todo_db -c "SELECT email, username, is_active, is_superuser FROM users ORDER BY email;"
+```
+
+通常の `docker-compose.yml` 構成を使っている場合は、従来どおり次を使います。
+
+```powershell
+docker-compose exec app python ops/scripts/setup_security.py
+```
+
+このスクリプトは `ops/security/roles_permissions.py` に定義されたテストユーザーを作り直します。
+
 ### 1. ログインとトークン取得
 
 ```bash
@@ -243,7 +266,7 @@ curl -H "Authorization: Bearer <TESTUSER_TOKEN>" \
 ### 1. セットアップ失敗時
 
 ```bash
-# データベースリセット
+# 通常 docker-compose.yml 構成のデータベースリセット
 docker-compose down -v
 docker-compose up -d
 
@@ -251,10 +274,19 @@ docker-compose up -d
 docker-compose exec app python ops/scripts/setup_security.py
 ```
 
+unified `prod` profile の場合:
+
+```powershell
+.\start-docker.ps1 unified-prod-down
+docker compose -f docker-compose.unified.yml --profile prod down -v
+.\start-docker.ps1 unified-prod
+docker compose -f docker-compose.unified.yml --profile prod exec app-prod python ops/scripts/setup_security.py
+```
+
 ### 2. 権限データ確認
 
 ```bash
-# 権限一覧確認
+# 通常 docker-compose.yml 構成の権限一覧確認
 docker-compose exec db psql -U koiki_user -d koiki_todo_db -c "
 SELECT p.name, p.description, p.resource, p.action 
 FROM permissions p ORDER BY p.name;
@@ -271,6 +303,8 @@ JOIN permissions p ON p.id = rp.permission_id
 ORDER BY u.email, p.name;
 "
 ```
+
+unified `prod` profile の場合は、`docker compose -f docker-compose.unified.yml --profile prod exec db ...` を使います。
 
 ### 3. API応答確認
 
@@ -308,14 +342,15 @@ curl http://localhost:8000/docs
 権限やロールを追加する場合：
 
 1. `ops/security/roles_permissions.py` を編集
-2. `python ops/scripts/setup_security.py` を実行
-3. `python ops/tests/test_security_api.py` でテスト
+2. unified `prod` では `docker compose -f docker-compose.unified.yml --profile prod exec app-prod python ops/scripts/setup_security.py` を実行
+3. 通常 compose では `docker-compose exec app python ops/scripts/setup_security.py` を実行
+4. `python ops/tests/test_security_api.py` またはコンテナ内の `ops/tests/test_security_api.py` でテスト
 
 ## 📞 サポート
 
 問題が発生した場合は、以下を確認：
 
-1. Docker環境の状態 (`docker-compose ps`)
-2. アプリケーションログ (`docker-compose logs -f app`)
-3. データベース接続 (`docker-compose exec db psql...`)
+1. Docker環境の状態 (`docker compose -f docker-compose.unified.yml --profile prod ps` または `docker-compose ps`)
+2. アプリケーションログ (`docker compose -f docker-compose.unified.yml --profile prod logs -f app-prod` または `docker-compose logs -f app`)
+3. データベース接続 (`docker compose -f docker-compose.unified.yml --profile prod exec db psql...` または `docker-compose exec db psql...`)
 4. セキュリティ設定 (権限・ロール・ユーザー)

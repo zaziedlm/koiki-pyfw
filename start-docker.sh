@@ -6,24 +6,87 @@ set -e
 
 echo "[INFO] Starting KOIKI Framework with Docker Compose..."
 
-# Check if .env file exists
-if [ ! -f .env ]; then
-    echo "[WARN] .env not found. Creating from .env.example..."
-    if [ -f .env.example ]; then
-        cp .env.example .env
-        echo "[INFO] Please edit .env with your configuration"
+ensure_base_env() {
+    # Ensure .env exists for commands that run or build services.
+    if [ ! -f .env ]; then
+        echo "[WARN] .env not found. Creating from .env.example..."
+        if [ -f .env.example ]; then
+            cp .env.example .env
+            echo "[INFO] Please edit .env with your configuration"
+        else
+            echo "[ERROR] .env.example not found. Please create .env file manually."
+            exit 1
+        fi
+    fi
+
+    # Check if frontend .env.local exists for local development
+    if [ ! -f frontend/.env.local ]; then
+        echo "[INFO] Creating frontend .env.local from template..."
+        cp frontend/.env.local.example frontend/.env.local
+        echo "[INFO] Frontend .env.local created"
+    fi
+}
+
+set_base_compose_env_readonly() {
+    if [ -f .env ]; then
+        export ENV_FILE=.env
+    elif [ -f .env.example ]; then
+        export ENV_FILE=.env.example
     else
-        echo "[ERROR] .env.example not found. Please create .env file manually."
+        echo "[ERROR] .env or .env.example is required for Docker Compose validation."
         exit 1
     fi
-fi
+}
 
-# Check if frontend .env.local exists for local development
-if [ ! -f frontend/.env.local ]; then
-    echo "[INFO] Creating frontend .env.local from template..."
-    cp frontend/.env.local.example frontend/.env.local
-    echo "[INFO] Frontend .env.local created"
-fi
+ensure_production_env() {
+    if [ ! -f .env.production ]; then
+        echo "[WARN] .env.production not found. Creating from .env.production.example..."
+        if [ -f .env.production.example ]; then
+            cp .env.production.example .env.production
+            echo "[INFO] Please edit .env.production with production or AWS values"
+        else
+            echo "[ERROR] .env.production.example not found. Create .env.production manually."
+            exit 1
+        fi
+    fi
+
+    if [ ! -f frontend/.env.production ]; then
+        echo "[WARN] frontend/.env.production not found. Creating from template..."
+        if [ -f frontend/.env.production.example ]; then
+            cp frontend/.env.production.example frontend/.env.production
+            echo "[INFO] Please edit frontend/.env.production with production frontend values"
+        else
+            echo "[ERROR] frontend/.env.production.example not found. Create frontend/.env.production manually."
+            exit 1
+        fi
+    fi
+
+    export ENV_FILE=.env.production
+    export FRONTEND_ENV_FILE=./frontend/.env.production
+    export FRONTEND_BUILD_ENV_FILE=.env.production
+}
+
+set_production_compose_env_readonly() {
+    if [ -f .env.production ]; then
+        export ENV_FILE=.env.production
+    elif [ -f .env.production.example ]; then
+        export ENV_FILE=.env.production.example
+    else
+        echo "[ERROR] .env.production or .env.production.example is required for Docker Compose validation."
+        exit 1
+    fi
+
+    if [ -f frontend/.env.production ]; then
+        export FRONTEND_ENV_FILE=./frontend/.env.production
+    elif [ -f frontend/.env.production.example ]; then
+        export FRONTEND_ENV_FILE=./frontend/.env.production.example
+    else
+        echo "[ERROR] frontend/.env.production or frontend/.env.production.example is required for Docker Compose validation."
+        exit 1
+    fi
+
+    export FRONTEND_BUILD_ENV_FILE=unused-for-down
+}
 
 # Function to show available commands
 show_help() {
@@ -77,6 +140,7 @@ show_help() {
 case "${1:-up}" in
     "up")
         echo "[INFO] Starting services in production mode..."
+        ensure_base_env
         docker compose up -d
         echo "[INFO] Services started"
         echo "[INFO] Frontend: http://localhost:3000"
@@ -85,66 +149,83 @@ case "${1:-up}" in
         ;;
     "dev")
         echo "[INFO] Starting services in development mode..."
+        ensure_base_env
         docker compose -f docker-compose.yml -f docker-compose.dev.yml up
         ;;
     "build")
         echo "[INFO] Building Docker images (production)..."
+        ensure_base_env
         docker compose build
         echo "[INFO] Build completed"
         ;;
     "build-dev")
         echo "[INFO] Building Docker images (development)..."
+        ensure_base_env
         docker compose -f docker-compose.yml -f docker-compose.dev.yml build
         echo "[INFO] Development build completed"
         ;;
     "down")
         echo "[INFO] Stopping services (production)..."
+        set_base_compose_env_readonly
         docker compose down
         echo "[INFO] Services stopped"
         ;;
     "down-dev")
         echo "[INFO] Stopping services (development)..."
+        set_base_compose_env_readonly
         docker compose -f docker-compose.yml -f docker-compose.dev.yml down
         echo "[INFO] Services stopped"
         ;;
     "logs")
+        set_base_compose_env_readonly
         docker compose logs -f
         ;;
     "logs-dev")
+        set_base_compose_env_readonly
         docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f
         ;;
     "logs-frontend")
+        set_base_compose_env_readonly
         docker compose logs -f frontend
         ;;
     "logs-frontend-dev")
+        set_base_compose_env_readonly
         docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f frontend
         ;;
     "logs-backend")
+        set_base_compose_env_readonly
         docker compose logs -f app
         ;;
     "logs-backend-dev")
+        set_base_compose_env_readonly
         docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f app
         ;;
     "logs-db")
+        set_base_compose_env_readonly
         docker compose logs -f db
         ;;
     "logs-db-dev")
+        set_base_compose_env_readonly
         docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f db
         ;;
     "shell-frontend")
         echo "[INFO] Accessing frontend container (production)..."
+        set_base_compose_env_readonly
         docker compose exec frontend sh
         ;;
     "shell-frontend-dev")
         echo "[INFO] Accessing frontend container (development)..."
+        set_base_compose_env_readonly
         docker compose -f docker-compose.yml -f docker-compose.dev.yml exec frontend sh
         ;;
     "shell-backend")
         echo "[INFO] Accessing backend container (production)..."
+        set_base_compose_env_readonly
         docker compose exec app bash
         ;;
     "shell-backend-dev")
         echo "[INFO] Accessing backend container (development)..."
+        set_base_compose_env_readonly
         docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app bash
         ;;
     "health")
@@ -154,69 +235,85 @@ case "${1:-up}" in
         echo "Backend health:"
         curl -s http://localhost:8000/api/health || echo "[WARN] Backend not responding"
         echo "Database health:"
+        set_base_compose_env_readonly
         docker compose exec db pg_isready -U ${POSTGRES_USER:-koiki_user} -d ${POSTGRES_DB:-koiki_todo_db} || echo "[WARN] Database not responding"
         ;;
     "clean")
         echo "[INFO] Cleaning up Docker resources..."
+        set_base_compose_env_readonly
         docker compose down -v
         docker system prune -f
         echo "[INFO] Cleanup completed"
         ;;
     "unified-dev")
         echo "[INFO] Starting unified stack (dev profile)..."
+        ensure_base_env
         ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile dev up
         ;;
     "unified-dev-build")
         echo "[INFO] Building unified stack images (dev profile)..."
+        ensure_base_env
         ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile dev build
         ;;
     "unified-dev-down")
         echo "[INFO] Stopping unified stack (dev profile)..."
+        set_base_compose_env_readonly
         ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile dev down
         ;;
     "unified-optimized")
         echo "[INFO] Starting unified stack (optimized profile)..."
+        ensure_base_env
         ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile optimized up -d
         ;;
     "unified-optimized-build")
         echo "[INFO] Building unified stack images (optimized profile)..."
+        ensure_base_env
         ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile optimized build --no-cache
         ;;
     "unified-optimized-down")
         echo "[INFO] Stopping unified stack (optimized profile)..."
+        set_base_compose_env_readonly
         ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile optimized down
         ;;
     "unified-prod")
         echo "[INFO] Starting unified stack (prod profile)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod up -d
+        ensure_production_env
+        docker compose -f docker-compose.unified.yml --profile prod up -d
         ;;
     "unified-prod-build")
         echo "[INFO] Building unified stack images (prod profile)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod build --no-cache
+        ensure_production_env
+        docker compose -f docker-compose.unified.yml --profile prod build --no-cache
         ;;
     "unified-prod-down")
         echo "[INFO] Stopping unified stack (prod profile)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod down
+        set_production_compose_env_readonly
+        docker compose -f docker-compose.unified.yml --profile prod down
         ;;
     "unified-prod-external")
         echo "[INFO] Starting unified stack (prod-external profile, external DB/IdP)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod-external up -d
+        ensure_production_env
+        docker compose -f docker-compose.unified.yml --profile prod-external up -d
         ;;
     "unified-prod-external-build")
         echo "[INFO] Building unified stack images (prod-external profile)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod-external build --no-cache
+        ensure_production_env
+        docker compose -f docker-compose.unified.yml --profile prod-external build --no-cache
         ;;
     "unified-prod-external-down")
         echo "[INFO] Stopping unified stack (prod-external profile)..."
-        ENV_FILE=${ENV_FILE:-.env.production} docker compose -f docker-compose.unified.yml --profile prod-external down
+        set_production_compose_env_readonly
+        docker compose -f docker-compose.unified.yml --profile prod-external down
         ;;
     "unified-down")
         echo "[INFO] Stopping unified stack..."
         # Stop all unified profiles so containers created with any profile are removed
+        set_production_compose_env_readonly
         docker compose -f docker-compose.unified.yml --profile dev --profile optimized --profile prod --profile prod-external down
         ;;
     "unified-logs")
         echo "[INFO] Showing logs for unified stack..."
+        set_production_compose_env_readonly
         docker compose -f docker-compose.unified.yml logs -f
         ;;
     "help"|"-h"|"--help")
