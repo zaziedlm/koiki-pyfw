@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # Unified Dockerfile for backend (dev/optimized/production)
 
-ARG PYTHON_VERSION=3.11-slim
+ARG PYTHON_VERSION=3.13.13-slim-bookworm
 
 # ---------------------
 # Base: common tools, certs, uv

@@ -6,13 +6,12 @@
 `components/koiki_ref_app` 参照アプリを root workspace から同時に開発します。
 
 標準の依存管理と実行コマンドは `uv` です。
-推奨 Python バージョンは **3.11.7** です。
+ローカル PC 開発環境の推奨 Python バージョンは **3.13.13** です。
 
-### 0. Python 3.11.7 のインストール
+### 0. Python 3.13.13 のインストール
 
 ```powershell
-pyenv install 3.11.7
-pyenv local 3.11.7
+uv python install 3.13.13
 ```
 
 ### 1. uv の確認
@@ -28,7 +27,7 @@ uv --version
 root で実行します。
 
 ```powershell
-uv sync
+uv sync --python 3.13.13
 ```
 
 用途別の依存グループを明示する場合:

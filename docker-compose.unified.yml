@@ -1,5 +1,6 @@
 # docker-compose.unified.yml
 # Profiles: dev / optimized / prod / prod-external
+name: koiki_v07_unified
 
 x-app-base: &app-base
   env_file:
@@ -24,11 +25,6 @@ x-app-base: &app-base
 x-frontend-base: &frontend-base
   env_file:
     - ./frontend/.env.docker
-  environment:
-    - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://app:8000/api/v1}
-    - NEXT_PUBLIC_API_PREFIX=${NEXT_PUBLIC_API_PREFIX:-/api/v1}
-    - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://app:8000}
-    - NODE_ENV=production
   ports:
     - "3000:3000"
   restart: unless-stopped
@@ -46,7 +42,7 @@ services:
   app-dev:
     <<: *app-base
     profiles: [ "dev" ]
-    container_name: koiki_app_dev
+    container_name: koiki_v07_app_dev
     build:
       context: .
       dockerfile: Dockerfile.unified
@@ -65,7 +61,7 @@ services:
   app-optimized:
     <<: *app-base
     profiles: [ "optimized" ]
-    container_name: koiki_app_opt
+    container_name: koiki_v07_app_opt
     build:
       context: .
       dockerfile: Dockerfile.unified
@@ -79,7 +75,7 @@ services:
   app-prod:
     <<: *app-base
     profiles: [ "prod" ]
-    container_name: koiki_app_prod_unified
+    container_name: koiki_v07_app_prod_unified
     env_file:
       - ${ENV_FILE:-.env.production}
     build:
@@ -97,7 +93,7 @@ services:
   app-prod-external:
     <<: *app-base
     profiles: [ "prod-external" ]
-    container_name: koiki_app_prod_external_unified
+    container_name: koiki_v07_app_prod_external_unified
     env_file:
       - ${ENV_FILE:-.env.production}
     build:
@@ -115,7 +111,11 @@ services:
   frontend-dev:
     <<: *frontend-base
     profiles: [ "dev" ]
-    container_name: koiki_frontend_dev
+    container_name: koiki_v07_frontend_dev
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_ENABLE_DEV_TOOLS=true
+      - NEXT_PUBLIC_DEBUG=true
     build:
       context: ./frontend
       dockerfile: Dockerfile.unified
@@ -132,7 +132,7 @@ services:
   frontend-optimized:
     <<: *frontend-base
     profiles: [ "optimized" ]
-    container_name: koiki_frontend_opt
+    container_name: koiki_v07_frontend_opt
     build:
       context: ./frontend
       dockerfile: Dockerfile.unified
@@ -144,13 +144,15 @@ services:
   frontend-prod:
     <<: *frontend-base
     profiles: [ "prod" ]
-    container_name: koiki_frontend_prod_unified
+    container_name: koiki_v07_frontend_prod_unified
     env_file:
-      - ${ENV_FILE:-.env.production}
+      - ${FRONTEND_ENV_FILE:-./frontend/.env.production}
     build:
       context: ./frontend
       dockerfile: Dockerfile.unified
       target: runner
+      args:
+        FRONTEND_ENV_FILE: ${FRONTEND_BUILD_ENV_FILE:-.env.docker}
     depends_on:
       app-prod:
         condition: service_started
@@ -158,13 +160,15 @@ services:
   frontend-prod-external:
     <<: *frontend-base
     profiles: [ "prod-external" ]
-    container_name: koiki_frontend_prod_external_unified
+    container_name: koiki_v07_frontend_prod_external_unified
     env_file:
-      - ${ENV_FILE:-.env.production}
+      - ${FRONTEND_ENV_FILE:-./frontend/.env.production}
     build:
       context: ./frontend
       dockerfile: Dockerfile.unified
       target: runner
+      args:
+        FRONTEND_ENV_FILE: ${FRONTEND_BUILD_ENV_FILE:-.env.docker}
     depends_on:
       app-prod-external:
         condition: service_started
@@ -175,17 +179,13 @@ services:
   db:
     profiles: [ "dev", "optimized", "prod" ]
     image: postgres:15
-    container_name: osskk_postgres_unified
+    container_name: koiki_v07_postgres_unified
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
       - ${ENV_FILE:-.env}
     ports:
       - "5432:5432"
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-koiki_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-koiki_password}
-      POSTGRES_DB: ${POSTGRES_DB:-koiki_todo_db}
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 10s
@@ -202,7 +202,7 @@ services:
   keycloak:
     profiles: [ "dev", "optimized", "prod" ]
     image: quay.io/keycloak/keycloak:26.3.5
-    container_name: osskk_keycloak_unified
+    container_name: koiki_v07_keycloak_unified
     env_file:
       - ${ENV_FILE:-.env}
     volumes:
@@ -213,8 +213,6 @@ services:
       - "8090:8080"
       - "9000:9000"
     environment:
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       # KC_DB: postgres
       # KC_DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-koiki_todo_db}
       # KC_DB_USERNAME: ${POSTGRES_USER:-koiki_user}
@@ -240,4 +238,6 @@ services:
 
 volumes:
   postgres_data:
+    name: koiki_v07_unified_postgres_data
   keycloak_data:
+    name: koiki_v07_unified_keycloak_data

@@ -9,23 +9,86 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "[INFO] Starting KOIKI Framework with Docker Compose..."
 
-# Ensure .env exists
-if (-not (Test-Path ".env")) {
-    Write-Host "[WARN] .env not found. Creating from .env.example..."
-    if (Test-Path ".env.example") {
-        Copy-Item ".env.example" ".env"
-        Write-Host "[INFO] Please edit .env with your configuration"
+function Ensure-BaseEnv {
+    # Ensure .env exists for commands that run or build services.
+    if (-not (Test-Path ".env")) {
+        Write-Host "[WARN] .env not found. Creating from .env.example..."
+        if (Test-Path ".env.example") {
+            Copy-Item ".env.example" ".env"
+            Write-Host "[INFO] Please edit .env with your configuration"
+        } else {
+            Write-Host "[ERROR] .env.example not found. Create .env manually."
+            exit 1
+        }
+    }
+
+    # Ensure frontend .env.local exists for local development.
+    if (-not (Test-Path "frontend\.env.local")) {
+        Write-Host "[INFO] Creating frontend .env.local from template..."
+        Copy-Item "frontend\.env.local.example" "frontend\.env.local"
+        Write-Host "[INFO] Frontend .env.local created"
+    }
+}
+
+function Set-BaseComposeEnvReadOnly {
+    if (Test-Path ".env") {
+        $env:ENV_FILE = ".env"
+    } elseif (Test-Path ".env.example") {
+        $env:ENV_FILE = ".env.example"
     } else {
-        Write-Host "[ERROR] .env.example not found. Create .env manually."
+        Write-Host "[ERROR] .env or .env.example is required for Docker Compose validation."
         exit 1
     }
 }
 
-# Ensure frontend .env.local exists
-if (-not (Test-Path "frontend\.env.local")) {
-    Write-Host "[INFO] Creating frontend .env.local from template..."
-    Copy-Item "frontend\.env.local.example" "frontend\.env.local"
-    Write-Host "[INFO] Frontend .env.local created"
+function Ensure-ProductionEnv {
+    if (-not (Test-Path ".env.production")) {
+        Write-Host "[WARN] .env.production not found. Creating from .env.production.example..."
+        if (Test-Path ".env.production.example") {
+            Copy-Item ".env.production.example" ".env.production"
+            Write-Host "[INFO] Please edit .env.production with production or AWS values"
+        } else {
+            Write-Host "[ERROR] .env.production.example not found. Create .env.production manually."
+            exit 1
+        }
+    }
+
+    if (-not (Test-Path "frontend\.env.production")) {
+        Write-Host "[WARN] frontend .env.production not found. Creating from template..."
+        if (Test-Path "frontend\.env.production.example") {
+            Copy-Item "frontend\.env.production.example" "frontend\.env.production"
+            Write-Host "[INFO] Please edit frontend\.env.production with production frontend values"
+        } else {
+            Write-Host "[ERROR] frontend\.env.production.example not found. Create frontend\.env.production manually."
+            exit 1
+        }
+    }
+
+    $env:ENV_FILE = ".env.production"
+    $env:FRONTEND_ENV_FILE = "./frontend/.env.production"
+    $env:FRONTEND_BUILD_ENV_FILE = ".env.production"
+}
+
+function Set-ProductionComposeEnvReadOnly {
+    if (Test-Path ".env.production") {
+        $env:ENV_FILE = ".env.production"
+    } elseif (Test-Path ".env.production.example") {
+        $env:ENV_FILE = ".env.production.example"
+    } else {
+        Write-Host "[ERROR] .env.production or .env.production.example is required for Docker Compose validation."
+        exit 1
+    }
+
+    if (Test-Path "frontend\.env.production") {
+        $env:FRONTEND_ENV_FILE = "./frontend/.env.production"
+    } elseif (Test-Path "frontend\.env.production.example") {
+        $env:FRONTEND_ENV_FILE = "./frontend/.env.production.example"
+    } else {
+        Write-Host "[ERROR] frontend\.env.production or frontend\.env.production.example is required for Docker Compose validation."
+        exit 1
+    }
+
+    $env:FRONTEND_BUILD_ENV_FILE = "unused-for-down"
 }
 
 function Show-Help {
@@ -78,6 +141,7 @@ function Show-Help {
 switch ($Command.ToLower()) {
     "up" {
         Write-Host "[INFO] Starting services in production mode..."
+        Ensure-BaseEnv
         docker compose up -d
         if ($LASTEXITCODE -eq 0) {
             Write-Host "[INFO] Services started"
@@ -91,10 +155,12 @@ switch ($Command.ToLower()) {
     }
     "dev" {
         Write-Host "[INFO] Starting services in development mode..."
+        Ensure-BaseEnv
         docker compose -f docker-compose.yml -f docker-compose.dev.yml up
     }
     "build" {
         Write-Host "[INFO] Building Docker images (production)..."
+        Ensure-BaseEnv
         docker compose build
         if ($LASTEXITCODE -eq 0) {
             Write-Host "[INFO] Build completed"
@@ -105,6 +171,7 @@ switch ($Command.ToLower()) {
     }
     "build-dev" {
         Write-Host "[INFO] Building Docker images (development)..."
+        Ensure-BaseEnv
         docker compose -f docker-compose.yml -f docker-compose.dev.yml build
         if ($LASTEXITCODE -eq 0) {
             Write-Host "[INFO] Development build completed"
@@ -115,6 +182,7 @@ switch ($Command.ToLower()) {
     }
     "down" {
         Write-Host "[INFO] Stopping services (production)..."
+        Set-BaseComposeEnvReadOnly
         docker compose down
         if ($LASTEXITCODE -eq 0) {
             Write-Host "[INFO] Services stopped"
@@ -125,6 +193,7 @@ switch ($Command.ToLower()) {
     }
     "down-dev" {
         Write-Host "[INFO] Stopping services (development)..."
+        Set-BaseComposeEnvReadOnly
         docker compose -f docker-compose.yml -f docker-compose.dev.yml down
         if ($LASTEXITCODE -eq 0) {
             Write-Host "[INFO] Services stopped"
@@ -133,28 +202,32 @@ switch ($Command.ToLower()) {
             exit 1
         }
     }
-    "logs" { docker compose logs -f }
-    "logs-dev" { docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f }
-    "logs-frontend" { docker compose logs -f frontend }
-    "logs-frontend-dev" { docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f frontend }
-    "logs-backend" { docker compose logs -f app }
-    "logs-backend-dev" { docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f app }
-    "logs-db" { docker compose logs -f db }
-    "logs-db-dev" { docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f db }
+    "logs" { Set-BaseComposeEnvReadOnly; docker compose logs -f }
+    "logs-dev" { Set-BaseComposeEnvReadOnly; docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f }
+    "logs-frontend" { Set-BaseComposeEnvReadOnly; docker compose logs -f frontend }
+    "logs-frontend-dev" { Set-BaseComposeEnvReadOnly; docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f frontend }
+    "logs-backend" { Set-BaseComposeEnvReadOnly; docker compose logs -f app }
+    "logs-backend-dev" { Set-BaseComposeEnvReadOnly; docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f app }
+    "logs-db" { Set-BaseComposeEnvReadOnly; docker compose logs -f db }
+    "logs-db-dev" { Set-BaseComposeEnvReadOnly; docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f db }
     "shell-frontend" {
         Write-Host "[INFO] Accessing frontend container (production)..."
+        Set-BaseComposeEnvReadOnly
         docker compose exec frontend sh
     }
     "shell-frontend-dev" {
         Write-Host "[INFO] Accessing frontend container (development)..."
+        Set-BaseComposeEnvReadOnly
         docker compose -f docker-compose.yml -f docker-compose.dev.yml exec frontend sh
     }
     "shell-backend" {
         Write-Host "[INFO] Accessing backend container (production)..."
+        Set-BaseComposeEnvReadOnly
         docker compose exec app bash
     }
     "shell-backend-dev" {
         Write-Host "[INFO] Accessing backend container (development)..."
+        Set-BaseComposeEnvReadOnly
         docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app bash
     }
     "health" {
@@ -178,6 +251,7 @@ switch ($Command.ToLower()) {
 
         Write-Host "Database health:"
         try {
+            Set-BaseComposeEnvReadOnly
             $postgresUser = "koiki_user"
             $postgresDb = "koiki_todo_db"
 
@@ -201,6 +275,7 @@ switch ($Command.ToLower()) {
     }
     "clean" {
         Write-Host "[INFO] Cleaning up Docker resources..."
+        Set-BaseComposeEnvReadOnly
         docker compose down -v
         docker system prune -f
         if ($LASTEXITCODE -eq 0) {
@@ -212,71 +287,77 @@ switch ($Command.ToLower()) {
     }
     "unified-dev" {
         Write-Host "[INFO] Starting unified stack (dev profile)..."
+        Ensure-BaseEnv
         $env:ENV_FILE = ".env"
         docker compose -f docker-compose.unified.yml --profile dev up
     }
     "unified-dev-build" {
         Write-Host "[INFO] Building unified stack images (dev profile)..."
+        Ensure-BaseEnv
         $env:ENV_FILE = ".env"
         docker compose -f docker-compose.unified.yml --profile dev build
     }
     "unified-dev-down" {
         Write-Host "[INFO] Stopping unified stack (dev profile)..."
-        $env:ENV_FILE = ".env"
+        Set-BaseComposeEnvReadOnly
         docker compose -f docker-compose.unified.yml --profile dev down
     }
     "unified-optimized" {
         Write-Host "[INFO] Starting unified stack (optimized profile)..."
+        Ensure-BaseEnv
         $env:ENV_FILE = ".env"
         docker compose -f docker-compose.unified.yml --profile optimized up -d
     }
     "unified-optimized-build" {
         Write-Host "[INFO] Building unified stack images (optimized profile)..."
+        Ensure-BaseEnv
         $env:ENV_FILE = ".env"
         docker compose -f docker-compose.unified.yml --profile optimized build --no-cache
     }
     "unified-optimized-down" {
         Write-Host "[INFO] Stopping unified stack (optimized profile)..."
-        $env:ENV_FILE = ".env"
+        Set-BaseComposeEnvReadOnly
         docker compose -f docker-compose.unified.yml --profile optimized down
     }
     "unified-prod" {
         Write-Host "[INFO] Starting unified stack (prod profile)..."
-        $env:ENV_FILE = ".env.production"
+        Ensure-ProductionEnv
         docker compose -f docker-compose.unified.yml --profile prod up -d
     }
     "unified-prod-build" {
         Write-Host "[INFO] Building unified stack images (prod profile)..."
-        $env:ENV_FILE = ".env.production"
+        Ensure-ProductionEnv
         docker compose -f docker-compose.unified.yml --profile prod build --no-cache
     }
     "unified-prod-down" {
         Write-Host "[INFO] Stopping unified stack (prod profile)..."
-        $env:ENV_FILE = ".env.production"
+        Set-ProductionComposeEnvReadOnly
         docker compose -f docker-compose.unified.yml --profile prod down
     }
     "unified-prod-external" {
         Write-Host "[INFO] Starting unified stack (prod-external profile, external DB/IdP)..."
-        $env:ENV_FILE = ".env.production"
+        Ensure-ProductionEnv
         docker compose -f docker-compose.unified.yml --profile prod-external up -d
     }
     "unified-prod-external-build" {
         Write-Host "[INFO] Building unified stack images (prod-external profile)..."
-        $env:ENV_FILE = ".env.production"
+        Ensure-ProductionEnv
         docker compose -f docker-compose.unified.yml --profile prod-external build --no-cache
     }
     "unified-prod-external-down" {
         Write-Host "[INFO] Stopping unified stack (prod-external profile)..."
-        $env:ENV_FILE = ".env.production"
+        Set-ProductionComposeEnvReadOnly
         docker compose -f docker-compose.unified.yml --profile prod-external down
     }
     "unified-down" {
         Write-Host "[INFO] Stopping unified stack..."
         # Stop all unified profiles so containers created with any profile are removed
+        Set-ProductionComposeEnvReadOnly
         docker compose -f docker-compose.unified.yml --profile dev --profile optimized --profile prod --profile prod-external down
     }
     "unified-logs" {
         Write-Host "[INFO] Showing logs for unified stack..."
+        Set-ProductionComposeEnvReadOnly
         docker compose -f docker-compose.unified.yml logs -f
     }
     { $_ -in @("help", "-h", "--help") } {
