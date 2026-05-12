@@ -26,7 +26,7 @@ classifiers = [
 dependencies = [
     # Core Web Framework
     "fastapi>=0.136.1,<0.137.0",            # Updated to allow Starlette security fixes
-    "uvicorn>=0.34.3,<0.35.0",              # Updated ASGI server (major performance improvements)
+    "uvicorn>=0.46.0,<0.47.0",              # Updated ASGI server (major performance improvements)
     
     # Database Layer (Python 3.13 compatible)
     "sqlalchemy[asyncio]>=2.0.23,<2.1.0",   # Minor version locked
