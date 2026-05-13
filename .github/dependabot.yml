@@ -82,8 +82,9 @@ updates:
           - "version-update:semver-major"
 
       # Security / auth / SAML
-      - dependency-name: "PyJWT"
+      - dependency-name: "pyjwt*"
         update-types:
+          - "version-update:semver-patch"
           - "version-update:semver-minor"
           - "version-update:semver-major"
       - dependency-name: "bcrypt"
