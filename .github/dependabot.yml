@@ -1,40 +1,160 @@
 version: 2
+
 updates:
   - package-ecosystem: "uv"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
       time: "05:00"
       timezone: "Asia/Tokyo"
-    open-pull-requests-limit: 8
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "backend"
+      - "dependabot"
     groups:
-      backend-patch:
+      backend-safe-patch:
         patterns:
-          - "*"
+          - "tzdata"
+          - "email-validator"
+          - "defusedxml"
+          - "limits"
+          - "prometheus-fastapi-instrumentator"
+          - "structlog"
+          - "pytest"
+          - "pytest-asyncio"
+          - "pytest-cov"
+          - "pytest-mock"
+          - "PyYAML"
+          - "pip-audit"
+          - "bandit"
         update-types:
           - "patch"
-          - "minor"
+    ignore:
+      # Version updates are intentionally limited to patch releases.
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      # Core framework/runtime
+      - dependency-name: "fastapi"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "uvicorn"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      # Data / ORM / migration
+      - dependency-name: "sqlalchemy"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "asyncpg"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "alembic"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "psycopg2-binary"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "aiosqlite"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      # Validation / settings
+      - dependency-name: "pydantic"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "pydantic-settings"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      # Security / auth / SAML
+      - dependency-name: "PyJWT"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "bcrypt"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "python3-saml"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "xmlsec"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      # HTTP / integration / cache
+      - dependency-name: "httpx"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "python-multipart"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "redis"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "slowapi"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      # Workspace packages
+      - dependency-name: "libkoiki"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+      - dependency-name: "koiki-ref-app"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
 
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
       time: "06:00"
       timezone: "Asia/Tokyo"
-    open-pull-requests-limit: 8
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "frontend"
+      - "dependabot"
     groups:
       frontend-patch:
         patterns:
           - "*"
         update-types:
           - "patch"
-          - "minor"
+    ignore:
+      # Version updates are intentionally limited to patch releases.
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
 
   - package-ecosystem: "docker"
     directory: "/"
@@ -46,6 +166,7 @@ updates:
     labels:
       - "dependencies"
       - "docker"
+      - "dependabot"
 
   - package-ecosystem: "docker"
     directory: "/frontend"
@@ -58,6 +179,7 @@ updates:
       - "dependencies"
       - "docker"
       - "frontend"
+      - "dependabot"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -69,3 +191,4 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+      - "dependabot"
