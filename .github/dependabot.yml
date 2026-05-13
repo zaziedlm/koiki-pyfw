@@ -13,6 +13,23 @@ updates:
       - "dependencies"
       - "backend"
       - "dependabot"
+    allow:
+      # Only these uv dependencies receive version-update PRs.
+      # Core runtime, auth/security, DB, and workspace dependencies are updated manually.
+      - dependency-name: "tzdata"
+      - dependency-name: "email-validator"
+      - dependency-name: "defusedxml"
+      - dependency-name: "limits"
+      - dependency-name: "prometheus-fastapi-instrumentator"
+      - dependency-name: "structlog"
+      - dependency-name: "python-multipart"
+      - dependency-name: "pytest"
+      - dependency-name: "pytest-asyncio"
+      - dependency-name: "pytest-cov"
+      - dependency-name: "pytest-mock"
+      - dependency-name: "pyyaml"
+      - dependency-name: "pip-audit"
+      - dependency-name: "bandit"
     groups:
       backend-safe-patch:
         patterns:
@@ -22,11 +39,12 @@ updates:
           - "limits"
           - "prometheus-fastapi-instrumentator"
           - "structlog"
+          - "python-multipart"
           - "pytest"
           - "pytest-asyncio"
           - "pytest-cov"
           - "pytest-mock"
-          - "PyYAML"
+          - "pyyaml"
           - "pip-audit"
           - "bandit"
         update-types:
@@ -38,95 +56,8 @@ updates:
           - "version-update:semver-minor"
           - "version-update:semver-major"
 
-      # Core framework/runtime
-      - dependency-name: "fastapi"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "uvicorn"
-        update-types:
-          - "version-update:semver-patch"
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-
-      # Data / ORM / migration
-      - dependency-name: "sqlalchemy"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "asyncpg"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "alembic"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "psycopg2-binary"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "aiosqlite"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-
-      # Validation / settings
-      - dependency-name: "pydantic"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "pydantic-settings"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-
-      # Security / auth / SAML
+      # Keep pyjwt extras out of Dependabot updates explicitly; uv logs this as pyjwt[crypto].
       - dependency-name: "pyjwt*"
-        update-types:
-          - "version-update:semver-patch"
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "bcrypt"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "python3-saml"
-        update-types:
-          - "version-update:semver-patch"
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "xmlsec"
-        update-types:
-          - "version-update:semver-patch"
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-
-      # HTTP / integration / cache
-      - dependency-name: "httpx"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "python-multipart"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "redis"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "slowapi"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-
-      # Workspace packages
-      - dependency-name: "libkoiki"
-        update-types:
-          - "version-update:semver-patch"
-          - "version-update:semver-minor"
-          - "version-update:semver-major"
-      - dependency-name: "koiki-ref-app"
         update-types:
           - "version-update:semver-patch"
           - "version-update:semver-minor"
