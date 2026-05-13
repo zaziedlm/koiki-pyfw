@@ -1,40 +1,92 @@
 version: 2
+
 updates:
   - package-ecosystem: "uv"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
       time: "05:00"
       timezone: "Asia/Tokyo"
-    open-pull-requests-limit: 8
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "backend"
+      - "dependabot"
+    allow:
+      # Only these uv dependencies receive version-update PRs.
+      # Core runtime, auth/security, DB, and workspace dependencies are updated manually.
+      - dependency-name: "tzdata"
+      - dependency-name: "email-validator"
+      - dependency-name: "defusedxml"
+      - dependency-name: "limits"
+      - dependency-name: "prometheus-fastapi-instrumentator"
+      - dependency-name: "structlog"
+      - dependency-name: "python-multipart"
+      - dependency-name: "pytest"
+      - dependency-name: "pytest-asyncio"
+      - dependency-name: "pytest-cov"
+      - dependency-name: "pytest-mock"
+      - dependency-name: "pyyaml"
+      - dependency-name: "pip-audit"
+      - dependency-name: "bandit"
     groups:
-      backend-patch:
+      backend-safe-patch:
         patterns:
-          - "*"
+          - "tzdata"
+          - "email-validator"
+          - "defusedxml"
+          - "limits"
+          - "prometheus-fastapi-instrumentator"
+          - "structlog"
+          - "python-multipart"
+          - "pytest"
+          - "pytest-asyncio"
+          - "pytest-cov"
+          - "pytest-mock"
+          - "pyyaml"
+          - "pip-audit"
+          - "bandit"
         update-types:
           - "patch"
-          - "minor"
+    ignore:
+      # Version updates are intentionally limited to patch releases.
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
+
+      # Keep pyjwt extras out of Dependabot updates explicitly; uv logs this as pyjwt[crypto].
+      - dependency-name: "pyjwt*"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
 
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
       time: "06:00"
       timezone: "Asia/Tokyo"
-    open-pull-requests-limit: 8
+    open-pull-requests-limit: 3
     labels:
       - "dependencies"
       - "frontend"
+      - "dependabot"
     groups:
       frontend-patch:
         patterns:
           - "*"
         update-types:
           - "patch"
-          - "minor"
+    ignore:
+      # Version updates are intentionally limited to patch releases.
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
 
   - package-ecosystem: "docker"
     directory: "/"
@@ -46,6 +98,7 @@ updates:
     labels:
       - "dependencies"
       - "docker"
+      - "dependabot"
 
   - package-ecosystem: "docker"
     directory: "/frontend"
@@ -58,6 +111,7 @@ updates:
       - "dependencies"
       - "docker"
       - "frontend"
+      - "dependabot"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -69,3 +123,4 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+      - "dependabot"
