@@ -50,7 +50,7 @@ dependencies = [
     
     # HTTP & Communication
     "httpx>=0.28.1,<0.29.0",                # Updated HTTP client
-    "python-multipart>=0.0.20,<0.1.0",      # Minor version locked
+    "python-multipart>=0.0.28,<0.1.0",      # Minor version locked
     
     # Logging & Monitoring
     "structlog>=25.4.0,<25.5.0",            # Updated structured logging
