@@ -3,7 +3,7 @@
 # ---------------------
 # Base stage with uv and dependencies
 # ---------------------
-FROM python:3.13.13-slim-bookworm AS base
+FROM python:3.14.0-slim-bookworm AS base
 
 # Add custom certificate and ensure CA bundle is installed/updated
 COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
@@ -73,7 +73,7 @@ CMD ["uvicorn", "koiki_ref_app.asgi:app", "--host", "0.0.0.0", "--port", "8000",
 # ---------------------
 # Production stage
 # ---------------------
-FROM python:3.13.13-slim-bookworm AS production
+FROM python:3.14.0-slim-bookworm AS production
 
 # Add custom certificate
 COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
