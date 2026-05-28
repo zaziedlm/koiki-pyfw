@@ -316,3 +316,77 @@ uv run --locked pytest components/libkoiki/tests components/koiki_ref_app/tests 
 - `HTTP_422_UNPROCESSABLE_ENTITY` deprecation warning
 
 いずれも今回の Starlette / FastAPI 更新で新規に発生した失敗ではない。
+
+## 12. 残件脆弱性対応結果
+
+実施日: 2026-05-28
+
+`Starlette / FastAPI` 更新後に残っていた `pip-audit` 検出を、lockfile 更新で解消した。
+
+実施内容:
+
+- `idna 3.13 -> 3.16`
+- `mako 1.3.11 -> 1.3.12`
+- `pip 26.0.1 -> 26.1.1`
+- `python-multipart 0.0.26 -> 0.0.29`
+- `urllib3 2.6.3 -> 2.7.0`
+
+依存元分類:
+
+- `python-multipart`: root direct runtime dependency
+- `idna`: `anyio` / `httpx` / `email-validator` / `requests` 経由
+- `mako`: `alembic` 経由
+- `urllib3`: `requests` 経由。主に `pip-audit` / `cachecontrol` 側
+- `pip`: `pip-audit` / `pip-api` 側
+
+解決確認:
+
+```text
+uv lock --upgrade-package idna --upgrade-package mako --upgrade-package python-multipart --upgrade-package urllib3 --upgrade-package pip
+  Updated idna v3.13 -> v3.16
+  Updated mako v1.3.11 -> v1.3.12
+  Updated pip v26.0.1 -> v26.1.1
+  Updated python-multipart v0.0.26 -> v0.0.29
+  Updated urllib3 v2.6.3 -> v2.7.0
+
+uv lock --check
+  Resolved 85 packages
+
+uv run --locked python -c "import importlib.metadata as m; ..."
+  idna 3.16
+  mako 1.3.12
+  pip 26.1.1
+  python-multipart 0.0.29
+  urllib3 2.7.0
+```
+
+監査結果:
+
+```text
+uv run --locked pip-audit
+  No known vulnerabilities found
+
+Name          Skip Reason
+------------- ----------------------------------------------------------------------------
+koiki-ref-app Dependency not found on PyPI and could not be audited: koiki-ref-app (0.7.0)
+libkoiki      Dependency not found on PyPI and could not be audited: libkoiki (0.7.0)
+```
+
+検証結果:
+
+```text
+uv run --locked pytest components/koiki_ref_app/tests/unit/app/services/test_saml_service.py components/koiki_ref_app/tests/unit/app/test_saml_auth_logging.py
+  35 passed
+
+uv run --locked pytest components/libkoiki/tests/unit/libkoiki/api/test_auth_logging.py
+  7 passed
+
+uv run --locked pytest components/koiki_ref_app/tests/unit/app/services/test_sso_service.py components/koiki_ref_app/tests/unit/app/test_sso_auth_logging.py
+  16 passed
+
+uv run --locked pytest components/libkoiki/tests components/koiki_ref_app/tests -m "not db_integration"
+  204 passed, 1 skipped, 11 deselected
+```
+
+既知 warning は 11 章と同じ。
+今回の残件脆弱性対応で新規の test failure は確認されていない。
