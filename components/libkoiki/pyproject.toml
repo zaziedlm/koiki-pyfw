@@ -22,7 +22,8 @@ classifiers = [
 # Enterprise-grade dependency management with strict versioning
 dependencies = [
     # Core Web Framework - Latest stable with security patches
-    "fastapi>=0.136.1,<0.137.0",          # Updated to allow Starlette security fixes
+    "fastapi>=0.136.3,<0.137.0",          # Updated to allow Starlette security fixes
+    "starlette>=1.1.0,<1.2.0",            # Direct dependency: middleware imports Starlette APIs directly
     "uvicorn>=0.34.3,<0.35.0",            # Updated ASGI server (major performance improvements)
     
     # Database Layer - Critical for data integrity
