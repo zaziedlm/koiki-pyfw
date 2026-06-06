@@ -1,0 +1,73 @@
+{
+  "name": "KOIKI-FW Dev",
+  "dockerComposeFile": [
+    "../docker-compose.yml",
+    "../docker-compose.dev.yml",
+    "docker-compose.devcontainer.yml"
+  ],
+  "service": "app",
+  "workspaceFolder": "/app",
+  "remoteUser": "appuser",
+
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.pylance",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "charliermarsh.ruff",
+        "littlefoxteam.vscode-python-test-adapter",
+        "ms-azuretools.vscode-docker",
+        "donjayamanne.githistory",
+        "eamodio.gitlens"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/app/.venv/bin/python",
+        "python.analysis.extraPaths": [
+          "/app/app",
+          "/app/components/libkoiki/src",
+          "/app/components/koiki_ref_app/src"
+        ],
+        "python.terminal.activateEnvironment": false,
+        "python.linting.enabled": false,
+        "python.linting.pylintEnabled": false,
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": [
+          "components/libkoiki/tests",
+          "tests/unit/agent_guidance",
+          "components/koiki_ref_app/tests",
+          "tests/integration/services",
+          "-m",
+          "not db_integration"
+        ],
+        "editor.formatOnSave": true,
+        "[python]": {
+          "editor.formatOnSave": true,
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+
+  "forwardPorts": [8000, 3000, 5432, 8090],
+  "portsAttributes": {
+    "8000": { "label": "FastAPI Backend" },
+    "3000": { "label": "Next.js Frontend" },
+    "5432": { "label": "PostgreSQL" },
+    "8090": { "label": "Keycloak" }
+  },
+
+  "shutdownAction": "stopCompose",
+
+  "postCreateCommand": "[ -f /app/.env ] || cp /app/.env.example /app/.env && cd /app/components/koiki_ref_app && uv run alembic upgrade head",
+  "postStartCommand": "echo 'Dev container ready. Run: uvicorn koiki_ref_app.asgi:app --host 0.0.0.0 --port 8000 --reload'"
+}

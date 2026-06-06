@@ -56,7 +56,10 @@ FROM base AS dev
 RUN adduser --disabled-password --gecos "" appuser
 
 # Alembic versionsディレクトリの作成と所有者変更
-RUN mkdir -p /app/components/koiki_ref_app/alembic/versions && chown -R appuser:appuser /app
+# /opt/uv-cache も appuser に chown する (named volume がroot所有で初期化されるのを防ぐ)
+RUN mkdir -p /app/components/koiki_ref_app/alembic/versions \
+    && chown -R appuser:appuser /app \
+    && chown -R appuser:appuser /opt/uv-cache
 
 # 非rootユーザーに切り替え
 USER appuser

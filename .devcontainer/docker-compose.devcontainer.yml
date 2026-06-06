@@ -1,0 +1,18 @@
+services:
+  app:
+    # VS Code が接続している間コンテナを維持する (uvicorn は手動または Run/Debug で起動)
+    command: sleep infinity
+    # devcontainer では DB/Keycloak の起動を待たず app に即接続できるようにする
+    depends_on: {}
+    volumes:
+      # リポルート全体を /app にマウント (.git / .env / pyproject.toml 等を可視化)
+      - .:/app:cached
+      # Windows の .venv が Linux コンテナに見えてしまうのを anonymous volume で遮蔽
+      - /app/.venv
+      # uv キャッシュをコンテナ内に保持 (再ビルド高速化)
+      - uv_cache:/opt/uv-cache
+    environment:
+      - APP_ENV=development
+
+volumes:
+  uv_cache:
