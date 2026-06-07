@@ -1,18 +1,77 @@
+name: koiki_devcontainer
+
 services:
-  app:
-    # VS Code が接続している間コンテナを維持する (uvicorn は手動または Run/Debug で起動)
-    command: sleep infinity
-    # devcontainer では DB/Keycloak の起動を待たず app に即接続できるようにする
-    depends_on: {}
+  workspace:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.devcontainer
     volumes:
-      # リポルート全体を /app にマウント (.git / .env / pyproject.toml 等を可視化)
-      - .:/app:cached
-      # Windows の .venv が Linux コンテナに見えてしまうのを anonymous volume で遮蔽
-      - /app/.venv
-      # uv キャッシュをコンテナ内に保持 (再ビルド高速化)
+      # リポジトリ全体を /workspace にマウント
+      - ..:/workspace:cached
+      # Windows の .venv / node_modules が Linux コンテナに見えないよう anonymous volume で遮蔽
+      - /workspace/.venv
+      - /workspace/frontend/node_modules
+      # uv キャッシュをコンテナ内に保持（再ビルド高速化）
       - uv_cache:/opt/uv-cache
+    command: sleep infinity
     environment:
       - APP_ENV=development
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - koiki_dev
+
+  db:
+    image: postgres:15
+    # .env.example のデフォルト値に合わせた初期設定
+    environment:
+      POSTGRES_USER: koiki_user
+      POSTGRES_PASSWORD: koiki_password
+      POSTGRES_DB: koiki_todo_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U koiki_user -d koiki_todo_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=100"
+      - "-c"
+      - "shared_buffers=256MB"
+    networks:
+      - koiki_dev
+
+  # profiles: [keycloak] により、通常起動では含まれない
+  # 起動する場合: docker compose --profile keycloak up
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.5
+    profiles: [keycloak]
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    volumes:
+      - ../docker/keycloak/realm-koiki.json:/opt/keycloak/data/import/realm-koiki.json:ro
+      - ../docker/keycloak/realm-saml.json:/opt/keycloak/data/import/realm-saml.json:ro
+      - keycloak_data:/opt/keycloak/data
+    ports:
+      - "8090:8080"
+      - "9000:9000"
+    networks:
+      - koiki_dev
 
 volumes:
+  postgres_data:
+  keycloak_data:
   uv_cache:
+
+networks:
+  koiki_dev:

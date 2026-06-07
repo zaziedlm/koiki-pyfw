@@ -1,13 +1,9 @@
 {
   "name": "KOIKI-FW Dev",
-  "dockerComposeFile": [
-    "../docker-compose.yml",
-    "../docker-compose.dev.yml",
-    "docker-compose.devcontainer.yml"
-  ],
-  "service": "app",
-  "workspaceFolder": "/app",
-  "remoteUser": "appuser",
+  "dockerComposeFile": "docker-compose.devcontainer.yml",
+  "service": "workspace",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "vscode",
 
   "features": {
     "ghcr.io/devcontainers/features/git:1": {}
@@ -16,22 +12,27 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        // Python / Backend
         "ms-python.python",
         "ms-python.pylance",
         "ms-python.black-formatter",
         "ms-python.isort",
         "charliermarsh.ruff",
-        "littlefoxteam.vscode-python-test-adapter",
+        // Frontend
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        // Git / Docker
         "ms-azuretools.vscode-docker",
         "donjayamanne.githistory",
         "eamodio.gitlens"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/app/.venv/bin/python",
+        "python.defaultInterpreterPath": "/workspace/.venv/bin/python",
         "python.analysis.extraPaths": [
-          "/app/app",
-          "/app/components/libkoiki/src",
-          "/app/components/koiki_ref_app/src"
+          "/workspace/app",
+          "/workspace/components/libkoiki/src",
+          "/workspace/components/koiki_ref_app/src"
         ],
         "python.terminal.activateEnvironment": false,
         "python.linting.enabled": false,
@@ -68,6 +69,20 @@
 
   "shutdownAction": "stopCompose",
 
-  "postCreateCommand": "[ -f /app/.env ] || cp /app/.env.example /app/.env && cd /app/components/koiki_ref_app && uv run alembic upgrade head",
-  "postStartCommand": "echo 'Dev container ready. Run: uvicorn koiki_ref_app.asgi:app --host 0.0.0.0 --port 8000 --reload'"
+  // 1. .env がなければ .env.example からコピー
+  // 2. Python 依存関係インストール (uv workspace メンバーを editable インストール)
+  // 3. フロントエンド依存関係インストール
+  // 4. DB マイグレーション適用 (失敗しても非致命的: postStartCommand でリトライする)
+  //
+  // 注意: /workspace/.venv と /workspace/frontend/node_modules は docker-compose.devcontainer.yml の
+  // anonymous volume で遮蔽されており、Dockerfile.devcontainer で vscode:vscode 所有にした
+  // ディレクトリとして初期化される（その修正が適用されたイメージを使用すること）。
+  // DB 接続先 "db" は Docker ネットワーク内のホスト名。alembic は DATABASE_URL が
+  // カレントディレクトリの .env から読まれるため /workspace から実行する。
+  "postCreateCommand": "git config --global --add safe.directory /workspace && [ -f /workspace/.env ] || cp /workspace/.env.example /workspace/.env && cd /workspace && uv sync --locked --group dev --group test && npm --prefix /workspace/frontend install",
+
+  // コンテナ起動のたびに DB マイグレーションを適用する。
+  // postCreateCommand でのトランジェントエラー (Hyper-V ソケットタイムアウト等) から自動回復する。
+  // alembic は idempotent なので重複適用しても安全。
+  "postStartCommand": "git config --global --add safe.directory /workspace && DATABASE_URL=postgresql+asyncpg://koiki_user:koiki_password@db:5432/koiki_todo_db uv run --directory /workspace alembic -c components/koiki_ref_app/alembic.ini upgrade head"
 }
