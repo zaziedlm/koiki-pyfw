@@ -33,6 +33,32 @@ RUN if [ "${FRONTEND_ENV_FILE}" != ".env.production" ] && [ "${FRONTEND_ENV_FILE
 RUN npm run build
 
 # ---------------------
+# Development stage
+# ---------------------
+FROM node:22-slim AS dev
+
+COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends ca-certificates wget curl && \
+  update-ca-certificates && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
+  SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+  NEXT_TELEMETRY_DISABLED=1
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]
+
+# ---------------------
 # Runtime stage
 # ---------------------
 FROM node:22-slim AS runner
