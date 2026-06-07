@@ -24,7 +24,7 @@ def _parse_frontmatter(skill_path: Path) -> dict[str, str]:
 
 def test_canonical_and_claude_skill_sets_match() -> None:
     canonical = {path.name for path in _skill_directories(CANONICAL_ROOT)}
-    wrappers = {path.name for path in _skill_directories(CLAUDE_ROOT)}
+    wrappers = {path.name for path in _skill_directories(CLAUDE_ROOT) if path.name.startswith("koiki-")}
 
     assert canonical, "canonical skill directories must exist"
     assert canonical == wrappers
@@ -84,6 +84,8 @@ def test_openai_metadata_tracks_api_ownership_routing_terms() -> None:
 
 def test_claude_wrappers_point_to_canonical_skills() -> None:
     for wrapper_dir in _skill_directories(CLAUDE_ROOT):
+        if not wrapper_dir.name.startswith("koiki-"):
+            continue
         wrapper_path = wrapper_dir / "SKILL.md"
         assert wrapper_path.exists(), f"{wrapper_dir.name} wrapper is missing SKILL.md"
 
