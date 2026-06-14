@@ -72,17 +72,15 @@
   // 1. .env がなければ .env.example からコピー
   // 2. Python 依存関係インストール (uv workspace メンバーを editable インストール)
   // 3. フロントエンド依存関係インストール
-  // 4. DB マイグレーション適用 (失敗しても非致命的: postStartCommand でリトライする)
   //
   // 注意: /workspace/.venv と /workspace/frontend/node_modules は docker-compose.devcontainer.yml の
   // anonymous volume で遮蔽されており、Dockerfile.devcontainer で vscode:vscode 所有にした
   // ディレクトリとして初期化される（その修正が適用されたイメージを使用すること）。
-  // DB 接続先 "db" は Docker ネットワーク内のホスト名。alembic は DATABASE_URL が
-  // カレントディレクトリの .env から読まれるため /workspace から実行する。
   "postCreateCommand": "git config --global --add safe.directory /workspace && [ -f /workspace/.env ] || cp /workspace/.env.example /workspace/.env && cd /workspace && uv sync --locked --group dev --group test && npm --prefix /workspace/frontend install",
 
   // コンテナ起動のたびに DB マイグレーションを適用する。
-  // postCreateCommand でのトランジェントエラー (Hyper-V ソケットタイムアウト等) から自動回復する。
-  // alembic は idempotent なので重複適用しても安全。
-  "postStartCommand": "git config --global --add safe.directory /workspace && DATABASE_URL=postgresql+asyncpg://koiki_user:koiki_password@db:5432/koiki_todo_db uv run --directory /workspace alembic -c components/koiki_ref_app/alembic.ini upgrade head"
+  // DB 接続先 "db" は Docker ネットワーク内のホスト名。接続設定は環境変数で上書きできる。
+  // DB 接続を最大 60 秒待機し、一時的な接続失敗に備えて Alembic を最大 3 回実行する。
+  // 恒久的なマイグレーションエラーは最終試行後に非ゼロで終了する。
+  "postStartCommand": "git config --global --add safe.directory /workspace && /bin/sh /workspace/.devcontainer/scripts/post-start.sh"
 }
