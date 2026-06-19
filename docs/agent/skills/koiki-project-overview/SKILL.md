@@ -19,12 +19,14 @@ This skill is the transitional repository overview and routing skill. In a later
 
 ## Decision Rules
 
-- if the change is reusable across applications, prefer `components/libkoiki/`
-- if the change depends on business requirements, prefer `components/koiki_ref_app/`
-- if the change is downstream or customer-specific, start by considering `apps/`
+- if the change is reusable across applications, prefer `components/libkoiki/` and route to `koiki-libkoiki-feature-work`
+- if the change depends on reference-app business requirements, prefer `components/koiki_ref_app/` and route to `koiki-refapp-feature-work`
+- if the change is downstream or customer-specific, place it under `apps/` and route to `koiki-business-app-feature-work`
 - treat the current Todo API as a `libkoiki` framework sample / starter capability, not as precedent for new business APIs
 - if the change affects UI integration or browser flows, inspect `frontend/`
 - if the change affects auth, SSO, SAML, rate limiting, or audit behavior, also read the auth/security skill
+
+> Note: `koiki-refapp-feature-work` (reference app, `components/koiki_ref_app/`) and `koiki-business-app-feature-work` (downstream apps, `apps/`) are distinct; do not conflate the singular reference app with the plural downstream apps directory.
 
 ## Read Next
 

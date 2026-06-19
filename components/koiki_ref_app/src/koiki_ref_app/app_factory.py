@@ -248,7 +248,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.APP_NAME,
         debug=settings.DEBUG,
-        version="0.7.0",
+        version="0.7.1",
         openapi_url="/openapi.json" if settings.APP_ENV != "production" else None,
         docs_url="/docs" if settings.APP_ENV != "production" else None,
         redoc_url="/redoc" if settings.APP_ENV != "production" else None,
@@ -293,7 +293,7 @@ def create_app() -> FastAPI:
         return {
             "status": "healthy",
             "service": "koiki-framework",
-            "version": "0.7.0",
+            "version": "0.7.1",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
@@ -303,7 +303,7 @@ def create_app() -> FastAPI:
         logger.debug("Root endpoint called.")
         return {
             "service": "KOIKI Framework API",
-            "version": "0.7.0",
+            "version": "0.7.1",
             "docs": "/docs",
             "health": "/health",
         }

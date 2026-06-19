@@ -1,6 +1,6 @@
 # App Extension Patterns Reference
 
-Use this reference when the `koiki-app-feature-work` skill needs a compact reminder of application-side implementation patterns.
+Use this reference when the `koiki-refapp-feature-work` skill needs a compact reminder of application-side implementation patterns.
 
 ## Focus Areas
 

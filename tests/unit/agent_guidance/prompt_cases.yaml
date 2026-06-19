@@ -1,7 +1,8 @@
 skills:
   - koiki-project-overview
-  - koiki-app-feature-work
+  - koiki-refapp-feature-work
   - koiki-libkoiki-feature-work
+  - koiki-business-app-feature-work
   - koiki-auth-security
   - koiki-testing
 
@@ -12,19 +13,19 @@ cases:
       - koiki-project-overview
     required_first_skill: koiki-project-overview
     forbidden_skills:
-      - koiki-app-feature-work
+      - koiki-refapp-feature-work
       - koiki-libkoiki-feature-work
     rationale: "変更レイヤが曖昧な依頼は最初に project overview で分類する。"
 
   - id: app-business-feature
-    prompt: "app の Todo API に承認フロー依存の業務ルールを追加してください。既存の libkoiki 共通機能は再利用したいです。"
+    prompt: "reference app の Todo API に承認フロー依存の業務ルールを追加してください。既存の libkoiki 共通機能は再利用したいです。"
     expected_skills:
-      - koiki-app-feature-work
-    required_first_skill: koiki-app-feature-work
+      - koiki-refapp-feature-work
+    required_first_skill: koiki-refapp-feature-work
     forbidden_skills:
       - koiki-project-overview
       - koiki-libkoiki-feature-work
-    rationale: "業務固有の backend 変更は app feature work が第一候補。"
+    rationale: "reference app 固有の backend 変更は refapp feature work が第一候補。"
 
   - id: reusable-framework-capability
     prompt: "複数アプリで使える共通監査ロギング基盤を libkoiki に追加してください。app 固有の判断は入れないでください。"
@@ -33,14 +34,14 @@ cases:
     required_first_skill: koiki-libkoiki-feature-work
     forbidden_skills:
       - koiki-project-overview
-      - koiki-app-feature-work
+      - koiki-refapp-feature-work
     rationale: "再利用される共通基盤は libkoiki 側で扱う。"
 
   - id: todo-business-api-not-framework-precedent
     prompt: "Todo API に顧客別の承認ワークフローと案件固有ステータスを追加してください。既存 Todo が libkoiki にあるので同じ場所でよいか判断してください。"
     expected_skills:
-      - koiki-app-feature-work
-    required_first_skill: koiki-app-feature-work
+      - koiki-refapp-feature-work
+    required_first_skill: koiki-refapp-feature-work
     forbidden_skills:
       - koiki-libkoiki-feature-work
     rationale: "Todo は framework sample / starter capability であり、業務固有 API を libkoiki に置く前例ではない。"
@@ -51,18 +52,27 @@ cases:
       - koiki-libkoiki-feature-work
     required_first_skill: koiki-libkoiki-feature-work
     forbidden_skills:
-      - koiki-app-feature-work
+      - koiki-refapp-feature-work
     rationale: "Todo を framework sample / starter capability として扱う保守は libkoiki feature work が第一候補。"
 
   - id: downstream-app-specific-api
-    prompt: "特定顧客向けの請求連携 API を downstream apps/ 配下に追加するか、koiki_ref_app に入れるかを判断してから進めてください。"
+    prompt: "特定顧客向けの請求連携 API を downstream の apps/ 配下に実装してください。components/ は編集せず、既存の koiki_ref_app と libkoiki を組み合わせて構成します。"
     expected_skills:
-      - koiki-project-overview
-    required_first_skill: koiki-project-overview
+      - koiki-business-app-feature-work
+    required_first_skill: koiki-business-app-feature-work
     forbidden_skills:
-      - koiki-app-feature-work
+      - koiki-refapp-feature-work
       - koiki-libkoiki-feature-work
-    rationale: "downstream apps/ に置くべき案件固有 API は専用 skill がないため、まず overview で配置判断する。"
+    rationale: "components/ を編集しない downstream / 顧客固有の apps/ API は business app feature work が第一候補。reference app 用の refapp feature work とは区別する。"
+
+  - id: business-app-vs-refapp-disambiguation
+    prompt: "この新しい在庫管理 API は特定案件専用です。reference app (koiki_ref_app) ではなく downstream の apps/ 配下に置いて実装してください。"
+    expected_skills:
+      - koiki-business-app-feature-work
+    required_first_skill: koiki-business-app-feature-work
+    forbidden_skills:
+      - koiki-refapp-feature-work
+    rationale: "案件専用 API は apps/ の business app feature work。reference app 用の refapp feature work とは1文字違いで混同しやすいため明確に区別する。"
 
   - id: ambiguous-new-api-ownership
     prompt: "新しいレポート API を追加したいです。複数アプリで使うか、reference app 固有か、案件固有かまだ決まっていません。"
@@ -70,8 +80,9 @@ cases:
       - koiki-project-overview
     required_first_skill: koiki-project-overview
     forbidden_skills:
-      - koiki-app-feature-work
+      - koiki-refapp-feature-work
       - koiki-libkoiki-feature-work
+      - koiki-business-app-feature-work
     rationale: "API ownership が未確定の新規 API は、実装 skill へ直行せず overview で layer を分類する。"
 
   - id: auth-security-change
@@ -81,18 +92,18 @@ cases:
     required_first_skill: koiki-auth-security
     forbidden_skills:
       - koiki-project-overview
-      - koiki-app-feature-work
+      - koiki-refapp-feature-work
       - koiki-libkoiki-feature-work
     rationale: "auth, token, RBAC を含む依頼は auth security を必ず起動対象にする。"
 
   - id: app-sso-change
-    prompt: "app の SAML SSO ログインフローを修正してください。必要なら app 層と libkoiki 層の両方を見てください。"
+    prompt: "reference app の SAML SSO ログインフローを修正してください。必要なら app 層と libkoiki 層の両方を見てください。"
     expected_skills:
       - koiki-auth-security
-      - koiki-app-feature-work
+      - koiki-refapp-feature-work
     required_first_skill: koiki-auth-security
     forbidden_skills: []
-    rationale: "SSO/SAML は auth security を含みつつ、app 固有実装なら app feature も必要。"
+    rationale: "SSO/SAML は auth security を含みつつ、reference app 固有実装なら refapp feature も必要。"
 
   - id: framework-auth-change
     prompt: "libkoiki のログイン試行制限とセキュリティ監査ログを強化してください。複数プロジェクトで再利用します。"
@@ -126,7 +137,7 @@ cases:
       - koiki-project-overview
     required_first_skill: koiki-project-overview
     forbidden_skills:
-      - koiki-app-feature-work
+      - koiki-refapp-feature-work
       - koiki-libkoiki-feature-work
       - koiki-auth-security
       - koiki-testing

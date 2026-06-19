@@ -1,0 +1,4 @@
+interface:
+  display_name: "KOIKI Reference App Feature Work"
+  short_description: "Implement reference-app business layer changes under components/koiki_ref_app/."
+  default_prompt: "Use $koiki-refapp-feature-work to implement this KOIKI reference-app feature in components/koiki_ref_app/."

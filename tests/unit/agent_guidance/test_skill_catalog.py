@@ -53,14 +53,14 @@ def test_canonical_skills_have_expected_contract_files() -> None:
 
 def test_api_ownership_terms_are_present_in_routing_skills() -> None:
     overview = (CANONICAL_ROOT / "koiki-project-overview" / "SKILL.md").read_text(encoding="utf-8")
-    app = (CANONICAL_ROOT / "koiki-app-feature-work" / "SKILL.md").read_text(encoding="utf-8")
+    refapp = (CANONICAL_ROOT / "koiki-refapp-feature-work" / "SKILL.md").read_text(encoding="utf-8")
     libkoiki = (CANONICAL_ROOT / "koiki-libkoiki-feature-work" / "SKILL.md").read_text(encoding="utf-8")
 
     assert "`apps/`" in overview
     assert "Todo API" in overview
     assert "framework sample / starter capability" in overview
-    assert "downstream customer-specific API" in app
-    assert "starter/reference behavior" in app
+    assert "downstream customer-specific API" in refapp
+    assert "starter/reference behavior" in refapp
     assert "starter/sample capability" in libkoiki
     assert "new business-specific APIs" in libkoiki
 
@@ -69,8 +69,8 @@ def test_openai_metadata_tracks_api_ownership_routing_terms() -> None:
     overview = yaml.safe_load(
         (CANONICAL_ROOT / "koiki-project-overview" / "agents" / "openai.yaml").read_text(encoding="utf-8")
     )["interface"]
-    app = yaml.safe_load(
-        (CANONICAL_ROOT / "koiki-app-feature-work" / "agents" / "openai.yaml").read_text(encoding="utf-8")
+    refapp = yaml.safe_load(
+        (CANONICAL_ROOT / "koiki-refapp-feature-work" / "agents" / "openai.yaml").read_text(encoding="utf-8")
     )["interface"]
     libkoiki = yaml.safe_load(
         (CANONICAL_ROOT / "koiki-libkoiki-feature-work" / "agents" / "openai.yaml").read_text(encoding="utf-8")
@@ -78,7 +78,7 @@ def test_openai_metadata_tracks_api_ownership_routing_terms() -> None:
 
     assert "apps/" in overview["short_description"]
     assert "API ownership" in overview["default_prompt"]
-    assert "reference-app" in app["short_description"]
+    assert "reference-app" in refapp["short_description"]
     assert "starter/sample" in libkoiki["short_description"]
 
 
@@ -95,12 +95,12 @@ def test_claude_wrappers_point_to_canonical_skills() -> None:
 
 def test_claude_wrapper_descriptions_track_api_ownership_routing() -> None:
     overview = _parse_frontmatter(CLAUDE_ROOT / "koiki-project-overview" / "SKILL.md")
-    app = _parse_frontmatter(CLAUDE_ROOT / "koiki-app-feature-work" / "SKILL.md")
+    refapp = _parse_frontmatter(CLAUDE_ROOT / "koiki-refapp-feature-work" / "SKILL.md")
     libkoiki = _parse_frontmatter(CLAUDE_ROOT / "koiki-libkoiki-feature-work" / "SKILL.md")
 
     assert "API ownership" in overview["description"]
     assert "apps/" in overview["description"]
-    assert "reference-application" in app["description"]
+    assert "reference-application" in refapp["description"]
     assert "starter/sample" in libkoiki["description"]
 
 

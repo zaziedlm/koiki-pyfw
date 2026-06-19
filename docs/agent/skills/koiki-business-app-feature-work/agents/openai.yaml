@@ -1,0 +1,4 @@
+interface:
+  display_name: "KOIKI Business App Feature Work"
+  short_description: "Implement downstream business-app backend changes under apps/."
+  default_prompt: "Use $koiki-business-app-feature-work to implement this downstream business-app feature under apps/, composing components/ without editing it."

@@ -127,7 +127,8 @@ By keeping canonical guidance in `docs/agent/`, the repository can evolve once a
 The current canonical skills are:
 
 - `koiki-project-overview`
-- `koiki-app-feature-work`
+- `koiki-refapp-feature-work`
+- `koiki-business-app-feature-work`
 - `koiki-libkoiki-feature-work`
 - `koiki-auth-security`
 - `koiki-testing`

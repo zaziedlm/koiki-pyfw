@@ -120,8 +120,9 @@ Core/Infrastructure層（設定、認証、ミドルウェア）
 このプロジェクトには以下のSkillsが定義されています：
 
 - **koiki-project-overview**: タスク分類とレイヤー選択
-- **koiki-libkoiki-feature-work**: フレームワーク層の機能開発
-- **koiki-app-feature-work**: アプリケーション層の機能開発
+- **koiki-libkoiki-feature-work**: フレームワーク層（components/libkoiki/）の機能開発
+- **koiki-refapp-feature-work**: リファレンスアプリ層（components/koiki_ref_app/）の機能開発
+- **koiki-business-app-feature-work**: ダウンストリーム業務アプリ層（apps/）の機能開発
 - **koiki-auth-security**: 認証・セキュリティ関連作業
 - **koiki-testing**: テスト作成・実行
 

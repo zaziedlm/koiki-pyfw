@@ -15,7 +15,11 @@
 依存方向は `apps/ -> components/` のみです。
 
 業務アプリ固有 API の router 登録や ASGI composition は、`components/` ではなく `apps/` 側で所有します。
-業務アプリ固有 model の Base 定義も、`apps/db/base.py` 側に用意します。
+
+業務アプリ固有 model の Base は、既定では `koiki_ref_app.db.base.Base` を利用します。
+これは `libkoiki.db.base.Base` と registry / metadata を共有しており、migration target に乗せやすい設計です。
+業務固有の主キー・tenant_id・監査カラムなど独自カラム設計が必要な場合のみ、`apps/db/base.py` で独自 Base を定義します。
+
 詳細は `docs/dev/apps-plugin-composition-plan.ja.md` を参照してください。
 
 ## 推奨レイアウト

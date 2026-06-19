@@ -1,6 +1,6 @@
 [project]
 name = "libkoiki"
-version = "0.7.0"
+version = "0.7.1"
 description = "Enterprise-grade FastAPI application framework."
 readme = "README.md"
 authors = [{ name = "KOIKI Team" }]
