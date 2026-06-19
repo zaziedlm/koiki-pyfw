@@ -1,6 +1,6 @@
 [project]
 name = "koiki_ref_app"
-version = "0.7.0"
+version = "0.7.1"
 description = "Reference application built with KOIKI Framework."
 authors = [{ name = "KOIKI Team" }]
 license = {text = "MIT"}

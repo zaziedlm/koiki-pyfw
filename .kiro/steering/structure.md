@@ -168,8 +168,9 @@ app/ は互換性ラッパーのみ
 コード配置の判断には以下のSkillsが役立ちます：
 
 - **koiki-project-overview**: タスク分類とレイヤー選択
-- **koiki-libkoiki-feature-work**: フレームワーク層での作業
-- **koiki-app-feature-work**: アプリケーション層での作業
+- **koiki-libkoiki-feature-work**: フレームワーク層（components/libkoiki/）での作業
+- **koiki-refapp-feature-work**: リファレンスアプリ層（components/koiki_ref_app/）での作業
+- **koiki-business-app-feature-work**: ダウンストリーム業務アプリ層（apps/）での作業
 
 ---
 

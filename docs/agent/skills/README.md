@@ -10,8 +10,10 @@ Use these skills when the task already matches a known work type and you want co
 
 - `koiki-project-overview`
   - classify the task and choose the correct repository layer
-- `koiki-app-feature-work`
-  - implement business-specific backend changes under `components/koiki_ref_app/`
+- `koiki-refapp-feature-work`
+  - implement reference-app business backend changes under `components/koiki_ref_app/`
+- `koiki-business-app-feature-work`
+  - implement downstream / customer-specific business backend changes under `apps/`
 - `koiki-libkoiki-feature-work`
   - implement reusable framework changes under `components/libkoiki/`
 - `koiki-auth-security`

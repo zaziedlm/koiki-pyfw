@@ -12,7 +12,8 @@ The current skills remain the active discovery surface. Future maintainer/templa
 | --- | --- | --- | --- |
 | `koiki-project-overview` | Repository routing and layer classification | Transitional overview / future maintainer overview seed | Keep as the first stop for ambiguous tasks until separate maintainer and template overviews exist. |
 | `koiki-libkoiki-feature-work` | Reusable framework implementation | Maintainer framework work | This is already the closest match to the future maintainer-facing framework skill. |
-| `koiki-app-feature-work` | Reference application backend implementation | Template backend work | This should remain focused on `components/koiki_ref_app` and avoid customer-specific app behavior. |
+| `koiki-refapp-feature-work` | Reference application backend implementation | Template backend work | Renamed from `koiki-app-feature-work` in v0.7.1. Stays focused on `components/koiki_ref_app` and avoids customer-specific app behavior. |
+| `koiki-business-app-feature-work` | Downstream / customer-specific backend implementation under `apps/` | Template/consumer backend work | Added in v0.7.1. Owns downstream `apps/` composition; aligns with the future `koiki-template-backend-feature-work` candidate. |
 | `koiki-auth-security` | Auth, SSO, SAML, RBAC, security logging | Cross-cutting security skill | Retain across maintainer and template phases because security behavior spans both layers. |
 | `koiki-testing` | Test scope and validation guidance | Cross-cutting testing skill | Retain across maintainer and template phases because validation choices span both layers. |
 
@@ -59,16 +60,16 @@ Cross-cutting skills to retain:
 
 ## Current Split Decision
 
-No new skill is added for the DM-15 follow-up.
+The DM-15 follow-up added no new skill. That decision was re-opened in v0.7.1 for the downstream `apps/` layer only (see `docs/dev/dm15-agent-guidance-skills-consistency.ja.md`, DM-15-E).
 
-Current routing remains:
+Current routing:
 
 - frontend-only changes start with `koiki-project-overview` because no frontend-specific skill exists yet
-- downstream `apps/` API placement starts with `koiki-project-overview` because no downstream app skill exists yet
-- reference-app backend work continues to use `koiki-app-feature-work`
+- downstream `apps/` API placement now uses `koiki-business-app-feature-work` (added in v0.7.1); `koiki-project-overview` still classifies ambiguous ownership first
+- reference-app backend work uses `koiki-refapp-feature-work` (renamed from `koiki-app-feature-work` in v0.7.1)
 - reusable framework or explicit starter/sample work continues to use `koiki-libkoiki-feature-work`
 
-Reconsider the split only when prompt catalog or runtime smoke results show repeated routing misses that cannot be fixed by tightening existing descriptions and guardrails.
+Reconsider further splits (frontend-specific, full maintainer/template) only when prompt catalog or runtime smoke results show repeated routing misses that cannot be fixed by tightening existing descriptions and guardrails.
 
 ## Frontend Template Responsibility
 
@@ -86,7 +87,7 @@ It should not treat root `frontend/` as part of the reusable Python framework pa
 
 ## Migration Rules
 
-- Do not replace current skill names until replacement skills exist and wrappers are validated.
+- Replace a skill name only together with its canonical content, wrapper, OpenAI metadata, prompt catalog, and contract tests (as done for the `koiki-app-feature-work` -> `koiki-refapp-feature-work` rename in v0.7.1).
 - Do not split cross-cutting security or testing guidance prematurely.
 - Keep old-to-new role mapping visible while both naming schemes are in use.
-- Add consumer-oriented skills only after copy-first template adoption has concrete downstream examples.
+- Consumer-oriented `apps/` guidance (`koiki-business-app-feature-work`) is paired with a minimal `apps/` skeleton so it points at concrete downstream patterns rather than an empty directory.

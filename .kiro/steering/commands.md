@@ -260,8 +260,9 @@ NEXT_PUBLIC_API_PREFIX=/api/v1
 コマンド実行時には以下のSkillsが役立ちます：
 
 - **koiki-testing**: テスト作成・実行の詳細ガイダンス
-- **koiki-libkoiki-feature-work**: フレームワーク層での開発
-- **koiki-app-feature-work**: アプリケーション層での開発
+- **koiki-libkoiki-feature-work**: フレームワーク層（components/libkoiki/）での開発
+- **koiki-refapp-feature-work**: リファレンスアプリ層（components/koiki_ref_app/）での開発
+- **koiki-business-app-feature-work**: ダウンストリーム業務アプリ層（apps/）での開発
 
 ---
 
