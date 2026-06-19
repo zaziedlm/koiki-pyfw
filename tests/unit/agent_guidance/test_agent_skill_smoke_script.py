@@ -64,14 +64,15 @@ def test_evaluate_passes_for_valid_results(tmp_path: Path) -> None:
             {
                 "cases": [
                     {"id": "ambiguous-layer-routing", "observed_skills": ["koiki-project-overview"]},
-                    {"id": "app-business-feature", "observed_skills": ["koiki-app-feature-work"]},
+                    {"id": "app-business-feature", "observed_skills": ["koiki-refapp-feature-work"]},
                     {"id": "reusable-framework-capability", "observed_skills": ["koiki-libkoiki-feature-work"]},
-                    {"id": "todo-business-api-not-framework-precedent", "observed_skills": ["koiki-app-feature-work"]},
+                    {"id": "todo-business-api-not-framework-precedent", "observed_skills": ["koiki-refapp-feature-work"]},
                     {"id": "todo-framework-sample-maintenance", "observed_skills": ["koiki-libkoiki-feature-work"]},
-                    {"id": "downstream-app-specific-api", "observed_skills": ["koiki-project-overview"]},
+                    {"id": "downstream-app-specific-api", "observed_skills": ["koiki-business-app-feature-work"]},
+                    {"id": "business-app-vs-refapp-disambiguation", "observed_skills": ["koiki-business-app-feature-work"]},
                     {"id": "ambiguous-new-api-ownership", "observed_skills": ["koiki-project-overview"]},
                     {"id": "auth-security-change", "observed_skills": ["koiki-auth-security"]},
-                    {"id": "app-sso-change", "observed_skills": ["koiki-auth-security", "koiki-app-feature-work"]},
+                    {"id": "app-sso-change", "observed_skills": ["koiki-auth-security", "koiki-refapp-feature-work"]},
                     {"id": "framework-auth-change", "observed_skills": ["koiki-auth-security", "koiki-libkoiki-feature-work"]},
                     {"id": "test-scope-question", "observed_skills": ["koiki-testing"]},
                     {"id": "ci-test-coverage-scope", "observed_skills": ["koiki-testing", "koiki-project-overview"]},
@@ -105,15 +106,16 @@ def test_evaluate_fails_for_missing_expected_or_forbidden_skill(tmp_path: Path) 
         json.dumps(
             {
                 "cases": [
-                    {"id": "ambiguous-layer-routing", "observed_skills": ["koiki-app-feature-work"]},
-                    {"id": "app-business-feature", "observed_skills": ["koiki-project-overview", "koiki-app-feature-work"]},
+                    {"id": "ambiguous-layer-routing", "observed_skills": ["koiki-refapp-feature-work"]},
+                    {"id": "app-business-feature", "observed_skills": ["koiki-project-overview", "koiki-refapp-feature-work"]},
                     {"id": "reusable-framework-capability", "observed_skills": ["koiki-libkoiki-feature-work"]},
-                    {"id": "todo-business-api-not-framework-precedent", "observed_skills": ["koiki-app-feature-work"]},
+                    {"id": "todo-business-api-not-framework-precedent", "observed_skills": ["koiki-refapp-feature-work"]},
                     {"id": "todo-framework-sample-maintenance", "observed_skills": ["koiki-libkoiki-feature-work"]},
-                    {"id": "downstream-app-specific-api", "observed_skills": ["koiki-project-overview"]},
+                    {"id": "downstream-app-specific-api", "observed_skills": ["koiki-business-app-feature-work"]},
+                    {"id": "business-app-vs-refapp-disambiguation", "observed_skills": ["koiki-business-app-feature-work"]},
                     {"id": "ambiguous-new-api-ownership", "observed_skills": ["koiki-project-overview"]},
                     {"id": "auth-security-change", "observed_skills": ["koiki-auth-security"]},
-                    {"id": "app-sso-change", "observed_skills": ["koiki-auth-security", "koiki-app-feature-work"]},
+                    {"id": "app-sso-change", "observed_skills": ["koiki-auth-security", "koiki-refapp-feature-work"]},
                     {"id": "framework-auth-change", "observed_skills": ["koiki-auth-security", "koiki-libkoiki-feature-work"]},
                     {"id": "test-scope-question", "observed_skills": ["koiki-testing"]},
                     {"id": "ci-test-coverage-scope", "observed_skills": ["koiki-testing", "koiki-project-overview"]},
@@ -141,7 +143,7 @@ def test_evaluate_fails_for_missing_expected_or_forbidden_skill(tmp_path: Path) 
     assert "app-business-feature" in failed_ids
     ambiguous_case = next(case for case in payload["cases"] if case["id"] == "ambiguous-layer-routing")
     assert ambiguous_case["wrong_first_selection"]["expected"] == "koiki-project-overview"
-    assert ambiguous_case["wrong_first_selection"]["observed"] == "koiki-app-feature-work"
+    assert ambiguous_case["wrong_first_selection"]["observed"] == "koiki-refapp-feature-work"
 
 
 def test_evaluate_rejects_duplicate_or_unknown_result_ids(tmp_path: Path) -> None:
