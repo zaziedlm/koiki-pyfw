@@ -47,7 +47,7 @@ services:
       context: .
       dockerfile: Dockerfile.unified
       target: dev
-    command: uvicorn koiki_ref_app.asgi:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn apps.asgi:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       db:
         condition: service_healthy
@@ -55,6 +55,7 @@ services:
         condition: service_started
     volumes:
       - ./app:/app/app:cached
+      - ./apps:/app/apps:cached
       - ./components:/app/components:cached
       - ./ops:/app/ops:cached
 
@@ -66,6 +67,7 @@ services:
       context: .
       dockerfile: Dockerfile.unified
       target: optimized
+    command: uvicorn apps.asgi:app --host 0.0.0.0 --port 8000 --no-access-log
     depends_on:
       db:
         condition: service_healthy
@@ -84,6 +86,7 @@ services:
       target: production
       args:
         INSTALL_MAIN_ONLY: "true"
+    command: uvicorn apps.asgi:app --host 0.0.0.0 --port 8000 --no-access-log
     depends_on:
       db:
         condition: service_healthy
@@ -102,6 +105,7 @@ services:
       target: production
       args:
         INSTALL_MAIN_ONLY: "true"
+    command: uvicorn apps.asgi:app --host 0.0.0.0 --port 8000 --no-access-log
     # 外部DB/IdPに接続するため、ローカルdb/keycloakへは依存しない
     depends_on: [ ]
 

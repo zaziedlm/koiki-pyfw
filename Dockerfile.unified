@@ -48,6 +48,7 @@ ARG INSTALL_MAIN_ONLY=false
 
 COPY pyproject.toml uv.lock README.md ./
 COPY ./app ./app
+COPY ./apps ./apps
 COPY ./components ./components
 COPY ./ops ./ops
 
