@@ -1,11 +1,13 @@
 ---
-name: koiki-app-feature-work
-description: Use when implementing reference-application business functionality under components/koiki_ref_app/, including domain endpoints, services, repositories, models, schemas, and application-specific integrations built on components/libkoiki.
+name: koiki-refapp-feature-work
+description: Use when implementing reference-application business functionality under components/koiki_ref_app/, including domain endpoints, services, repositories, models, schemas, and application-specific integrations built on components/libkoiki. For downstream customer-specific apps under apps/, use koiki-business-app-feature-work instead.
 ---
 
-# KOIKI app Feature Work
+# KOIKI Reference App Feature Work
 
-Use this skill for business-application behavior that should remain separate from the framework.
+Use this skill for reference-application behavior under `components/koiki_ref_app/` that should remain separate from the framework.
+
+For downstream / customer-specific backend APIs under `apps/`, use `koiki-business-app-feature-work` instead.
 
 ## Scope
 

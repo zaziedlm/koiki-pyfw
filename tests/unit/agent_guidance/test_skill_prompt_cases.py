@@ -72,7 +72,7 @@ def test_prompt_catalog_includes_negative_examples_for_specific_skills() -> None
 
     for skill in [
         "koiki-project-overview",
-        "koiki-app-feature-work",
+        "koiki-refapp-feature-work",
         "koiki-libkoiki-feature-work",
         "koiki-auth-security",
     ]:
