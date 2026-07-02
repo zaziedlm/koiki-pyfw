@@ -7,8 +7,6 @@ HttpOnly cookies and response bodies never expose access or refresh tokens.
 
 from __future__ import annotations
 
-from typing import Annotated
-
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, model_validator
 
@@ -27,6 +25,7 @@ from libkoiki.core.browser_session import (
     set_auth_cookies,
     set_csrf_cookie,
 )
+from libkoiki.core.config import settings
 from libkoiki.schemas.browser_session import BrowserSessionResponse
 from libkoiki.schemas.refresh_token import RefreshTokenRequest
 from libkoiki.schemas.todo import TodoCreate, TodoResponse, TodoUpdate
@@ -100,7 +99,7 @@ async def browser_refresh(
     db: DBSessionDep,
 ) -> BrowserSessionResponse:
     require_browser_csrf(request)
-    refresh_token = request.cookies.get("koiki_refresh_token")
+    refresh_token = request.cookies.get(settings.BROWSER_REFRESH_TOKEN_COOKIE_NAME)
     if not refresh_token:
         clear_auth_cookies(response)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token is missing")
