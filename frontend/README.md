@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KOIKI React Frontend
 
-## Getting Started
+`frontend/` is a small React 19 + TypeScript + Vite application. It deliberately uses React state, hooks, browser `fetch`, and native HTML controls rather than Next.js, React Query, an application state store, or a UI component framework.
 
-First, run the development server:
+## Important architecture decision
+
+React Server Components require an RSC-capable server/runtime. A standalone Vite SPA does not provide that runtime, so this frontend intentionally uses ordinary client-side React components. Server-side security work remains in FastAPI.
+
+## Authentication boundary
+
+The browser does **not** receive a JWT or refresh token in JavaScript.
+
+1. React calls `/api/v1/auth/browser/csrf` to receive the readable half of a double-submit CSRF token.
+2. Password, OIDC SSO, or SAML completion calls `/api/v1/auth/browser/*`.
+3. FastAPI reuses the existing authentication services and writes access/refresh tokens only as HttpOnly cookies.
+4. Todo requests use the same origin and include a matching CSRF header for every unsafe request.
+5. Bearer-token APIs stay available unchanged for API clients and integrations.
+
+During development Vite proxies `/api` to `http://app:8000`. In optimized/production Compose profiles nginx serves static assets and proxies `/api` to the FastAPI service. This keeps browser requests same-origin and avoids exposing internal tokens to the React bundle.
+
+## Commands
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run check-types
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The old Next.js sources remain outside this build's TypeScript include path. They are retained in Git history; see `../frontend-old/README.md` for recovery guidance.
