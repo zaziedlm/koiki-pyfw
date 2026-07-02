@@ -7,7 +7,7 @@ libkoikiの標準APIに加えて、アプリケーション固有のAPIエンド
 """
 from fastapi import APIRouter
 
-from .endpoints import business_clock, saml_auth, sso_auth
+from .endpoints import browser_session, business_clock, saml_auth, sso_auth
 
 # アプリケーション固有のAPIルーター
 router = APIRouter()
@@ -24,6 +24,13 @@ router.include_router(
     saml_auth.router,
     prefix="/auth",
     tags=["SAML Authentication"]
+)
+
+# Browser-only completion routes keep SSO/SAML tokens out of JavaScript.
+router.include_router(
+    browser_session.router,
+    prefix="/auth",
+    tags=["Authentication - Browser Session"],
 )
 
 # Business clock management endpoints
