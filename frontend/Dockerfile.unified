@@ -1,72 +1,23 @@
 # syntax=docker/dockerfile:1.7
-# Unified Dockerfile for frontend (Next.js)
 
 ARG NODE_VERSION=22-slim
 
-# ---------------------
-# Base: certs and tooling
-# ---------------------
-FROM node:${NODE_VERSION} AS base
-
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates wget curl && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
-RUN update-ca-certificates
-
-ENV NODE_ENV=production \
-    NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
-    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
-    NEXT_TELEMETRY_DISABLED=1
-
+FROM node:${NODE_VERSION} AS deps
 WORKDIR /app
-
-# ---------------------
-# Deps: install all deps for build
-# ---------------------
-FROM base AS deps
-# Dev/build need devDependencies; override NODE_ENV for install step
-ENV NODE_ENV=development
 COPY package*.json ./
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci
+RUN --mount=type=cache,target=/root/.npm npm install
 
-# ---------------------
-# Build: compile Next.js app (standalone output)
-# ---------------------
-FROM deps AS build
-ENV NODE_ENV=production
-ARG FRONTEND_ENV_FILE=.env.docker
-COPY . .
-RUN if [ "${FRONTEND_ENV_FILE}" != ".env.production" ] && [ "${FRONTEND_ENV_FILE}" != "./.env.production" ]; then \
-      cp "${FRONTEND_ENV_FILE}" .env.production; \
-    fi
-RUN npm run build
-
-# ---------------------
-# Dev stage (turbopack/next dev)
-# ---------------------
 FROM deps AS dev
 COPY . .
 EXPOSE 3000
-CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
 
-# ---------------------
-# Runner (production server)
-# ---------------------
-FROM base AS runner
-ENV NODE_ENV=production
-WORKDIR /app
+FROM deps AS build
+COPY . .
+RUN npm run build
 
-# Copy standalone bundle and static assets
-COPY --from=build /app/public ./public
-COPY --from=build /app/.next/standalone ./
-# Next.js runtime expects .next/static under the app root; also mirror to public for static asset fallback
-COPY --from=build /app/.next/static ./.next/static
-COPY --from=build /app/.next/static ./public/_next/static
-
+FROM nginx:1.27-alpine AS runner
+ENV API_UPSTREAM=http://app:8000
+COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 3000
-CMD ["/bin/sh", "-c", "HOSTNAME=0.0.0.0 node server.js"]
