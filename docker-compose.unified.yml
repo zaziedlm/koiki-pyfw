@@ -25,20 +25,19 @@ x-app-base: &app-base
 x-frontend-base: &frontend-base
   env_file:
     - ./frontend/.env.docker
+  environment:
+    - API_UPSTREAM=http://app:8000
   ports:
     - "3000:3000"
   restart: unless-stopped
   healthcheck:
-    test: [ "CMD", "curl", "-f", "http://127.0.0.1:3000/api/health" ]
+    test: [ "CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/health" ]
     interval: 30s
     timeout: 10s
     retries: 3
     start_period: 30s
 
 services:
-  # ------------------------
-  # Backend
-  # ------------------------
   app-dev:
     <<: *app-base
     profiles: [ "dev" ]
@@ -106,25 +105,20 @@ services:
       args:
         INSTALL_MAIN_ONLY: "true"
     command: uvicorn apps.asgi:app --host 0.0.0.0 --port 8000 --no-access-log
-    # 外部DB/IdPに接続するため、ローカルdb/keycloakへは依存しない
-    depends_on: [ ]
+    depends_on: []
 
-  # ------------------------
-  # Frontend
-  # ------------------------
   frontend-dev:
     <<: *frontend-base
     profiles: [ "dev" ]
     container_name: koiki_v07_frontend_dev
     environment:
-      - NODE_ENV=development
-      - NEXT_PUBLIC_ENABLE_DEV_TOOLS=true
-      - NEXT_PUBLIC_DEBUG=true
+      - VITE_API_BASE_URL=/api/v1
+      - VITE_API_PROXY_TARGET=http://app:8000
     build:
       context: ./frontend
       dockerfile: Dockerfile.unified
       target: dev
-    command: npm run dev -- --turbopack --hostname 0.0.0.0 --port 3000
+    command: npm run dev -- --host 0.0.0.0 --port 3000
     volumes:
       - ./frontend/src:/app/src:cached
       - ./frontend/public:/app/public:cached
@@ -155,8 +149,6 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.unified
       target: runner
-      args:
-        FRONTEND_ENV_FILE: ${FRONTEND_BUILD_ENV_FILE:-.env.docker}
     depends_on:
       app-prod:
         condition: service_started
@@ -171,15 +163,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.unified
       target: runner
-      args:
-        FRONTEND_ENV_FILE: ${FRONTEND_BUILD_ENV_FILE:-.env.docker}
     depends_on:
       app-prod-external:
         condition: service_started
 
-  # ------------------------
-  # Data stores (dev/optimized/prod only)
-  # ------------------------
   db:
     profiles: [ "dev", "optimized", "prod" ]
     image: postgres:15
@@ -217,10 +204,6 @@ services:
       - "8090:8080"
       - "9000:9000"
     environment:
-      # KC_DB: postgres
-      # KC_DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-koiki_todo_db}
-      # KC_DB_USERNAME: ${POSTGRES_USER:-koiki_user}
-      # KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-koiki_password}
       KC_HTTP_ENABLED: true
       KC_HOSTNAME_STRICT: false
       KC_LOG_LEVEL: INFO
@@ -229,9 +212,6 @@ services:
     command:
       - start-dev
       - --import-realm
-    # depends_on:
-    #   db:
-    #     condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'" ]
