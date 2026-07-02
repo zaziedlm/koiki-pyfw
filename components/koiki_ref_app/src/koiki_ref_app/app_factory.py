@@ -43,10 +43,11 @@ except ImportError:
     ConnectionPool = DummyConnectionPool
 
 from libkoiki.api.v1.router import api_router as api_router_v1
+from libkoiki.core.browser_session import BrowserSessionCSRFMiddleware
 from libkoiki.core.config import settings
 from libkoiki.core.error_handlers import setup_exception_handlers
 from libkoiki.core.logging import get_logger, setup_logging
-from libkoiki.core.middleware import (  # AccessLogMiddlewareはオプション
+from libkoiki.core.middleware import (
     AccessLogMiddleware,
     AuditLogMiddleware,
     RequestContextLogMiddleware,
@@ -54,7 +55,7 @@ from libkoiki.core.middleware import (  # AccessLogMiddlewareはオプション
 )
 from libkoiki.core.monitoring import setup_monitoring
 from libkoiki.db.session import AsyncSessionFactory, connect_db, disconnect_db
-from libkoiki.events.handlers import (  # サンプルハンドラ
+from libkoiki.events.handlers import (
     EventHandler,
     user_created_handler,
 )
@@ -69,9 +70,9 @@ logger = get_logger(__name__)
 
 # SAML認証フロークリーンアップ用
 from koiki_ref_app.repositories.saml_auth_flow_repository import (
-    SamlAuthFlowRepository,  # noqa: E402
+    SamlAuthFlowRepository,
 )
-from koiki_ref_app.bootstrap import bootstrap_orm  # noqa: E402
+from koiki_ref_app.bootstrap import bootstrap_orm
 
 _cleanup_task: Optional[asyncio.Task] = None
 
@@ -106,15 +107,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     app.state.redis = None
     app.state.event_publisher = None
     app.state.event_handler = None
-    app.state.limiter = None  # --- データベース接続確認 ---
+    app.state.limiter = None
     await connect_db()
 
     # --- データベーススキーマは Alembic マイグレーションで管理 ---
-    # PostgreSQL環境ではAlembicを使用してスキーマを管理するのが望ましいです
     logger.info(
         "Database connection established. Tables should be managed by Alembic migrations."
-    )  # --- Redis 接続プールとクライアント初期化 ---
-    # シンプル版では Redis は使用しない
+    )
+    # --- Redis 接続プールとクライアント初期化 ---
     if settings.REDIS_ENABLED and REDIS_AVAILABLE and settings.REDIS_URL:
         try:
             logger.info(
@@ -124,24 +124,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 settings.REDIS_URL, decode_responses=True, max_connections=10
             )
             app.state.redis = Redis(connection_pool=app.state.redis_pool)
-            # 接続テスト
             await app.state.redis.ping()
             logger.info("Redis connection successful.")
-
-            # --- イベントパブリッシャー初期化 (Redisが必要) ---
             app.state.event_publisher = EventPublisher(redis_client=app.state.redis)
             logger.info("Event publisher initialized.")
-
-            # --- イベントハンドラー初期化とリスニング開始 (Redisが必要) ---
-            # 初期版では非同期イベント配信を無効化
             logger.info("Event handling is disabled in initial version.")
         except Exception as e:
             logger.error(
                 f"Failed to connect to or initialize Redis components: {e}",
                 exc_info=True,
             )
-            # Redis接続失敗時の処理 (必要なら起動中止など)
-            app.state.redis = None  # Redisを使えないことを示す
+            app.state.redis = None
             app.state.event_publisher = None
             app.state.event_handler = None
     else:
@@ -149,28 +142,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             logger.warning(
                 "Redis package is not installed. Using dummy implementations for Redis-dependent features."
             )
-            # ダミー実装を提供
-            app.state.redis = Redis()  # DummyRedis インスタンス
+            app.state.redis = Redis()
             app.state.redis_pool = None
-            # ダミーのEventPublisherとEventHandlerを初期化
             app.state.event_publisher = EventPublisher(redis_client=app.state.redis)
             logger.info("Dummy event publisher initialized.")
-            # イベントハンドラーはダミー実装でリスニングしないため不要
             app.state.event_handler = None
         else:
             logger.warning(
                 "Redis URL not configured. Redis-dependent features (Events, Rate Limiting Strategy, Caching) might be disabled or limited."
             )
     # --- レートリミッター初期化 ---
-    # storage_uri は Redis が利用可能な場合のみ設定
     redis_storage_uri = (
         settings.REDIS_URL if app.state.redis and REDIS_AVAILABLE else None
     )
-    storage_options = (
-        {"decode_responses": True} if redis_storage_uri else {}
-    )  # Redis使用時のオプション
+    storage_options = {"decode_responses": True} if redis_storage_uri else {}
 
-    # REDIS_AVAILABLEがFalseの場合、戦略をredisからfixedwindowに変更
     strategy = settings.RATE_LIMIT_STRATEGY
     if not REDIS_AVAILABLE and strategy == "redis":
         strategy = "fixed-window"
@@ -189,10 +175,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         storage_options=storage_options,
     )
     app.state.limiter = limiter
-    # slowapi のデフォルトハンドラを使用（カスタムする場合は error_handlers で設定）
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-    # オプション: グローバル制限をミドルウェアでかける場合
-    # app.add_middleware(SlowAPIMiddleware) # limiterインスタンスは自動でstateから取得される
     logger.info(
         "Rate limiter initialized.",
         enabled=settings.RATE_LIMIT_ENABLED,
@@ -201,7 +184,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     logger.info("Application startup sequence completed.")
 
-    # --- SAML認証フロー定期クリーンアップ開始 ---
     global _cleanup_task
     _cleanup_task = asyncio.create_task(_periodic_saml_flow_cleanup())
     logger.info(
@@ -209,10 +191,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         interval_seconds=CLEANUP_INTERVAL_SECONDS,
     )
 
-    yield  # アプリケーション実行
+    yield
     logger.info("Application shutdown sequence initiated.")
 
-    # --- SAML認証フロークリーンアップ停止 ---
     if _cleanup_task and not _cleanup_task.done():
         _cleanup_task.cancel()
         try:
@@ -221,21 +202,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             pass
         logger.info("SAML flow cleanup task stopped")
 
-    # --- イベントハンドラー停止 ---
-    # 初期版では無効化
-    # if app.state.event_handler:
-    #     logger.info("Stopping event handler listening.")
-    #     await app.state.event_handler.stop_listening()
-
-    # --- Redis 接続プール切断 ---
     if app.state.redis and REDIS_AVAILABLE:
         logger.info("Closing Redis connection.")
-        await app.state.redis.close()  # クライアントを閉じる
+        await app.state.redis.close()
     if app.state.redis_pool and REDIS_AVAILABLE:
         logger.info("Disposing Redis connection pool.")
-        await app.state.redis_pool.disconnect()  # プールを破棄
+        await app.state.redis_pool.disconnect()
 
-    # --- データベース接続プール切断 ---
     await disconnect_db()
 
     logger.info("Application shutdown sequence completed.")
@@ -264,6 +237,10 @@ def create_app() -> FastAPI:
             allow_headers=["*"],
         )
         logger.info("CORS middleware enabled.", origins=settings.BACKEND_CORS_ORIGINS)
+
+    # Keep Cookie-authenticated browser mutations behind an explicit CSRF gate.
+    app.add_middleware(BrowserSessionCSRFMiddleware)
+    logger.info("Browser session CSRF middleware enabled.")
 
     app.add_middleware(SecurityHeadersMiddleware)
     logger.info("Security headers middleware enabled.")
