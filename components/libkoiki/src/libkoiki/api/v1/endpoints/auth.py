@@ -6,19 +6,22 @@
 - auth_basic: ログイン、登録、ログアウト、現在ユーザー取得
 - auth_password: パスワード変更、パスワードリセット
 - auth_token: トークンリフレッシュ、全トークン無効化
+- auth_browser: React 向け HttpOnly Cookie セッション境界
 """
 from fastapi import APIRouter
 
-from . import auth_basic, auth_password, auth_token
+from . import auth_basic, auth_browser, auth_password, auth_token
 
 router = APIRouter()
 
 # 基本認証機能
 router.include_router(auth_basic.router, tags=["Authentication - Basic"])
 
-# パスワード管理機能  
+# パスワード管理機能
 router.include_router(auth_password.router, tags=["Authentication - Password"])
 
 # トークン管理機能
 router.include_router(auth_token.router, tags=["Authentication - Token"])
 
+# Standalone React frontend compatibility boundary
+router.include_router(auth_browser.router, tags=["Authentication - Browser Session"])
