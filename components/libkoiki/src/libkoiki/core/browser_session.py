@@ -18,6 +18,7 @@ from starlette.responses import JSONResponse, Response
 
 from libkoiki.core.config import settings
 from libkoiki.core.security import get_user_from_token
+from libkoiki.db.session import get_db
 from libkoiki.models.user import UserModel
 from libkoiki.repositories.user_repository import UserRepository
 
@@ -118,7 +119,7 @@ def require_browser_csrf(request: Request) -> None:
 
 async def get_browser_active_user(
     request: Request,
-    db: AsyncSession,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> UserModel:
     """Resolve an authenticated active user from the HttpOnly access-token cookie.
 
