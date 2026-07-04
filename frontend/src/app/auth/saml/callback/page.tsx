@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cookieApiClient } from '@/lib/cookie-api-client';
 import { clearSamlContext, loadSamlContext } from '@/lib/saml-storage';
@@ -11,11 +11,17 @@ type Status = 'pending' | 'error';
 function SamlCallbackContent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const hasFinalizedRef = useRef(false);
 
   const [status, setStatus] = useState<Status>('pending');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (hasFinalizedRef.current) {
+      return;
+    }
+    hasFinalizedRef.current = true;
+
     const samlTicket = searchParams.get('saml_ticket');
     const relayStateFromQuery =
       searchParams.get('relay_state') || searchParams.get('RelayState');
