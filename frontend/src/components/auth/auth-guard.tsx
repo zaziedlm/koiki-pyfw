@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useCookieAuth } from '@/hooks/use-cookie-auth-queries';
 import { Loader2 } from 'lucide-react';
 
@@ -12,9 +12,8 @@ interface AuthGuardProps {
   fallback?: React.ReactNode;
 }
 
-const isDev = process.env.NODE_ENV !== 'production';
 const devLog = (...args: unknown[]) => {
-  if (isDev) {
+  if (import.meta.env.DEV) {
     console.log('[auth-guard]', ...args);
   }
 };
@@ -26,8 +25,8 @@ export function AuthGuard({
   fallback,
 }: AuthGuardProps) {
   const [isChecking, setIsChecking] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const { user, isAuthenticated, isLoading, error: cookieError } = useCookieAuth();
 
@@ -49,7 +48,7 @@ export function AuthGuard({
           error: cookieError ? String(cookieError) : null,
         });
       } catch (error) {
-        if (isDev) {
+        if (import.meta.env.DEV) {
           console.error('Auth check failed:', error instanceof Error ? error.message : error);
         }
       } finally {
@@ -64,9 +63,9 @@ export function AuthGuard({
   // Handle authentication redirect in useEffect to avoid rendering during render
   useEffect(() => {
     if (!isLoading && !isChecking && requireAuth && !isAuthenticated) {
-      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
+      navigate(`/auth/login?redirect=${encodeURIComponent(location.pathname)}`, { replace: true });
     }
-  }, [requireAuth, isAuthenticated, isLoading, isChecking, router, pathname]);
+  }, [requireAuth, isAuthenticated, isLoading, isChecking, navigate, location.pathname]);
 
   // Still checking authentication state
   if (isLoading || isChecking) {
@@ -113,7 +112,7 @@ export function AuthGuard({
               You don&apos;t have permission to access this page.
             </p>
             <button
-              onClick={() => router.back()}
+              onClick={() => navigate(-1)}
               className="text-primary hover:underline"
             >
               Go back
@@ -148,15 +147,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // Wrapper for public pages that should redirect authenticated users
 export function PublicRoute({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-
   const { isAuthenticated, isLoading } = useCookieAuth();
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push('/dashboard');
-    }
-  }, [isAuthenticated, isLoading, router]);
 
   if (isLoading) {
     return (
@@ -167,14 +158,7 @@ export function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-          <p className="text-sm text-muted-foreground">Redirecting...</p>
-        </div>
-      </div>
-    );
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

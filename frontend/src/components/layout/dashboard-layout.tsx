@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -89,8 +88,8 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const pathname = usePathname();
-  const router = useRouter();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { setTheme } = useUIStore();
 
   const { user } = useCookieAuth();
@@ -103,11 +102,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       console.log('🚪 Executing logout mutation...');
       await logoutMutation.mutateAsync();
       console.log('🚪 Logout successful, redirecting to login page');
-      router.push('/auth/login');
+      navigate('/auth/login');
     } catch (error) {
       console.error('🚪 Logout API call failed:', error);
       console.log('🚪 Cookie auth: forcing logout despite API error');
-      router.push('/auth/login');
+      navigate('/auth/login');
     }
   };
 
@@ -143,7 +142,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-6">
-        <Link href="/dashboard" className="flex items-center space-x-2">
+        <Link to="/dashboard" className="flex items-center space-x-2">
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
             <CheckSquare className="h-5 w-5 text-primary-foreground" />
           </div>
@@ -158,7 +157,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           return (
             <Link
               key={item.name}
-              href={item.href}
+              to={item.href}
               onClick={() => setSidebarOpen(false)}
               className={cn(
                 'group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
@@ -289,13 +288,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/profile">
+                  <Link to="/dashboard/profile">
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/settings">
+                  <Link to="/dashboard/settings">
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
                   </Link>

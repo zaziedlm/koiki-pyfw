@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Link from 'next/link';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,15 +20,15 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-const isDev = process.env.NODE_ENV !== 'production';
 const devLog = (...args: unknown[]) => {
-  if (isDev) {
+  if (import.meta.env.DEV) {
     console.log('[login-form]', ...args);
   }
 };
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
   const addNotification = useUIStore((state) => state.addNotification);
 
   const {
@@ -54,10 +54,10 @@ export function LoginForm() {
         message: 'ログインに成功しました',
       });
 
-      // リダイレクトは useCookieLogin の onSuccess で実施
+      navigate(result?.location || '/dashboard', { replace: true });
 
     } catch (error: unknown) {
-      if (isDev) {
+      if (import.meta.env.DEV) {
         console.error('Login error in form:', error instanceof Error ? error.message : error);
       }
       let errorMessage = 'メールアドレスまたはパスワードが正しくありません';
@@ -142,7 +142,7 @@ export function LoginForm() {
           <div className="text-center text-sm text-gray-600">
             Don&apos;t have an account?{' '}
             <Link
-              href="/auth/register"
+              to="/auth/register"
               className="text-primary hover:underline font-medium"
             >
               Sign up
@@ -151,7 +151,7 @@ export function LoginForm() {
 
           <div className="text-center">
             <Link
-              href="/auth/forgot-password"
+              to="/auth/forgot-password"
               className="text-sm text-primary hover:underline"
             >
               Forgot your password?

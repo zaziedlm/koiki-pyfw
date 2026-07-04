@@ -84,9 +84,6 @@ export function useCookieLogin() {
         await queryClient.invalidateQueries({ queryKey: cookieAuthKeys.all });
         devLog('login: invalidation done');
 
-        const targetLocation = data.location || '/dashboard';
-        devLog('login: redirect to', targetLocation);
-        window.location.href = targetLocation;
       } catch {
         devLog('login: onSuccess error');
         throw new Error('Login post-success handling failed');

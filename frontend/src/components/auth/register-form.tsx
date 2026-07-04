@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,7 +36,7 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const router = useRouter();
+  const navigate = useNavigate();
   const addNotification = useUIStore((state) => state.addNotification);
 
   const {
@@ -53,7 +52,7 @@ export function RegisterForm() {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      const { ...registerData } = data;
+      const { confirmPassword: _confirmPassword, ...registerData } = data;
       await registerMutation.mutateAsync(registerData);
 
       addNotification({
@@ -61,7 +60,7 @@ export function RegisterForm() {
         title: 'Registration successful',
         message: 'Welcome to KOIKI Task Manager!',
       });
-      router.push('/dashboard');
+      navigate('/dashboard');
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : 'Failed to create account';
@@ -188,7 +187,7 @@ export function RegisterForm() {
           <div className="text-center text-sm text-gray-600">
             Already have an account?{' '}
             <Link
-              href="/auth/login"
+              to="/auth/login"
               className="text-primary hover:underline font-medium"
             >
               Sign in

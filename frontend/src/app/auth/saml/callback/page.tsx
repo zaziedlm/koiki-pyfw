@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cookieApiClient } from '@/lib/cookie-api-client';
 import { clearSamlContext, loadSamlContext } from '@/lib/saml-storage';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 type Status = 'pending' | 'error';
 
 function SamlCallbackContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [status, setStatus] = useState<Status>('pending');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -61,8 +61,7 @@ function SamlCallbackContent() {
 
         clearSamlContext();
 
-        const target = data?.location || '/dashboard';
-        window.location.href = target;
+        navigate(data?.location || '/dashboard', { replace: true });
       } finally {
         clearSamlContext();
       }
@@ -74,7 +73,7 @@ function SamlCallbackContent() {
       setErrorMessage(message);
       setStatus('error');
     });
-  }, [router, searchParams]);
+  }, [navigate, searchParams]);
 
   if (status === 'pending') {
     return (
@@ -90,8 +89,8 @@ function SamlCallbackContent() {
       <h1 className="text-xl font-semibold">SAML Login Failed</h1>
       {errorMessage && <p className="text-sm text-muted-foreground max-w-md">{errorMessage}</p>}
       <div className="flex gap-2">
-        <Button onClick={() => router.replace('/auth/login')}>Go to Login</Button>
-        <Button variant="outline" onClick={() => router.replace('/')}>Return Home</Button>
+        <Button onClick={() => navigate('/auth/login', { replace: true })}>Go to Login</Button>
+        <Button variant="outline" onClick={() => navigate('/', { replace: true })}>Return Home</Button>
       </div>
     </div>
   );

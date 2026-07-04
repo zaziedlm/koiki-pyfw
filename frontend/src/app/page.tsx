@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCookieAuth } from '@/hooks/use-cookie-auth-queries';
@@ -12,7 +11,7 @@ import { useSsoLogin } from '@/hooks/use-sso-login';
 import { useSamlLogin } from '@/hooks/use-saml-login';
 
 export default function Home() {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const { isAuthenticated, isLoading } = useCookieAuth();
   const { startSsoLogin, isLoading: isSsoLoading } = useSsoLogin();
@@ -22,9 +21,9 @@ export default function Home() {
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      router.push('/dashboard');
+      navigate('/dashboard');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   if (isLoading) {
     return (
@@ -58,12 +57,12 @@ export default function Home() {
   ];
 
   const handleLoginClick = () => {
-    router.push('/auth/login');
+    navigate('/auth/login');
   };
 
   const handleSsoLogin = async () => {
     if (isAuthenticated) {
-      router.push('/dashboard');
+      navigate('/dashboard');
       return;
     }
 
@@ -79,7 +78,7 @@ export default function Home() {
 
   const handleSamlLogin = async () => {
     if (isAuthenticated) {
-      router.push('/dashboard');
+      navigate('/dashboard');
       return;
     }
 
@@ -124,7 +123,7 @@ export default function Home() {
               {isSamlLoading ? 'Redirecting…' : 'SAML Sign In'}
             </Button>
             <Button asChild>
-              <Link href="/auth/register">Get Started</Link>
+              <Link to="/auth/register">Get Started</Link>
             </Button>
           </div>
         </div>
@@ -143,7 +142,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild>
-              <Link href="/auth/register">Start Free Trial</Link>
+              <Link to="/auth/register">Start Free Trial</Link>
             </Button>
             <Button
               variant="outline"
@@ -224,7 +223,7 @@ export default function Home() {
               Join thousands of users who are already managing their tasks more effectively.
             </p>
             <Button size="lg" asChild>
-              <Link href="/auth/register">Create Your Account</Link>
+              <Link to="/auth/register">Create Your Account</Link>
             </Button>
           </div>
         </div>
@@ -233,7 +232,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4 py-8 text-center text-gray-600 dark:text-gray-300">
-          <p>&copy; 2024 {config.app.name}. Built with Next.js 15 and FastAPI.</p>
+          <p>&copy; 2024 {config.app.name}. Built with Vite React and FastAPI.</p>
         </div>
       </footer>
     </div>
