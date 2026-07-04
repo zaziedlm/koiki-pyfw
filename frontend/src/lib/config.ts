@@ -9,45 +9,51 @@ function optionalEnvValue(key: string): string | undefined {
   return undefined;
 }
 
-function envValue(key: string, fallback: string): string {
-  return optionalEnvValue(key) ?? fallback;
+function publicEnvValue(viteKey: string, nextKey: string, fallback: string): string {
+  return optionalEnvValue(viteKey) ?? optionalEnvValue(nextKey) ?? fallback;
 }
+
+const apiUrl = publicEnvValue('VITE_API_URL', 'NEXT_PUBLIC_API_URL', 'http://localhost:8000');
+const apiPrefix = publicEnvValue('VITE_API_PREFIX', 'NEXT_PUBLIC_API_PREFIX', '/api/v1');
+const apiBaseUrl = publicEnvValue(
+  'VITE_API_BASE_URL',
+  'NEXT_PUBLIC_API_BASE_URL',
+  `${apiUrl}${apiPrefix}`,
+);
 
 export const config = {
   api: {
     // Backend API configuration
-    url: envValue('NEXT_PUBLIC_API_URL', 'http://localhost:8000'),
-    prefix: envValue('NEXT_PUBLIC_API_PREFIX', '/api/v1'),
-    // baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
-
-    // For AWS ECS,Flexible base URL construction to support different deployment scenarios
-    baseUrl: optionalEnvValue('BACKEND_API_URL')
-      ? `${optionalEnvValue('BACKEND_API_URL')}${envValue('BACKEND_API_PREFIX', '/api/v1')}`
-      : envValue('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:8000/api/v1'),
+    url: apiUrl,
+    prefix: apiPrefix,
+    baseUrl: apiBaseUrl,
     // Frontend proxy configuration  
     proxyPrefix: '/api/backend',
   },
   app: {
-    name: envValue('NEXT_PUBLIC_APP_NAME', 'KOIKI Task Manager'),
-    version: envValue('NEXT_PUBLIC_APP_VERSION', '1.0.0'),
+    name: publicEnvValue('VITE_APP_NAME', 'NEXT_PUBLIC_APP_NAME', 'KOIKI Task Manager'),
+    version: publicEnvValue('VITE_APP_VERSION', 'NEXT_PUBLIC_APP_VERSION', '1.0.0'),
   },
   auth: {
-    tokenKey: envValue('NEXT_PUBLIC_ACCESS_TOKEN_NAME', 'koiki_access_token'),
-    refreshTokenKey: envValue('NEXT_PUBLIC_REFRESH_TOKEN_NAME', 'koiki_refresh_token'),
+    tokenKey: publicEnvValue('VITE_ACCESS_TOKEN_NAME', 'NEXT_PUBLIC_ACCESS_TOKEN_NAME', 'koiki_access_token'),
+    refreshTokenKey: publicEnvValue('VITE_REFRESH_TOKEN_NAME', 'NEXT_PUBLIC_REFRESH_TOKEN_NAME', 'koiki_refresh_token'),
     tokenExpiration: 30 * 60 * 1000, // 30 minutes in milliseconds
     cookieAuth: {
-      enabled: optionalEnvValue('NEXT_PUBLIC_COOKIE_AUTH_ENABLED') === 'true',
+      enabled: publicEnvValue('VITE_COOKIE_AUTH_ENABLED', 'NEXT_PUBLIC_COOKIE_AUTH_ENABLED', 'false') === 'true',
       csrfProtection: true,
-      sameSite: (optionalEnvValue('NEXT_PUBLIC_COOKIE_SAMESITE') as 'lax' | 'strict' | 'none') || 'lax',
+      sameSite: (optionalEnvValue('VITE_COOKIE_SAMESITE') ??
+        optionalEnvValue('NEXT_PUBLIC_COOKIE_SAMESITE') ??
+        'lax') as 'lax' | 'strict' | 'none',
       secure:
-        optionalEnvValue('NEXT_PUBLIC_COOKIE_SECURE') === 'true' ||
-        (import.meta.env.PROD && optionalEnvValue('NEXT_PUBLIC_COOKIE_SECURE') !== 'false'),
+        publicEnvValue('VITE_COOKIE_SECURE', 'NEXT_PUBLIC_COOKIE_SECURE', 'false') === 'true' ||
+        (import.meta.env.PROD &&
+          publicEnvValue('VITE_COOKIE_SECURE', 'NEXT_PUBLIC_COOKIE_SECURE', 'false') !== 'false'),
     },
   },
   sso: {
-    redirectUri: envValue('NEXT_PUBLIC_SSO_REDIRECT_URI', '/sso/callback'),
+    redirectUri: publicEnvValue('VITE_SSO_REDIRECT_URI', 'NEXT_PUBLIC_SSO_REDIRECT_URI', '/sso/callback'),
   },
   saml: {
-    redirectUri: envValue('NEXT_PUBLIC_SAML_REDIRECT_URI', '/auth/saml/callback'),
+    redirectUri: publicEnvValue('VITE_SAML_REDIRECT_URI', 'NEXT_PUBLIC_SAML_REDIRECT_URI', '/auth/saml/callback'),
   },
 } as const;

@@ -1,33 +1,62 @@
 import { config as appConfig } from './config';
 
+const CSRF_COOKIE_NAME = 'koiki_csrf_token';
+
+function isDev(): boolean {
+  return import.meta.env.DEV;
+}
+
+function normalizeBaseUrl(value: string): string {
+  return value.replace(/\/+$/, '');
+}
+
+function readCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+
+  const cookie = document.cookie
+    .split('; ')
+    .find((row) => row.startsWith(`${name}=`));
+
+  return cookie ? decodeURIComponent(cookie.split('=')[1] ?? '') : null;
+}
+
 // Cookie認証用のAPIクライアント
 class CookieApiClient {
   public csrfToken: string | null = null;
+  private readonly baseUrl = normalizeBaseUrl(appConfig.api.baseUrl);
 
   constructor() {
     // 初期化時にCSRFトークンを取得
     this.initializeCSRFToken();
   }
 
+  private apiUrl(path: string): string {
+    if (/^https?:\/\//i.test(path)) {
+      return path;
+    }
+
+    return `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+  }
+
   // CSRFトークンを取得・設定
   public async initializeCSRFToken(): Promise<void> {
     try {
-      // サーバーサイドでも動作するように絶対URLを使用
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}/api/auth/csrf`);
+      const response = await fetch(this.apiUrl('/auth/session/csrf'), {
+        credentials: 'include',
+      });
       if (response.ok) {
         const data = await response.json();
         this.csrfToken = data.csrf_token;
-        if (process.env.NODE_ENV === 'development') {
+        if (isDev()) {
           console.log('[CSRF] initialized');
         }
       } else {
-        if (process.env.NODE_ENV === 'development') {
+        if (isDev()) {
           console.error('[CSRF] init failed http', response.status);
         }
       }
     } catch {
-      if (process.env.NODE_ENV === 'development') {
+      if (isDev()) {
         console.error('[CSRF] init error');
       }
     }
@@ -51,15 +80,12 @@ class CookieApiClient {
 
     // CSRFトークンがない場合、Cookieから取得を試行
     if (!csrfToken && typeof document !== 'undefined') {
-      const cookieValue = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('koiki_csrf_token='))
-        ?.split('=')[1];
+      const cookieValue = readCookie(CSRF_COOKIE_NAME);
 
       if (cookieValue) {
         csrfToken = cookieValue;
         this.csrfToken = cookieValue; // キャッシュに保存
-        if (process.env.NODE_ENV === 'development') {
+        if (isDev()) {
           console.log('[CSRF] from cookie');
         }
       }
@@ -67,10 +93,10 @@ class CookieApiClient {
 
     if (csrfToken) {
       headers['x-csrf-token'] = csrfToken;
-      if (process.env.NODE_ENV === 'development') {
+      if (isDev()) {
         console.log('[CSRF] header attached');
       }
-    } else if (process.env.NODE_ENV === 'development') {
+    } else if (isDev()) {
       console.warn('[CSRF] header missing');
     }
 
@@ -82,7 +108,8 @@ class CookieApiClient {
     url: string,
     options: RequestInit = {}
   ): Promise<Response> {
-    const response = await fetch(url, {
+    const requestUrl = this.apiUrl(url);
+    const response = await fetch(requestUrl, {
       ...options,
       credentials: 'include', // Cookieを自動で送信
       headers: {
@@ -93,11 +120,12 @@ class CookieApiClient {
 
     // CSRF トークンエラーの場合は更新して再試行
     if (response.status === 403) {
-      const errorData = await response.json();
-      if (errorData.code === 'CSRF_TOKEN_INVALID') {
+      const errorData = await response.clone().json().catch(() => null);
+      const errorCode = errorData?.code ?? errorData?.detail?.code;
+      if (errorCode === 'CSRF_TOKEN_INVALID') {
         await this.refreshCSRFToken();
         // 新しいCSRFトークンでリトライ
-        return fetch(url, {
+        return fetch(requestUrl, {
           ...options,
           credentials: 'include',
           headers: {
@@ -116,24 +144,24 @@ class CookieApiClient {
     login: async (credentials: { email: string; password: string }) => {
       // CSRFトークンを確実に取得
       if (!this.csrfToken) {
-        if (process.env.NODE_ENV === 'development') {
+        if (isDev()) {
           console.log('[AUTH] CSRF missing, init');
         }
         await this.initializeCSRFToken();
       }
 
-      if (process.env.NODE_ENV === 'development') {
+      if (isDev()) {
         console.log('[AUTH] login with CSRF');
       }
 
-      return this.fetchWithCredentials('/api/auth/login', {
+      return this.fetchWithCredentials('/auth/session/login', {
         method: 'POST',
         body: JSON.stringify(credentials),
       });
     },
 
     logout: async () => {
-      return this.fetchWithCredentials('/api/auth/logout', {
+      return this.fetchWithCredentials('/auth/session/logout', {
         method: 'POST',
       });
     },
@@ -148,18 +176,18 @@ class CookieApiClient {
         await this.initializeCSRFToken();
       }
 
-      return this.fetchWithCredentials('/api/auth/register', {
+      return this.fetchWithCredentials('/auth/session/register', {
         method: 'POST',
         body: JSON.stringify(userData),
       });
     },
 
     getMe: async () => {
-      return this.fetchWithCredentials('/api/auth/me');
+      return this.fetchWithCredentials('/auth/session/me');
     },
 
     refreshToken: async () => {
-      return this.fetchWithCredentials('/api/auth/refresh', {
+      return this.fetchWithCredentials('/auth/session/refresh', {
         method: 'POST',
       });
     },
@@ -172,7 +200,7 @@ class CookieApiClient {
           ? `?${new URLSearchParams({ redirect_uri: params.redirect_uri }).toString()}`
           : '';
 
-      return this.fetchWithCredentials(`/api/sso/authorization${queryString}`);
+      return this.fetchWithCredentials(`/auth/sso/authorization${queryString}`);
     },
 
     login: async (payload: {
@@ -186,7 +214,29 @@ class CookieApiClient {
         await this.initializeCSRFToken();
       }
 
-      return this.fetchWithCredentials('/api/sso/login', {
+      return this.fetchWithCredentials('/auth/session/sso/login', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+  };
+
+  saml = {
+    authorization: async (params?: { redirect_uri?: string }) => {
+      const queryString =
+        params && params.redirect_uri
+          ? `?${new URLSearchParams({ redirect_uri: params.redirect_uri }).toString()}`
+          : '';
+
+      return this.fetchWithCredentials(`/auth/saml/authorization${queryString}`);
+    },
+
+    login: async (payload: { login_ticket: string; relay_state: string }) => {
+      if (!this.csrfToken) {
+        await this.initializeCSRFToken();
+      }
+
+      return this.fetchWithCredentials('/auth/session/saml/login', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
@@ -195,32 +245,32 @@ class CookieApiClient {
 
   // 既存のAPIクライアントとの互換性のためのプロキシメソッド
   get = async (url: string) => {
-    return this.fetchWithCredentials(appConfig.api.baseUrl + url);
+    return this.fetchWithCredentials(url);
   };
 
   post = async (url: string, data?: unknown) => {
-    return this.fetchWithCredentials(appConfig.api.baseUrl + url, {
+    return this.fetchWithCredentials(url, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
     });
   };
 
   put = async (url: string, data?: unknown) => {
-    return this.fetchWithCredentials(appConfig.api.baseUrl + url, {
+    return this.fetchWithCredentials(url, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
     });
   };
 
   patch = async (url: string, data?: unknown) => {
-    return this.fetchWithCredentials(appConfig.api.baseUrl + url, {
+    return this.fetchWithCredentials(url, {
       method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined,
     });
   };
 
   delete = async (url: string) => {
-    return this.fetchWithCredentials(appConfig.api.baseUrl + url, {
+    return this.fetchWithCredentials(url, {
       method: 'DELETE',
     });
   };
@@ -231,9 +281,10 @@ export const cookieApiClient = new CookieApiClient();
 
 // Cookie対応のAPIメソッド
 export const cookieApi = {
-  // 認証API（Route Handlers経由）
+  // 認証API（FastAPI Cookie session contract）
   auth: cookieApiClient.auth,
   sso: cookieApiClient.sso,
+  saml: cookieApiClient.saml,
 
   // その他のAPI（直接バックエンド、Cookie自動送信）
   get: cookieApiClient.get,
@@ -243,16 +294,16 @@ export const cookieApi = {
   delete: cookieApiClient.delete,
 };
 
-// Todo API methods (Cookie版) - Route Handler経由
+// Todo API methods (Cookie版)
 export const cookieTodoApi = {
   getAll: (params?: { skip?: number; limit?: number }) => {
     const queryString = params ? `?${new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString()}` : '';
-    return cookieApiClient.fetchWithCredentials(`/api/todos${queryString}`, {
+    return cookieApiClient.fetchWithCredentials(`/todos${queryString}`, {
       method: 'GET',
     });
   },
 
-  getById: (id: number) => cookieApiClient.fetchWithCredentials(`/api/todos/${id}`, {
+  getById: (id: number) => cookieApiClient.fetchWithCredentials(`/todos/${id}`, {
     method: 'GET',
   }),
 
@@ -262,7 +313,7 @@ export const cookieTodoApi = {
       await cookieApiClient.initializeCSRFToken();
     }
 
-    return cookieApiClient.fetchWithCredentials('/api/todos', {
+    return cookieApiClient.fetchWithCredentials('/todos', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -274,7 +325,7 @@ export const cookieTodoApi = {
       await cookieApiClient.initializeCSRFToken();
     }
 
-    return cookieApiClient.fetchWithCredentials(`/api/todos/${id}`, {
+    return cookieApiClient.fetchWithCredentials(`/todos/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -286,7 +337,7 @@ export const cookieTodoApi = {
       await cookieApiClient.initializeCSRFToken();
     }
 
-    return cookieApiClient.fetchWithCredentials(`/api/todos/${id}`, {
+    return cookieApiClient.fetchWithCredentials(`/todos/${id}`, {
       method: 'DELETE',
     });
   },
@@ -328,4 +379,3 @@ export const cookieUserApi = {
 
   delete: (id: number) => cookieApiClient.delete(`/users/${id}`),
 };
-

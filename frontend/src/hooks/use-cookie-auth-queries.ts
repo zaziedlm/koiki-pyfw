@@ -4,7 +4,7 @@ import { LoginCredentials, RegisterData } from '@/types';
 
 // dev-only minimal logger (no sensitive data)
 const devLog = (...args: unknown[]) => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (import.meta.env.DEV) {
     console.log('[cookie-auth]', ...args);
   }
 };
@@ -84,55 +84,9 @@ export function useCookieLogin() {
         await queryClient.invalidateQueries({ queryKey: cookieAuthKeys.all });
         devLog('login: invalidation done');
 
-        // Cookie設定完了の確認とリダイレクト処理
-        devLog('login: check redirect');
-
-        if (data.new_cookie_set) {
-          devLog('login: wait cookie propagation');
-
-          // Cookieの伝播を待つためのポーリング機能
-          const waitForCookie = async (maxAttempts = 10, delay = 200): Promise<boolean> => {
-            for (let attempt = 0; attempt < maxAttempts; attempt++) {
-              devLog('login: cookie check attempt', `${attempt + 1}/${maxAttempts}`);
-
-              // document.cookieでクライアント側cookieを確認（httpOnlyなので直接は見えないが、認証状態で判断）
-              try {
-                // ユーザー情報が取得できるかテスト
-                await queryClient.refetchQueries({ queryKey: cookieAuthKeys.me() });
-                const userData = queryClient.getQueryData(cookieAuthKeys.me());
-
-                if (userData) {
-                  devLog('login: cookie verified');
-                  return true;
-                }
-              } catch {
-                devLog('login: cookie verify failed attempt', attempt + 1);
-              }
-
-              // 次の試行まで待機
-              if (attempt < maxAttempts - 1) {
-                await new Promise(resolve => setTimeout(resolve, delay));
-              }
-            }
-
-            devLog('login: cookie verification timeout');
-            return false;
-          };
-
-          // Cookie伝播を待ってからリダイレクト
-          waitForCookie().finally(() => {
-            const targetLocation = data.location || '/dashboard';
-            devLog('login: redirect to', targetLocation);
-            window.location.href = targetLocation;
-          });
-
-        } else {
-          // フォールバック: Cookie設定フラグがない場合は従来の遅延リダイレクト
-          devLog('login: fallback redirect');
-          setTimeout(() => {
-            window.location.href = data.location || '/dashboard';
-          }, 800);
-        }
+        const targetLocation = data.location || '/dashboard';
+        devLog('login: redirect to', targetLocation);
+        window.location.href = targetLocation;
       } catch {
         devLog('login: onSuccess error');
         throw new Error('Login post-success handling failed');

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { config } from '@/lib/config';
+import { cookieApiClient } from '@/lib/cookie-api-client';
 import { saveSamlContext } from '@/lib/saml-storage';
 
 /**
@@ -43,11 +44,7 @@ export function useSamlLogin() {
     try {
       const redirectUri = buildRedirectUri(options?.redirectUri);
 
-      // Call backend SAML authorization endpoint via Next.js API route
-      const response = await fetch(`/api/saml/authorization?redirect_uri=${encodeURIComponent(redirectUri)}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
+      const response = await cookieApiClient.saml.authorization({ redirect_uri: redirectUri });
 
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
