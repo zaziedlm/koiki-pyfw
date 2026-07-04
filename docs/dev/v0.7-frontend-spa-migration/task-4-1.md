@@ -22,7 +22,8 @@ Frontend SPA migration の完了判定を行い、残課題とリリース時の
 ## 検証
 
 - auth Cookie が JS から読めない
-- state-changing request は CSRF なしで失敗する
+- Cookie 認証された state-changing request は CSRF なしで失敗する
+- Bearer-token client は CSRF なしでも contract どおり動作する
 - token refresh 後も authenticated state が維持される
 - logout 後に protected route へ戻れない
 

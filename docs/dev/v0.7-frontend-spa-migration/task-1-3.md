@@ -22,8 +22,12 @@ SSO と SAML の login exchange 後に FastAPI が直接 auth Cookie を発行�
 2. SSO login exchange 成功時に access / refresh Cookie を発行する
 3. SAML authorization init の response contract を SPA 向けに確認する
 4. SAML login ticket exchange 成功時に access / refresh Cookie を発行する
-5. Origin / CSRF / state / nonce / RelayState / ticket expiry の検証責務を確認する
-6. backend security logging が raw token や raw assertion を出さないことを確認する
+5. SSO / SAML login exchange response body から token value を返すかどうかを Task 0-2 の contract に合わせる
+6. SSO / SAML exchange endpoint に CSRF を要求するかを Task 0-2 の contract に合わせる
+   - 除外する場合は、`state`, `nonce`, PKCE, RelayState, one-time ticket, Origin check による代替防御を明示する
+7. Origin / CSRF / state / nonce / RelayState / ticket expiry の検証責務を確認する
+8. 既存 security logging / security metrics を維持する
+9. backend security logging が raw token や raw assertion を出さないことを確認する
 
 ## 検証
 
@@ -31,6 +35,9 @@ SSO と SAML の login exchange 後に FastAPI が直接 auth Cookie を発行�
 - SAML exchange 成功時に Cookie が発行される
 - invalid state / RelayState / ticket は拒否される
 - frontend は token value を受け取らなくても dashboard へ遷移できる
+- CSRF 要否と代替防御の組み合わせが Task 0-2 の contract と一致している
+- token value を SPA 向け response body に返さない contract の場合、そのことがテストで確認できる
+- security logging / metrics が既存 flow と同等に維持されている
 
 ## 完了条件
 

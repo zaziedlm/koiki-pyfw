@@ -26,7 +26,7 @@ The target architecture is:
   SSO token exchange, and SAML ticket exchange.
 - The SPA does not store access tokens or refresh tokens in browser storage.
 - The SPA calls backend APIs with `credentials: "include"`.
-- State-changing requests send an `x-csrf-token` header.
+- Cookie-authenticated state-changing requests send an `x-csrf-token` header.
 - Next.js route handlers and middleware are removed after backend parity exists.
 
 ## Stakeholder Communication Summary
@@ -137,7 +137,7 @@ The frontend should own:
 - browser routing
 - forms
 - calling backend APIs with `credentials: "include"`
-- sending the CSRF header on state-changing requests
+- sending the CSRF header on cookie-authenticated state-changing requests
 - holding only transient public flow correlation data such as PKCE verifier,
   OIDC state/nonce, and SAML RelayState
 
@@ -262,8 +262,10 @@ changes require CSRF protection.
 
 Backend requirements:
 
-- validate CSRF on `POST`, `PUT`, `PATCH`, and `DELETE`
+- validate CSRF on cookie-authenticated `POST`, `PUT`, `PATCH`, and `DELETE`
 - do not require CSRF on safe `GET` requests
+- do not require CSRF for non-browser Bearer-token clients unless a separate
+  policy explicitly requires it
 - reject missing or invalid CSRF tokens with a stable error code
 - rotate or reissue CSRF tokens on login and refresh where appropriate
 - avoid logging raw CSRF token values
@@ -340,6 +342,33 @@ Follow repository boundary guidance:
 Todo remains a `libkoiki` starter/sample capability. Do not use the Todo API as
 precedent for placing project-specific API behavior into `libkoiki`.
 
+## Contract Decision Gate
+
+Before backend implementation begins, `task-0-2.md` must settle the contract
+decisions that affect multiple later tasks:
+
+- whether existing JSON token endpoints remain unchanged, are extended, or are
+  paired with new cookie-auth endpoints
+- whether browser login uses JSON or keeps the current form-urlencoded
+  `OAuth2PasswordRequestForm` contract
+- whether registration logs the user in or preserves the current register-then-login behavior
+- whether logout only clears cookies or also revokes the current refresh token
+- how refresh reads the refresh token after cookie migration
+- whether SSO/SAML exchange endpoints require CSRF, and how that decision
+  interacts with `state`, `nonce`, PKCE, RelayState, one-time tickets, and
+  Origin checks
+- whether the SPA and API are same-origin or cross-origin, because this
+  determines CSRF token transport, CORS, `SameSite`, `Secure`, and `__Host-*`
+  cookie feasibility
+- how the current BFF authorization checks, especially Users API admin checks,
+  are preserved or intentionally changed in the backend
+- which environment variables move to `VITE_*`, which become backend settings,
+  and which are removed
+- the source of truth for auth cookie names, max-age, and secure attributes
+
+These decisions are intentionally not made in this plan. They are contract work
+that must be completed before `task-1-1.md` starts implementation.
+
 ## Migration Strategy
 
 The migration should be staged so that authentication behavior is not broken
@@ -383,7 +412,8 @@ Minimum validation before considering the migration complete:
 
 - backend tests prove login, refresh, logout, and CSRF behavior
 - backend tests prove SSO and SAML exchange endpoints issue cookies correctly
-- backend tests prove invalid CSRF is rejected for state-changing requests
+- backend tests prove invalid CSRF is rejected for cookie-authenticated
+  state-changing requests
 - frontend typecheck passes
 - frontend production build passes
 - Docker frontend service starts and healthcheck passes
@@ -392,13 +422,32 @@ Minimum validation before considering the migration complete:
 
 ## Open Questions
 
-- Should production deployment serve the SPA and API from the same origin?
+- Should production deployment serve the SPA and API from the same origin, and
+  how does that choice determine CSRF transport and cookie attributes?
 - Should auth cookies use the current `koiki_*` names or move to `__Host-*`
-  names with a compatibility window?
-- Should CSRF be synchronizer-token based or signed double-submit cookie based?
+  names with a compatibility window, given local development and HTTPS constraints?
+- Should CSRF be synchronizer-token based, signed double-submit cookie based,
+  or response-body bootstrap based for cross-origin deployments?
+- Should existing token-returning API contracts remain for non-browser clients?
 - Which SSO/SAML callback URLs must remain backward compatible?
 - Should the old Next.js implementation be removed in one branch or kept behind
   a short-lived fallback branch?
+
+## Version Line And Branch Policy
+
+This migration changes the `libkoiki` auth contract, cookies, CSRF behavior, and
+compatibility expectations for existing token responses. After backend
+implementation begins, treat it as a breaking-change line.
+
+Use the current `dev/v0.7-react-only` branch as a work and validation branch. Do
+not merge it directly into the v0.7 line. Once the `task-0-2.md` contract
+decisions are settled and implementation quality is stable, branch a new
+development line from the stable v0.7 tip, for example `dev/v0.8`, or `dev/v0.9`
+if v0.8 is already reserved. Merge or PR this React migration branch into that
+new development line.
+
+The PR should document the breaking changes, compatibility policy, and migration
+notes.
 
 ## Change Control
 

@@ -26,17 +26,25 @@
 3. `next/link`、`next/navigation`、`next/server` 依存箇所を一覧化する
 4. browser storage 利用箇所を一覧化する
 5. Next.js 削除前に backend parity が必要な処理を抽出する
+6. BFF が追加している authorization check を抽出する
+   - 特に `/api/users` GET/POST の admin check を backend 側で維持するか確認する
 
 ## 推奨成果物
 
 - route handler ごとの移管表
 - UI 移植対象ファイル一覧
 - Next.js 依存 API の置換表
+- BFF authorization parity 表
+  - route
+  - BFF 側 check
+  - backend 側 check
+  - 移管後の期待 policy
 
 ## 検証
 
 - API route handler 16 件がすべて分類されている
 - Cookie / CSRF / refresh / SSO / SAML の移管先が説明できる
+- BFF 削除で権限が緩む route が未分類で残っていない
 
 ## 完了条件
 

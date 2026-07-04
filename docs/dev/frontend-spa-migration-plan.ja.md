@@ -23,7 +23,7 @@
 - 認証 Cookie、CSRF 検証、token refresh、logout、SSO token exchange、SAML ticket exchange は FastAPI が担う。
 - SPA は access token / refresh token を browser storage に保存しない。
 - SPA は backend API を `credentials: "include"` 付きで呼び出す。
-- state-changing request では `x-csrf-token` header を送る。
+- Cookie 認証された state-changing request では `x-csrf-token` header を送る。
 - backend parity が揃った後に、Next.js route handler と middleware を削除する。
 
 ## 関係者向け説明サマリ
@@ -112,7 +112,7 @@ frontend が担うべきもの:
 - browser routing
 - forms
 - `credentials: "include"` による backend API 呼び出し
-- state-changing request への CSRF header 付与
+- Cookie 認証された state-changing request への CSRF header 付与
 - PKCE verifier、OIDC state/nonce、SAML RelayState など、一時的で公開可能な flow correlation data の保持
 
 これにより、backend が security behavior の source of truth となり、frontend 実装は置き換え可能になる。
@@ -219,8 +219,9 @@ browser cookie は自動送信されるため、cookie-authenticated state chang
 
 Backend requirements:
 
-- `POST`, `PUT`, `PATCH`, `DELETE` で CSRF を検証する
+- Cookie 認証された `POST`, `PUT`, `PATCH`, `DELETE` で CSRF を検証する
 - safe `GET` request では CSRF を要求しない
+- 明示的な別 policy がない限り、non-browser Bearer-token client には CSRF を要求しない
 - CSRF token がない、または不正な場合は安定した error code で拒否する
 - login / refresh 時に必要に応じて CSRF token を rotate または reissue する
 - raw CSRF token value をログに出さない
@@ -294,6 +295,23 @@ repository boundary guidance に従う。
 
 Todo は `libkoiki` の starter/sample capability として扱う。新しい project-specific API behavior を `libkoiki` に置く前例として Todo API を使ってはならない。
 
+## Contract Decision Gate
+
+backend 実装に入る前に、`task-0-2.md` で複数の後続タスクに影響する contract decision を確定する。
+
+- 既存の JSON token endpoint を維持するか、拡張するか、Cookie 認証用 endpoint を新設するか
+- browser login を JSON contract にするか、現行の form-urlencoded `OAuth2PasswordRequestForm` contract を維持するか
+- registration 後に自動ログインするか、現行の register-then-login behavior を維持するか
+- logout で Cookie clear のみ行うか、現在の refresh token 失効まで行うか
+- Cookie 移行後の refresh が refresh token をどこから読むか
+- SSO/SAML exchange endpoint に CSRF を要求するか、およびその判断を `state`、`nonce`、PKCE、RelayState、one-time ticket、Origin check とどう組み合わせるか
+- SPA と API を same-origin にするか cross-origin にするか。これは CSRF token transport、CORS、`SameSite`、`Secure`、`__Host-*` cookie の可否を決める
+- 現行 BFF の authorization check、特に Users API の admin check を backend 側でどう維持するか、または意図的に変更するか
+- どの環境変数を `VITE_*` に移し、どれを backend setting にし、どれを削除するか
+- auth cookie 名、max-age、secure attributes の source of truth をどこに置くか
+
+これらの判断は、この plan 内では決め打ちしない。`task-1-1.md` の実装に入る前に完了すべき contract work として扱う。
+
 ## Migration Strategy
 
 認証 behavior を途中で壊さないように、移行は段階的に進める。
@@ -335,7 +353,7 @@ backend endpoint が同等の behavior を提供し、security-sensitive path �
 
 - backend tests が login、refresh、logout、CSRF behavior を証明している
 - backend tests が SSO / SAML exchange endpoint による Cookie 発行を証明している
-- backend tests が state-changing request における invalid CSRF rejection を証明している
+- backend tests が Cookie 認証された state-changing request における invalid CSRF rejection を証明している
 - frontend typecheck が通る
 - frontend production build が通る
 - Docker frontend service が起動し healthcheck が通る
@@ -344,11 +362,24 @@ backend endpoint が同等の behavior を提供し、security-sensitive path �
 
 ## Open Questions
 
-- production deployment では SPA と API を same origin で配信するべきか
-- auth cookie は現行 `koiki_*` 名を使うか、compatibility window を設けて `__Host-*` 名へ移行するか
-- CSRF は synchronizer-token based と signed double-submit cookie based のどちらにするか
+- production deployment では SPA と API を same origin で配信するべきか。また、その選択が CSRF transport と Cookie attributes をどう決めるか
+- auth cookie は現行 `koiki_*` 名を使うか、local development と HTTPS 制約を踏まえて compatibility window を設け `__Host-*` 名へ移行するか
+- CSRF は synchronizer-token based、signed double-submit cookie based、または cross-origin deployment 向けの response-body bootstrap based のどれにするか
+- 既存の token-returning API contract を non-browser client 向けに残すか
 - どの SSO/SAML callback URL を backward compatible として維持する必要があるか
 - 旧 Next.js 実装は 1 branch で削除するか、短期間 fallback branch として残すか
+
+## Version Line And Branch Policy
+
+この移行は `libkoiki` の auth contract、Cookie、CSRF、既存 token response 互換性に関わるため、
+backend 実装に入った後は破壊的変更として扱う。
+
+現行の `dev/v0.7-react-only` は作業・検証用ブランチとして扱い、v0.7 系へ直接マージしない。
+`task-0-2.md` の contract decision が固まり、実装品質が安定した段階で、安定した v0.7 開発先端から
+`dev/v0.8`、または v0.8 が別用途なら `dev/v0.9` を切り、この React 化ブランチを新しい開発線へ
+PR / merge する。
+
+PR では破壊的変更の内容、互換維持方針、migration note を明記する。
 
 ## Change Control
 

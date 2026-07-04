@@ -34,3 +34,12 @@
 - Stage 2 で SPA 化する
 - Stage 3 で Next.js 依存を削除する
 - Stage 4 で統合検証と引き渡し文書を整える
+
+## ブランチ運用メモ
+
+この作業は `libkoiki` の auth contract、Cookie、CSRF、既存 token response 互換性に関わるため、
+backend 実装以降は破壊的変更として扱う。
+
+現在の `dev/v0.7-react-only` は作業・検証用ブランチとし、v0.7 系へ直接マージしない。
+`task-0-2.md` の contract decision が固まり品質が安定した段階で、安定した v0.7 開発先端から
+`dev/v0.8`、または v0.8 が別用途なら `dev/v0.9` を切り、この変更を新しい開発線へ PR / merge する。
