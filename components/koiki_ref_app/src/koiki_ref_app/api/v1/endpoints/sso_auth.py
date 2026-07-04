@@ -35,7 +35,6 @@ from libkoiki.core.security_metrics import security_metrics
 from libkoiki.core.transaction import transactional
 from libkoiki.schemas.auth_session import SessionAuthResponse
 from libkoiki.schemas.token import TokenWithRefresh
-from libkoiki.schemas.user import UserResponse
 
 logger = structlog.get_logger(__name__)
 
@@ -62,7 +61,17 @@ SSOServiceDep = Annotated[SSOService, Depends(get_sso_service)]
 
 
 def _user_payload(user: object) -> dict:
-    return UserResponse.model_validate(user).model_dump(mode="json")
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "is_active": user.is_active,
+        "is_superuser": user.is_superuser,
+        "created_at": user.created_at.isoformat(),
+        "updated_at": user.updated_at.isoformat(),
+        "roles": [],
+    }
 
 
 @router.get("/sso/authorization", response_model=SSOAuthorizationInitResponse)

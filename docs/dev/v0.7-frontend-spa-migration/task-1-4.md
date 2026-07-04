@@ -45,4 +45,58 @@ Cookie 認証、CSRF、refresh、SSO、SAML の backend behavior を integration
 
 ## 実施結果
 
-未実施。
+実施済み。
+
+- Cookie / CSRF helper を integration tests に追加した。
+- password session login の Cookie 発行と token body 非露出を検証した。
+- Cookie 認証で `GET /auth/session/me` が current user を解決できることを検証した。
+- Cookie 認証された `PUT /users/me` は CSRF を要求し、invalid CSRF を拒否することを検証した。
+- Bearer token 認証の `PUT /users/me` では CSRF を要求しないことを検証した。
+- session refresh の token rotation / Cookie 更新 / token body 非露出を検証した。
+- refresh 失敗時に auth Cookie clear header が返ることを検証した。
+- session logout 後に `GET /auth/session/me` が 401 になることを検証した。
+- Users API の権限 parity として、一般ユーザー Cookie 認証で `/users` が 403 になることを検証した。
+- 既存 token-returning login / refresh endpoint が token body を返し続けることを検証した。
+- session SSO / SAML exchange は service boundary stub を使い、router 経由で Cookie 発行と token body 非露出を検証した。
+
+実装補足:
+
+- Users API の unsafe endpoint に `CookieCSRFDep` を追加した。
+  - Cookie 認証された unsafe request のみ CSRF を検証する。
+  - Bearer token client には CSRF を要求しない。
+- session response の user payload は ORM lazy relationship に触れない明示 dict にした。
+
+SSO / SAML integration test の mock 方針:
+
+- IdP token endpoint、JWKS / ID token verification、SAML response verification は外部依存としてこの task では直接叩かない。
+- state / nonce / RelayState / ticket verification は既存 service / token endpoint flow と共有し、service-level tests と既存 logging tests に委ねる。
+- session endpoint 固有の責務である CSRF、Cookie 発行、token body 非露出は router 経由で検証する。
+
+検証:
+
+```text
+docker compose up -d --force-recreate db
+docker compose ps db
+DEBUG=False RUN_DB_INTEGRATION=1 DATABASE_URL=postgresql+asyncpg://koiki_user:koiki_password@localhost:5432/koiki_todo_db \
+  uv run pytest components/koiki_ref_app/tests/integration/app/api/test_auth_session_api.py
+```
+
+結果:
+
+```text
+10 passed, 12 warnings
+```
+
+関連 unit:
+
+```text
+DEBUG=False uv run pytest \
+  components/libkoiki/tests/unit/libkoiki/api/test_auth_session.py \
+  components/koiki_ref_app/tests/unit/app/test_session_sso_saml_auth.py
+```
+
+結果:
+
+```text
+11 passed
+```
