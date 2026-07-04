@@ -40,4 +40,29 @@ backend parity と SPA 移行が完了した後、Next.js 固有の server surfa
 
 ## 実施結果
 
-未実施。
+実施済み。
+
+- SPA 側が Next.js route handler を呼んでいないことを `rg` で確認した。
+- `frontend/src/app/api/` 配下の Next.js route handler を削除した。
+- `frontend/src/middleware.ts` を削除した。
+- `frontend/next.config.ts` を削除した。
+- Next.js server helper だった `frontend/src/lib/cookie-utils.ts` と `frontend/src/lib/csrf-utils.ts` を削除した。
+- Next.js App Router root layout だった `frontend/src/app/layout.tsx` を削除した。
+- `next`、`next-themes`、`eslint-config-next` を package dependencies から削除し、lockfile を更新した。
+- `frontend/tsconfig.json` から Next.js plugin / `.next` 型 include / `next-env.d.ts` include を削除した。
+- `frontend/eslint.config.mjs` から Next.js ESLint preset を削除した。
+- `frontend/src/components/ui/sonner.tsx` を `next-themes` 依存から既存 UI store の theme 参照へ変更した。
+
+検証:
+
+- `rg "next/|NextRequest|NextResponse|next-themes|eslint-config-next|next/core-web-vitals|next/typescript" frontend/src frontend/package.json frontend/tsconfig.json frontend/eslint.config.mjs`
+- `rg "src/app/api|/api/auth|/api/sso|/api/saml|/api/todos|/api/users" frontend/src`
+- `rg '"next"|next-themes|eslint-config-next|@next/' frontend/package-lock.json frontend/package.json`
+- `npm run check-types`
+- `npm run lint`
+- `npm run build`
+
+補足:
+
+- `frontend/README.md` と Dockerfile 類には Next.js 時代の記述や build 前提が残っている。Docker / environment 移行は Task 3-2 で扱う。
+- Vite build は sandbox 内では esbuild の `spawn EPERM` で失敗するため、昇格実行で確認した。
