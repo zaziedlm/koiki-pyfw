@@ -22,15 +22,18 @@ Next.js route handler 経由の API client を、FastAPI 直呼びの Cookie 認
 2. API base URL 解決を Vite 前提にする
 3. `credentials: "include"` を共通化する
 4. CSRF bootstrap と header 付与を共通化する
-5. login / refresh / logout / me を backend contract に合わせる
+5. login / register / refresh / logout / me を `/auth/session/*` backend contract に合わせる
 6. Todo API を backend `/todos` 直呼びにする
-7. token value を browser storage に保存していないことを確認する
+7. SSO / SAML callback exchange を `/auth/session/sso/login` と `/auth/session/saml/login` に合わせる
+8. token value を browser storage に保存していないことを確認する
 
 ## 検証
 
 - 未ログイン時の `me` は null として扱える
 - login 成功後に auth query が更新される
 - Todo CRUD が Cookie 認証で呼び出される
+- SPA client が Next.js `/api/*` route を呼んでいない
+- SPA client が token value を response body から読まない
 
 ## 完了条件
 

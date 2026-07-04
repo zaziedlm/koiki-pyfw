@@ -56,9 +56,28 @@ class Settings(BaseSettings):
     # JWT関連設定
     JWT_SECRET: str = "jwt_secret_development_only"
     JWT_ALGORITHM: str = "HS256"
+
+    # Browser Cookie authentication settings
+    AUTH_ACCESS_COOKIE_NAME: str = "koiki_access_token"
+    AUTH_REFRESH_COOKIE_NAME: str = "koiki_refresh_token"
+    AUTH_CSRF_COOKIE_NAME: str = "koiki_csrf_token"
+    AUTH_CSRF_HEADER_NAME: str = "x-csrf-token"
+    AUTH_COOKIE_SECURE: bool = False
+    AUTH_COOKIE_SAMESITE: str = "lax"
+    AUTH_COOKIE_DOMAIN: Optional[str] = None
+    AUTH_COOKIE_PATH: str = "/"
+    AUTH_CSRF_COOKIE_MAX_AGE_SECONDS: int = 24 * 60 * 60
     
     # レート制限設定
     RATE_LIMIT_PER_SECOND: int = 10
+
+    @field_validator("AUTH_COOKIE_SAMESITE")
+    @classmethod
+    def validate_cookie_samesite(cls, v: str) -> str:
+        normalized = v.lower()
+        if normalized not in {"lax", "strict", "none"}:
+            raise ValueError("AUTH_COOKIE_SAMESITE must be one of: lax, strict, none")
+        return normalized
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
