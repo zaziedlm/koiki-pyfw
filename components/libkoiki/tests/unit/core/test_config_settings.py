@@ -33,7 +33,22 @@ def test_backend_cors_origins_accepts_comma_separated_string():
         BACKEND_CORS_ORIGINS="http://localhost:3000,https://example.com",
     )
 
-    assert [str(origin) for origin in settings.BACKEND_CORS_ORIGINS] == [
-        "http://localhost:3000/",
-        "https://example.com/",
+    assert settings.BACKEND_CORS_ORIGINS == [
+        "http://localhost:3000",
+        "https://example.com",
+    ]
+
+
+def test_backend_cors_origins_strips_trailing_slash_from_list_items():
+    settings = Settings(
+        _env_file=None,
+        BACKEND_CORS_ORIGINS=[
+            "http://localhost:3000/",
+            "https://example.com/",
+        ],
+    )
+
+    assert settings.BACKEND_CORS_ORIGINS == [
+        "http://localhost:3000",
+        "https://example.com",
     ]

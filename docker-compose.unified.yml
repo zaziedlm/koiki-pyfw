@@ -23,17 +23,15 @@ x-app-base: &app-base
         - app
 
 x-frontend-base: &frontend-base
-  env_file:
-    - ./frontend/.env.docker
   ports:
     - "3000:3000"
   restart: unless-stopped
   healthcheck:
-    test: [ "CMD", "curl", "-f", "http://127.0.0.1:3000/api/health" ]
+    test: [ "CMD", "curl", "-f", "http://127.0.0.1:3000/health" ]
     interval: 30s
     timeout: 10s
     retries: 3
-    start_period: 30s
+    start_period: 10s
 
 services:
   # ------------------------
@@ -118,17 +116,26 @@ services:
     container_name: koiki_v07_frontend_dev
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_ENABLE_DEV_TOOLS=true
-      - NEXT_PUBLIC_DEBUG=true
+      - VITE_API_BASE_URL=http://localhost:8000/api/v1
+      - VITE_API_PREFIX=/api/v1
+      - VITE_API_URL=http://localhost:8000
+      - VITE_ENABLE_DEV_TOOLS=true
+      - VITE_DEBUG=true
     build:
       context: ./frontend
       dockerfile: Dockerfile.unified
       target: dev
-    command: npm run dev -- --turbopack --hostname 0.0.0.0 --port 3000
+    command: npm run dev
     volumes:
       - ./frontend/src:/app/src:cached
       - ./frontend/public:/app/public:cached
       - /app/node_modules
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3000/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     depends_on:
       app-dev:
         condition: service_started
@@ -141,6 +148,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.unified
       target: runner
+      args:
+        FRONTEND_ENV_FILE: ${FRONTEND_BUILD_ENV_FILE:-.env.docker}
     depends_on:
       app-optimized:
         condition: service_started
@@ -149,8 +158,6 @@ services:
     <<: *frontend-base
     profiles: [ "prod" ]
     container_name: koiki_v07_frontend_prod_unified
-    env_file:
-      - ${FRONTEND_ENV_FILE:-./frontend/.env.production}
     build:
       context: ./frontend
       dockerfile: Dockerfile.unified
@@ -165,8 +172,6 @@ services:
     <<: *frontend-base
     profiles: [ "prod-external" ]
     container_name: koiki_v07_frontend_prod_external_unified
-    env_file:
-      - ${FRONTEND_ENV_FILE:-./frontend/.env.production}
     build:
       context: ./frontend
       dockerfile: Dockerfile.unified

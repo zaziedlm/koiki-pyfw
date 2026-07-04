@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     # アプリケーション名を追加
     APP_NAME: str = "KOIKI Framework"
     
-    # BACKEND_CORS_ORIGINS is a comma-separated list of origins
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    # BACKEND_CORS_ORIGINS is a comma-separated list of browser origins.
+    BACKEND_CORS_ORIGINS: List[str] = []
 
     # API設定
     API_PREFIX: str = "/api/v1"  # API URLのプレフィックスを追加
@@ -83,8 +83,10 @@ class Settings(BaseSettings):
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+            return [i.strip().rstrip("/") for i in v.split(",") if i.strip()]
+        elif isinstance(v, list):
+            return [i.strip().rstrip("/") for i in v if i.strip()]
+        elif isinstance(v, str):
             return v
         raise ValueError(v)
 
