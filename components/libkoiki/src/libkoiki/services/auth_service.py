@@ -189,6 +189,13 @@ class AuthService:
         
         logger.info("User tokens revoked", user_id=user_id, count=revoked_count)
         return revoked_count
+
+    @transactional
+    async def revoke_refresh_token(self, refresh_token: str, db: AsyncSession) -> bool:
+        """単一の refresh token を無効化する。"""
+        logger.info("Revoking refresh token")
+        self.refresh_token_repo.set_session(db)
+        return await self.refresh_token_repo.revoke_token(refresh_token)
     
     async def get_user_tokens(
         self, 

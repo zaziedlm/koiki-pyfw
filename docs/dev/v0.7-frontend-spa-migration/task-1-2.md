@@ -54,4 +54,40 @@ password login、registration、refresh、logout、me を SPA 向け Cookie 認�
 
 ## 実施結果
 
-未実施。
+実施済み。
+
+- `libkoiki` に `/api/v1/auth/session/*` endpoint を追加した。
+  - `GET /session/csrf`
+  - `POST /session/login`
+  - `POST /session/register`
+  - `POST /session/refresh`
+  - `POST /session/logout`
+  - `GET /session/me`
+- 既存 `/api/v1/auth/login` の token-returning contract は維持し、password 認証・LoginSecurityService・security logging・token pair 発行処理だけを session login と共有した。
+- session login / refresh は response body に access token / refresh token を返さず、Cookie でのみ token を更新する。
+- session register は auth Cookie を発行せず、CSRF Cookie の更新だけを行う。
+- session refresh は refresh Cookie から token を読み、失敗時は auth Cookie / CSRF Cookie を clear する。
+- session logout は現在の refresh Cookie に対応する refresh token を失効し、Cookie を clear する。
+- session `me` は Task 1-1 の Cookie fallback により `ActiveUserDep` 経由で current user を返す。
+
+検証:
+
+```text
+DEBUG=False uv run pytest \
+  components/libkoiki/tests/unit/libkoiki/api/test_auth_session.py \
+  components/libkoiki/tests/unit/libkoiki/api/test_auth_logging.py \
+  components/libkoiki/tests/unit/core/test_auth_cookie_csrf.py \
+  components/libkoiki/tests/unit/libkoiki/test_token_logging.py \
+  tests/unit/test_pyjwt_migration.py
+```
+
+結果:
+
+```text
+56 passed, 7 warnings
+```
+
+補足:
+
+- request/DI/DB を含む full-stack の session flow 検証は Task 1-4 の integration tests で扱う。
+- Users API authorization parity は Task 1-4 の integration scope で、BFF 削除後の権限低下がないことを確認する。

@@ -74,6 +74,12 @@ def validate_request_csrf(request: Request) -> None:
     if not should_validate_csrf(request):
         return
 
+    require_valid_csrf_token(request)
+
+
+def require_valid_csrf_token(request: Request) -> None:
+    """Request の CSRF cookie/header pair を必ず検証する。"""
+
     cookie_token = request.cookies.get(settings.AUTH_CSRF_COOKIE_NAME)
     header_token = request.headers.get(settings.AUTH_CSRF_HEADER_NAME)
     if csrf_tokens_match(cookie_token, header_token):
