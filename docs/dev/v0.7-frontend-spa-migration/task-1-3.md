@@ -47,4 +47,37 @@ SSO と SAML の login exchange 後に FastAPI が直接 auth Cookie を発行�
 
 ## 実施結果
 
-未実施。
+実施済み。
+
+- `koiki_ref_app` の既存 SSO / SAML token-returning endpoint は維持した。
+  - `POST /api/v1/auth/sso/login`
+  - `POST /api/v1/auth/saml/login`
+- SPA 向け Cookie session exchange endpoint を追加した。
+  - `POST /api/v1/auth/session/sso/login`
+  - `POST /api/v1/auth/session/saml/login`
+- SSO / SAML の exchange、state / nonce / RelayState / ticket 検証、security logging、security metrics、内部 token pair 発行処理は既存 flow と共有した。
+- session SSO / SAML login は CSRF cookie/header pair を必須にし、成功時に access / refresh / CSRF Cookie を発行する。
+- session SSO / SAML login response body は `message`, `user`, `location` のみとし、access token / refresh token value を返さない。
+- SSO authorization init と SAML authorization init は既存 response contract のまま SPA から利用可能と判断した。
+
+検証:
+
+```text
+DEBUG=False uv run pytest \
+  components/koiki_ref_app/tests/unit/app/test_session_sso_saml_auth.py \
+  components/koiki_ref_app/tests/unit/app/test_sso_auth_logging.py \
+  components/koiki_ref_app/tests/unit/app/test_saml_auth_logging.py \
+  components/libkoiki/tests/unit/libkoiki/api/test_auth_session.py \
+  components/libkoiki/tests/unit/core/test_auth_cookie_csrf.py
+```
+
+結果:
+
+```text
+31 passed, 4 warnings
+```
+
+補足:
+
+- invalid state / RelayState / ticket の拒否は既存 service / token endpoint flow と共有しているため、個別の service-level tests と Task 1-4 の integration tests で full-stack に確認する。
+- frontend の dashboard 遷移確認は Task 2 系の SPA client 移行後に実施する。
