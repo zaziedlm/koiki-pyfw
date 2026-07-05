@@ -51,7 +51,7 @@ frontend の Docker、compose、env、README を Vite SPA 構成に合わせる�
 実施済み。
 
 - `frontend/Dockerfile` と `frontend/Dockerfile.unified` を Vite build + nginx static SPA serving 構成に変更した。
-- production runner は `dist/` を `/usr/share/nginx/html` に配置し、nginx で port `3000` を listen する。
+- production runner は `dist/` を `/usr/share/nginx/html` に配置し、unprivileged nginx で container port `8080` を listen する。Docker Compose では host port `3000` として公開する。
 - `frontend/docker/nginx.conf` を追加し、`/health` と React Router deep link 用の `/index.html` fallback を設定した。
 - Docker healthcheck を Next.js `/api/health` 依存から nginx `/health` へ変更した。
 - dev target / compose dev command を Vite dev server 前提の `npm run dev` に変更した。
@@ -83,6 +83,7 @@ Env migration:
 - `docker compose -f docker-compose.unified.yml --profile dev config --quiet`
 - `docker build --target runner -t koiki-frontend-spa:test ./frontend`
 - Built image runtime check:
+  - host `localhost:3000` -> container `8080`
   - `/health` -> HTTP 200, `ok`
   - `/dashboard` -> HTTP 200 via nginx SPA fallback
   - Docker health status -> `healthy`
@@ -94,6 +95,10 @@ Env migration:
     - `OPTIONS /api/v1/auth/session/me` from `http://127.0.0.1:3000` -> HTTP 200
   - frontend `/health` from host -> HTTP 200, `ok`
   - direct CSRF + login request with matching cookie/header -> CSRF passes; invalid credentials returns HTTP 401 instead of CSRF HTTP 403
+- Unprivileged nginx runtime check:
+  - `docker compose build frontend` -> success with `nginxinc/nginx-unprivileged:1.30.3-alpine`
+  - `docker compose ps frontend` -> `0.0.0.0:3000->8080/tcp`, `healthy`
+  - `curl http://localhost:3000/health` -> HTTP 200, `Server: nginx/1.30.3`, `ok`
 
 補足:
 

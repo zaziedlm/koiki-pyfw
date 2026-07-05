@@ -7,8 +7,6 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: dev
-    ports:
-      - "3000:3000"
     environment:
       - NODE_ENV=development
       - VITE_API_BASE_URL=http://localhost:8000/api/v1
@@ -16,14 +14,14 @@ services:
       - VITE_API_URL=http://localhost:8000
       - VITE_ENABLE_DEV_TOOLS=true
       - VITE_DEBUG=true
-    command: npm run dev
+    command: npm exec vite -- --host 0.0.0.0 --port 8080
     volumes:
       # Enable hot reload for frontend development
       - ./frontend/src:/app/src:cached
       - ./frontend/public:/app/public:cached
       - /app/node_modules # 匿名ボリュームでnode_modulesを保護
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3000/" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/" ]
       interval: 30s
       timeout: 10s
       retries: 3

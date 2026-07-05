@@ -235,16 +235,28 @@ switch ($Command.ToLower()) {
 
         Write-Host "Frontend health:"
         try {
-            $frontendHealth = Invoke-RestMethod -Uri "http://localhost:3000/api/health" -TimeoutSec 5
-            $frontendHealth | ConvertTo-Json -Depth 3
+            $frontendHealth = Invoke-WebRequest -Uri "http://localhost:3000/health" -TimeoutSec 5
+            $frontendBody = $frontendHealth.Content.Trim()
+            if ($frontendHealth.StatusCode -eq 200 -and $frontendBody -eq "ok") {
+                Write-Host "[INFO] Frontend is healthy: $frontendBody"
+            } else {
+                Write-Host "[WARN] Frontend health endpoint returned unexpected response"
+                Write-Host "[WARN] Status: $($frontendHealth.StatusCode)"
+                Write-Host "[WARN] Body: $frontendBody"
+            }
         } catch {
             Write-Host "[WARN] Frontend not responding"
         }
 
         Write-Host "Backend health:"
         try {
-            $backendHealth = Invoke-RestMethod -Uri "http://localhost:8000/api/health" -TimeoutSec 5
-            $backendHealth | ConvertTo-Json -Depth 3
+            $backendHealth = Invoke-WebRequest -Uri "http://localhost:8000/" -TimeoutSec 5
+            if ($backendHealth.StatusCode -eq 200) {
+                Write-Host "[INFO] Backend is healthy"
+                $backendHealth.Content | ConvertFrom-Json | ConvertTo-Json -Depth 3
+            } else {
+                Write-Host "[WARN] Backend returned status $($backendHealth.StatusCode)"
+            }
         } catch {
             Write-Host "[WARN] Backend not responding"
         }

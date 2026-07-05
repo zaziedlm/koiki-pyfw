@@ -40,7 +40,8 @@ npm run preview
 
 ## Docker
 
-Production Docker builds compile the SPA with Vite and serve `dist/` through nginx on port `3000`.
+Production Docker builds compile the SPA with Vite and serve `dist/` through unprivileged nginx on container port `8080`.
+Docker Compose publishes it as host port `3000`.
 
 ```bash
 docker compose up --build frontend

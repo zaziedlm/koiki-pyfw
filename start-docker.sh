@@ -231,9 +231,15 @@ case "${1:-up}" in
     "health")
         echo "[INFO] Checking service health..."
         echo "Frontend health:"
-        curl -s http://localhost:3000/api/health | jq . || echo "[WARN] Frontend not responding"
+        frontend_health="$(curl -fsS http://localhost:3000/health 2>/dev/null || true)"
+        if [ "$frontend_health" = "ok" ]; then
+            echo "[INFO] Frontend is healthy: ok"
+        else
+            echo "[WARN] Frontend health endpoint returned unexpected response"
+            [ -n "$frontend_health" ] && echo "$frontend_health"
+        fi
         echo "Backend health:"
-        curl -s http://localhost:8000/api/health || echo "[WARN] Backend not responding"
+        curl -fsS http://localhost:8000/ || echo "[WARN] Backend not responding"
         echo "Database health:"
         set_base_compose_env_readonly
         docker compose exec db pg_isready -U ${POSTGRES_USER:-koiki_user} -d ${POSTGRES_DB:-koiki_todo_db} || echo "[WARN] Database not responding"
