@@ -94,7 +94,8 @@ export function useCookieDeleteTodo() {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to delete todo');
       }
-      return response.json();
+      // DELETE は 204 No Content（空ボディ）を返すため response.json() は呼ばない
+      return null;
     },
     onSuccess: (_, id) => {
       // Remove the todo from cache
