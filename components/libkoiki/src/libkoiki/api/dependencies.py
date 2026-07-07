@@ -168,6 +168,8 @@ async def get_current_active_user(
     """現在認証されているアクティブなユーザーを取得"""
     if not user_id: # get_current_user_from_tokenがNoneを返す場合（エラー処理はそちらで行われる想定）
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+
+    validate_request_csrf(request)
     
     # ユーザーIDからユーザーオブジェクトを取得
     user_repo = UserRepository()
