@@ -4,9 +4,8 @@ from typing import AsyncGenerator, Optional
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 # Redis依存の条件付きインポート
 try:
@@ -53,6 +52,7 @@ from libkoiki.core.middleware import (  # AccessLogMiddlewareはオプション
     SecurityHeadersMiddleware,
 )
 from libkoiki.core.monitoring import setup_monitoring
+from libkoiki.core.rate_limiter import configure_limiter
 from libkoiki.db.session import AsyncSessionFactory, connect_db, disconnect_db
 from libkoiki.events.handlers import (  # サンプルハンドラ
     EventHandler,
@@ -178,12 +178,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "Changed rate limit strategy from 'redis' to 'fixed-window' due to Redis unavailability"
         )
 
-    limiter = Limiter(
-        key_func=get_remote_address,
+    limiter = configure_limiter(
         enabled=settings.RATE_LIMIT_ENABLED,
-        default_limits=[settings.RATE_LIMIT_DEFAULT]
-        if settings.RATE_LIMIT_ENABLED
-        else [],
+        default_limit=settings.RATE_LIMIT_DEFAULT,
         strategy=strategy,
         storage_uri=redis_storage_uri,
         storage_options=storage_options,
