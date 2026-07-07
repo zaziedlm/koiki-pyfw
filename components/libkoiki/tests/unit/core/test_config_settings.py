@@ -1,6 +1,14 @@
 from libkoiki.core.config import Settings
 
 
+def test_access_token_expire_minutes_default_is_short_lived(monkeypatch):
+    monkeypatch.delenv("ACCESS_TOKEN_EXPIRE_MINUTES", raising=False)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.ACCESS_TOKEN_EXPIRE_MINUTES == 30
+
+
 def test_database_url_is_built_from_postgres_settings_when_missing(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
 

@@ -4,8 +4,8 @@ from typing import List, Optional, Union
 
 class Settings(BaseSettings):
     # 既存の設定...
-    # JWT Access Token有効期限（開発環境：60分、本番環境：15分推奨）
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    # JWT Access Token有効期限（本番環境は 15-30 分を推奨）
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     # Refresh Token有効期限（日数）
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     SERVER_NAME: str = "KOIKI Framework"
