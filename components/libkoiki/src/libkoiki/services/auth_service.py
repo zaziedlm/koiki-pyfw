@@ -136,7 +136,9 @@ class AuthService:
             new_refresh_token = generate_refresh_token()
             
             # 新しいリフレッシュトークンを保存
-            expires_at = RefreshTokenModel.create_expires_at(days=7)
+            expires_at = RefreshTokenModel.create_expires_at(
+                days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+            )
             await self.refresh_token_repo.create_refresh_token(
                 user_id=user.id,
                 token=new_refresh_token,

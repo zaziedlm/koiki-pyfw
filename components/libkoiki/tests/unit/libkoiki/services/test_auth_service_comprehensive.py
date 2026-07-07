@@ -216,18 +216,26 @@ class TestAuthServiceComprehensive:
         auth_service.user_repo.get.assert_called_once_with(mock_refresh_token.user_id)
 
     @patch('libkoiki.core.security.create_access_token', return_value='new_access_token')
+    @patch('libkoiki.services.auth_service.RefreshTokenModel.create_expires_at')
     @patch('libkoiki.services.auth_service.verify_refresh_token_format', return_value=True)
     @pytest.mark.asyncio
     async def test_refresh_access_token_with_rotation(
         self,
         mock_verify_format,
+        mock_create_expires_at,
         mock_create_access_token,
         auth_service,
         mock_user,
         mock_refresh_token,
-        mock_db_session
+        mock_db_session,
+        monkeypatch
     ):
         """トークンローテーション付きリフレッシュテスト"""
+        from libkoiki.core.config import settings
+
+        monkeypatch.setattr(settings, "REFRESH_TOKEN_EXPIRE_DAYS", 14)
+        expected_expires_at = datetime.now(timezone.utc) + timedelta(days=14)
+        mock_create_expires_at.return_value = expected_expires_at
         auth_service.refresh_token_repo.get_valid_token.return_value = mock_refresh_token
         auth_service.user_repo.get.return_value = mock_user
 
@@ -240,6 +248,12 @@ class TestAuthServiceComprehensive:
         assert access_token == "new_access_token"
         assert isinstance(expires_in, int)
         auth_service.refresh_token_repo.revoke_token.assert_called_once_with("old_refresh_token")
+        mock_create_expires_at.assert_called_once_with(days=14)
+        auth_service.refresh_token_repo.create_refresh_token.assert_called_once()
+        assert (
+            auth_service.refresh_token_repo.create_refresh_token.await_args.kwargs["expires_at"]
+            is expected_expires_at
+        )
     
     # ====== ユーザートークン管理テスト ======
     
