@@ -14,13 +14,17 @@ def refresh_cookie_max_age_seconds() -> int:
     return int(timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS).total_seconds())
 
 
-def _cookie_options(max_age: int, *, http_only: bool) -> dict[str, Any]:
+def refresh_cookie_path() -> str:
+    return settings.AUTH_REFRESH_COOKIE_PATH or f"{settings.API_PREFIX}/auth/session"
+
+
+def _cookie_options(max_age: int, *, http_only: bool, path: str | None = None) -> dict[str, Any]:
     options: dict[str, Any] = {
         "httponly": http_only,
         "secure": settings.AUTH_COOKIE_SECURE,
         "samesite": settings.AUTH_COOKIE_SAMESITE,
         "max_age": max_age,
-        "path": settings.AUTH_COOKIE_PATH,
+        "path": path or settings.AUTH_COOKIE_PATH,
     }
     if settings.AUTH_COOKIE_DOMAIN:
         options["domain"] = settings.AUTH_COOKIE_DOMAIN
@@ -39,22 +43,31 @@ def set_refresh_token_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         settings.AUTH_REFRESH_COOKIE_NAME,
         token,
-        **_cookie_options(refresh_cookie_max_age_seconds(), http_only=True),
+        **_cookie_options(
+            refresh_cookie_max_age_seconds(),
+            http_only=True,
+            path=refresh_cookie_path(),
+        ),
     )
 
 
 def clear_auth_cookies(response: Response) -> None:
-    for name in (
-        settings.AUTH_ACCESS_COOKIE_NAME,
-        settings.AUTH_REFRESH_COOKIE_NAME,
-        settings.AUTH_CSRF_COOKIE_NAME,
-    ):
+    for name in (settings.AUTH_ACCESS_COOKIE_NAME, settings.AUTH_CSRF_COOKIE_NAME):
         response.delete_cookie(
             name,
             path=settings.AUTH_COOKIE_PATH,
             domain=settings.AUTH_COOKIE_DOMAIN,
             secure=settings.AUTH_COOKIE_SECURE,
             httponly=name != settings.AUTH_CSRF_COOKIE_NAME,
+            samesite=settings.AUTH_COOKIE_SAMESITE,
+        )
+    for path in {settings.AUTH_COOKIE_PATH, refresh_cookie_path()}:
+        response.delete_cookie(
+            settings.AUTH_REFRESH_COOKIE_NAME,
+            path=path,
+            domain=settings.AUTH_COOKIE_DOMAIN,
+            secure=settings.AUTH_COOKIE_SECURE,
+            httponly=True,
             samesite=settings.AUTH_COOKIE_SAMESITE,
         )
 

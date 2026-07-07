@@ -32,12 +32,22 @@ def _request(
     )
 
 
+def _set_cookie_lines(response: Response) -> list[str]:
+    return [
+        value.decode("latin-1")
+        for key, value in response.raw_headers
+        if key == b"set-cookie"
+    ]
+
+
 def test_auth_cookies_use_backend_settings(monkeypatch):
     monkeypatch.setattr(settings, "AUTH_ACCESS_COOKIE_NAME", "test_access")
     monkeypatch.setattr(settings, "AUTH_REFRESH_COOKIE_NAME", "test_refresh")
     monkeypatch.setattr(settings, "AUTH_COOKIE_SECURE", True)
     monkeypatch.setattr(settings, "AUTH_COOKIE_SAMESITE", "strict")
     monkeypatch.setattr(settings, "AUTH_COOKIE_DOMAIN", None)
+    monkeypatch.setattr(settings, "AUTH_COOKIE_PATH", "/")
+    monkeypatch.setattr(settings, "AUTH_REFRESH_COOKIE_PATH", "/api/v1/auth/session")
 
     response = Response()
 
@@ -47,18 +57,46 @@ def test_auth_cookies_use_backend_settings(monkeypatch):
         refresh_token="refresh-value",
     )
 
-    set_cookie_headers = response.raw_headers
-    cookie_text = "\n".join(
-        value.decode("latin-1")
-        for key, value in set_cookie_headers
-        if key == b"set-cookie"
+    cookie_lines = _set_cookie_lines(response)
+    access_cookie = next(line for line in cookie_lines if line.startswith("test_access="))
+    refresh_cookie = next(line for line in cookie_lines if line.startswith("test_refresh="))
+
+    assert "test_access=access-value" in access_cookie
+    assert "HttpOnly" in access_cookie
+    assert "Secure" in access_cookie
+    assert "SameSite=strict" in access_cookie
+    assert "Path=/" in access_cookie
+    assert "test_refresh=refresh-value" in refresh_cookie
+    assert "HttpOnly" in refresh_cookie
+    assert "Secure" in refresh_cookie
+    assert "SameSite=strict" in refresh_cookie
+    assert "Path=/api/v1/auth/session" in refresh_cookie
+
+
+def test_clear_auth_cookies_deletes_refresh_cookie_on_current_and_legacy_paths(monkeypatch):
+    monkeypatch.setattr(settings, "AUTH_COOKIE_PATH", "/")
+    monkeypatch.setattr(settings, "AUTH_REFRESH_COOKIE_PATH", "/api/v1/auth/session")
+    response = Response()
+
+    auth_cookies.clear_auth_cookies(response)
+
+    refresh_clear_cookies = (
+        line
+        for line in _set_cookie_lines(response)
+        if line.startswith(f"{settings.AUTH_REFRESH_COOKIE_NAME}=")
     )
 
-    assert "test_access=access-value" in cookie_text
-    assert "test_refresh=refresh-value" in cookie_text
-    assert "HttpOnly" in cookie_text
-    assert "Secure" in cookie_text
-    assert "SameSite=strict" in cookie_text
+    refresh_clear_text = "\n".join(refresh_clear_cookies)
+    assert f"{settings.AUTH_REFRESH_COOKIE_NAME}=\"\"" in refresh_clear_text
+    assert "Path=/api/v1/auth/session" in refresh_clear_text
+    assert "Path=/" in refresh_clear_text
+
+
+def test_refresh_cookie_path_defaults_to_session_auth_route(monkeypatch):
+    monkeypatch.setattr(settings, "API_PREFIX", "/api/v1")
+    monkeypatch.setattr(settings, "AUTH_REFRESH_COOKIE_PATH", None)
+
+    assert auth_cookies.refresh_cookie_path() == "/api/v1/auth/session"
 
 
 def test_csrf_token_is_signed_and_must_match():

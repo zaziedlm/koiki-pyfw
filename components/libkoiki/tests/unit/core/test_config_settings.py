@@ -18,6 +18,14 @@ def test_csrf_secret_is_separate_from_jwt_secret_by_default(monkeypatch):
     assert settings.AUTH_CSRF_SECRET != settings.JWT_SECRET
 
 
+def test_refresh_cookie_path_defaults_to_route_prefix(monkeypatch):
+    monkeypatch.delenv("AUTH_REFRESH_COOKIE_PATH", raising=False)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.AUTH_REFRESH_COOKIE_PATH is None
+
+
 def test_database_url_is_built_from_postgres_settings_when_missing(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
 

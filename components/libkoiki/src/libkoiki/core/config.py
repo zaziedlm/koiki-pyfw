@@ -67,6 +67,7 @@ class Settings(BaseSettings):
     AUTH_COOKIE_SAMESITE: str = "lax"
     AUTH_COOKIE_DOMAIN: Optional[str] = None
     AUTH_COOKIE_PATH: str = "/"
+    AUTH_REFRESH_COOKIE_PATH: Optional[str] = None
     AUTH_CSRF_COOKIE_MAX_AGE_SECONDS: int = 24 * 60 * 60
     
     # レート制限設定
