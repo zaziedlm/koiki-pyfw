@@ -5,6 +5,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from libkoiki.core import auth_cookies
+from libkoiki.core import csrf as csrf_module
 from libkoiki.core.config import settings
 from libkoiki.core.csrf import (
     CSRF_ERROR_CODE,
@@ -63,10 +64,33 @@ def test_auth_cookies_use_backend_settings(monkeypatch):
 def test_csrf_token_is_signed_and_must_match():
     token = generate_csrf_token()
 
+    assert len(token.split(".")) == 3
     assert csrf_tokens_match(token, token)
     assert not csrf_tokens_match(token, None)
     assert not csrf_tokens_match(token, f"{token}tampered")
     assert not csrf_tokens_match("not.signed", "not.signed")
+
+
+def test_csrf_token_expires(monkeypatch):
+    monkeypatch.setattr(settings, "AUTH_CSRF_COOKIE_MAX_AGE_SECONDS", 10)
+    monkeypatch.setattr(csrf_module.time, "time", lambda: 1_000)
+    token = generate_csrf_token()
+
+    monkeypatch.setattr(csrf_module.time, "time", lambda: 1_011)
+
+    assert not csrf_tokens_match(token, token)
+
+
+def test_csrf_token_uses_separate_csrf_secret(monkeypatch):
+    monkeypatch.setattr(settings, "JWT_SECRET", "jwt-secret-before")
+    monkeypatch.setattr(settings, "AUTH_CSRF_SECRET", "csrf-secret")
+    token = generate_csrf_token()
+
+    monkeypatch.setattr(settings, "JWT_SECRET", "jwt-secret-after")
+    assert csrf_tokens_match(token, token)
+
+    monkeypatch.setattr(settings, "AUTH_CSRF_SECRET", "different-csrf-secret")
+    assert not csrf_tokens_match(token, token)
 
 
 def test_validate_request_csrf_only_requires_cookie_authenticated_unsafe_request():

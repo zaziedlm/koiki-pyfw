@@ -9,6 +9,15 @@ def test_access_token_expire_minutes_default_is_short_lived(monkeypatch):
     assert settings.ACCESS_TOKEN_EXPIRE_MINUTES == 30
 
 
+def test_csrf_secret_is_separate_from_jwt_secret_by_default(monkeypatch):
+    monkeypatch.delenv("JWT_SECRET", raising=False)
+    monkeypatch.delenv("AUTH_CSRF_SECRET", raising=False)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.AUTH_CSRF_SECRET != settings.JWT_SECRET
+
+
 def test_database_url_is_built_from_postgres_settings_when_missing(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
 

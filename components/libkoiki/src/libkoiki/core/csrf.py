@@ -1,6 +1,7 @@
 import base64
 import hmac
 import secrets
+import time
 from hashlib import sha256
 
 from fastapi import HTTPException, Request, status
@@ -10,6 +11,7 @@ from libkoiki.core.config import settings
 
 CSRF_ERROR_CODE = "CSRF_TOKEN_INVALID"
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
+CSRF_CLOCK_SKEW_SECONDS = 60
 
 
 def _b64url(data: bytes) -> str:
@@ -17,22 +19,45 @@ def _b64url(data: bytes) -> str:
 
 
 def _sign(value: str) -> str:
-    digest = hmac.new(settings.JWT_SECRET.encode("utf-8"), value.encode("utf-8"), sha256).digest()
+    digest = hmac.new(
+        settings.AUTH_CSRF_SECRET.encode("utf-8"),
+        value.encode("utf-8"),
+        sha256,
+    ).digest()
     return _b64url(digest)
 
 
 def generate_csrf_token() -> str:
     nonce = secrets.token_urlsafe(32)
-    return f"{nonce}.{_sign(nonce)}"
+    issued_at = str(int(time.time()))
+    payload = f"{nonce}.{issued_at}"
+    return f"{payload}.{_sign(payload)}"
 
 
 def is_valid_csrf_token(token: str | None) -> bool:
-    if not token or "." not in token:
+    if not token:
         return False
-    nonce, signature = token.rsplit(".", 1)
-    if not nonce or not signature:
+    parts = token.split(".")
+    if len(parts) != 3:
         return False
-    return hmac.compare_digest(signature, _sign(nonce))
+    nonce, issued_at_text, signature = parts
+    if not nonce or not issued_at_text or not signature:
+        return False
+
+    try:
+        issued_at = int(issued_at_text)
+    except ValueError:
+        return False
+
+    now = int(time.time())
+    if issued_at > now + CSRF_CLOCK_SKEW_SECONDS:
+        return False
+    if now - issued_at > settings.AUTH_CSRF_COOKIE_MAX_AGE_SECONDS:
+        return False
+
+    payload = f"{nonce}.{issued_at_text}"
+    expected_signature = _sign(payload)
+    return hmac.compare_digest(signature, expected_signature)
 
 
 def csrf_tokens_match(cookie_token: str | None, header_token: str | None) -> bool:

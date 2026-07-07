@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     AUTH_REFRESH_COOKIE_NAME: str = "koiki_refresh_token"
     AUTH_CSRF_COOKIE_NAME: str = "koiki_csrf_token"
     AUTH_CSRF_HEADER_NAME: str = "x-csrf-token"
+    AUTH_CSRF_SECRET: str = "csrf_secret_development_only"
     AUTH_COOKIE_SECURE: bool = False
     AUTH_COOKIE_SAMESITE: str = "lax"
     AUTH_COOKIE_DOMAIN: Optional[str] = None
