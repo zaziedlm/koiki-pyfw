@@ -261,6 +261,7 @@ class TestEndpointInputLogging:
             request=SimpleNamespace(),
             user_in=UserUpdate(email="updated@example.com", password="Secret123!"),
             current_user=SimpleNamespace(id=1),
+            csrf=None,
             user_service=user_service,
             db=MagicMock(),
         )
@@ -284,6 +285,7 @@ class TestEndpointInputLogging:
             request=SimpleNamespace(),
             todo_in=TodoCreate(title="Private title", description="Private body"),
             current_user=SimpleNamespace(id=3),
+            csrf=None,
             todo_service=todo_service,
             db=MagicMock(),
         )
@@ -298,6 +300,7 @@ class TestEndpointInputLogging:
             todo_id=10,
             todo_in=TodoUpdate(title="Private title", description="Private body"),
             current_user=SimpleNamespace(id=3),
+            csrf=None,
             todo_service=todo_service,
             db=MagicMock(),
         )

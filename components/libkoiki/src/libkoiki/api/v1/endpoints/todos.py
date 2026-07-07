@@ -8,6 +8,7 @@ from libkoiki.services.todo_service import TodoService
 from libkoiki.api.dependencies import (
     TodoServiceDep,
     ActiveUserDep,
+    CookieCSRFDep,
     DBSessionDep,  # DBセッション依存関係を追加
     # RateLimitDep, # ヘルパーを使う場合
 )
@@ -34,6 +35,7 @@ async def create_todo(
     request: Request, # limiter用
     todo_in: TodoCreate,
     current_user: ActiveUserDep, # 認証済みアクティブユーザーを取得
+    csrf: CookieCSRFDep,
     todo_service: TodoServiceDep,
     db: DBSessionDep,  # DBセッションを追加
 ) -> Any:
@@ -134,6 +136,7 @@ async def update_todo(
     todo_id: int,
     todo_in: TodoUpdate,
     current_user: ActiveUserDep,
+    csrf: CookieCSRFDep,
     todo_service: TodoServiceDep,
     db: DBSessionDep,  # DBセッションを追加
 ) -> Any:
@@ -181,6 +184,7 @@ async def delete_todo(
     request: Request, # limiter用
     todo_id: int,
     current_user: ActiveUserDep,
+    csrf: CookieCSRFDep,
     todo_service: TodoServiceDep,
     db: DBSessionDep,  # DBセッションを追加
 ) -> None:
