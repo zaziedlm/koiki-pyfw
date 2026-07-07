@@ -4,12 +4,28 @@
 - 対象文書: `docs/security/session-auth-security-review.ja.md`
 - 目的: React SPA 化に伴うセッション認証セキュリティ指摘について、現行コード上での成立状況、対応可否、追検討・判断事項を整理する。
 - 備考: この整理時点ではソースコード変更・テスト実行は行っていない。
+- 更新: 2026-07-07 に `F1`, `F3`, `F6` の一部, `F9` を対応済み。残件は本書の「対応状況」「追検討が必要な事項」を参照。
 
 ## 結論
 
 元文書の主要指摘は、現行コードでも概ね成立している。
 
 特に優先度が高いのは `F1`、`F2`、`F3`。加えて、レートリミットについては、`app_factory.py` 側で Redis 対応の limiter を作っている一方、各 endpoint の decorator は `components/libkoiki/src/libkoiki/core/rate_limiter.py` のグローバル limiter を import しているため、Redis 設定が実際の decorator に効いていない可能性がある。したがって `F6` は元文書より強めに扱うべき。
+
+## 対応状況
+
+| ID | 状態 | 対応内容・残件 |
+|---|---|---|
+| F1 todos CSRF 漏れ | 済み | todos の POST/PUT/DELETE に `CookieCSRFDep` を追加。追加確認で `business_clock` 更新 API にも `CookieCSRFDep` を追加。 |
+| F2 CSRF 適用が手作業・順序依存 | 未対応 | 個別追加は進んだが、middleware / route-level / fail-close などの再発防止設計は未対応。 |
+| F3 SSO redirect_uri fail-open | 済み | allowlist 未設定時は default redirect URI のみ許可し、default もなければ拒否する挙動に変更。`.env.example` の callback URL 誤りも修正。 |
+| F4 access token 60分・logout 後失効なし | 未対応 | 期限短縮は設定対応候補。access token denylist は Redis 等を前提に別設計。 |
+| F5 CSRF TTL・鍵分離・非セッション拘束 | 未対応 | 中期対応。CSRF TTL / 鍵分離 / セッション拘束 / `__Host-` Cookie 採用方針を分けて検討。 |
+| F6 rate limit 実効性 | 一部済み | endpoint decorator が使う共有 limiter を app 起動設定で再構成するよう修正。Redis 分散 rate limit と ALB/proxy client IP key 方針は残件。 |
+| F7 refresh Cookie Path | 未対応 | refresh Cookie path 分離は未対応。frontend/backend の refresh endpoint path 影響確認が必要。 |
+| F8 refresh token 再利用検知 | 未対応 | token family 方式または同一ユーザー全 refresh token revoke 方針の判断が必要。 |
+| F9 refresh 7日ハードコード | 済み | refresh rotation 時も `settings.REFRESH_TOKEN_EXPIRE_DAYS` を参照するよう変更。 |
+| F10 既定値・ヘッダ・CI | 未対応 | Cookie secure、CORS、nginx headers、CSP、frontend CI は運用・配備方針込みで分割対応。 |
 
 ## 対応可否・判断整理
 
@@ -36,8 +52,8 @@
 ## 追検討が必要な事項
 
 - `F2`: CSRF を middleware で一括適用するか、router-level dependency に寄せるか、既存 `CookieCSRFDep` を fail-close 化するか。
-- `F3`: `SSO_ALLOWED_REDIRECT_URIS` 未設定時の挙動を「拒否」にするか、「default redirect URI のみ許可」にするか。
-- `F6`: slowapi limiter をアプリ生成時の Redis-aware limiter に統一する方法。あわせて proxy headers / real client IP の扱いを決める。
+- `F6`: Redis storage による分散 rate limit は将来対応として扱う。AWS ECS 2タスク想定では、当面は memory rate limit がタスク数分に緩む前提を明記する。
+- `F6`: AWS ALB 配下では proxy headers / real client IP の扱いを本番前に決める。`X-Forwarded-For` は trusted proxy 経由時のみ信頼する方針が必要。
 - `F8`: refresh token reuse 検知時に token family を全失効するか、既存モデルのまま同一ユーザー全 refresh token を失効するか。
 
 ## 確認した主な根拠
