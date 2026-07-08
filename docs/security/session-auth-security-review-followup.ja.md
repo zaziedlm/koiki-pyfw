@@ -52,7 +52,7 @@
 - `F10`: frontend CI の必須ゲート化は現時点では保留する。React SPA は参照実装であり、将来 Vue.js 等を含む別 frontend stack へ差し替え可能な位置づけとする。現行サンプルとして `npm run build` / `npm run lint` は手動確認済み。
 - `F4`: logout 後の access token denylist は Redis 等の共有ストア前提のため、別タイミングで設計判断する。
 - `F5`: CSRF token のセッション拘束を行うか。現行は署名付き・TTL 付き double-submit cookie 方式であり、社内限定・同一オリジン・HTTPS・`AUTH_COOKIE_DOMAIN` 未指定・CORS 最小化・CSP 維持を前提に当面許容する。導入する場合は access token / session identifier との結合方式と、refresh 時の token 再発行タイミングを別タイミングで設計する。
-- `F5`: `__Host-` Cookie 採用は `Secure` 必須、`Domain` 未指定、`Path=/` 固定が前提。本番 HTTPS 配備方針と合わせて別タイミングで判断する。
+- `F5`: `__Host-` Cookie 採用は `Secure` 必須、`Domain` 未指定、`Path=/` 固定が前提。本番 HTTPS 配備方針と合わせて別タイミングで判断する。採用判断は、同一親ドメイン配下に複数アプリ / サブドメインがあるか、サブドメインの管理主体が分かれるか、将来同一親ドメイン配下に別アプリが増えるか、Cookie injection 耐性を明示的に高める必要があるかを基準にする。現時点では、社内限定・外部 IdP SSO・ALB HTTPS・同一オリジン・`AUTH_COOKIE_DOMAIN` 未指定・CORS 最小化・CSP 維持を前提に、`__Host-` Cookie は必須対応とせず強化候補として保留する。
 - `F6`: Redis storage による分散 rate limit は将来対応として扱う。AWS ECS 2タスク想定では、当面は memory rate limit がタスク数分に緩む前提を明記する。
 - `F6`: AWS ALB 配下では proxy headers / real client IP の扱いを本番前に別タイミングで決める。`X-Forwarded-For` は trusted proxy 経由時のみ信頼する方針が必要。
 
