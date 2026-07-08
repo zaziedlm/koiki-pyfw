@@ -99,11 +99,31 @@ class AuthService:
         self.refresh_token_repo.set_session(db)
         self.user_repo.set_session(db)
         
-        # リフレッシュトークンを検証
-        refresh_token_model = await self.refresh_token_repo.get_valid_token(refresh_token)
+        # リフレッシュトークンを取得して状態ごとに検証する。
+        # revoked token は再利用検知として扱い、同一ユーザーの token を全失効する。
+        refresh_token_model = await self.refresh_token_repo.get_by_token(refresh_token)
         
         if not refresh_token_model:
             logger.warning("Refresh token not found or invalid")
+            raise AuthenticationException("Invalid or expired refresh token")
+
+        if refresh_token_model.is_revoked:
+            logger.warning(
+                "Revoked refresh token reused; revoking all user refresh tokens",
+                user_id=refresh_token_model.user_id,
+                token_id=refresh_token_model.id,
+            )
+            await self.refresh_token_repo.revoke_user_tokens(
+                user_id=refresh_token_model.user_id
+            )
+            raise AuthenticationException("Invalid or expired refresh token")
+
+        if refresh_token_model.is_expired:
+            logger.warning(
+                "Expired refresh token used",
+                user_id=refresh_token_model.user_id,
+                token_id=refresh_token_model.id,
+            )
             raise AuthenticationException("Invalid or expired refresh token")
         
         # ユーザーを取得

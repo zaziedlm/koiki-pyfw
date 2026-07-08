@@ -54,6 +54,7 @@ class TestAuthServiceComprehensive:
         token.token_hash = "test_token_hash"
         token.expires_at = datetime.now(timezone.utc) + timedelta(days=7)
         token.is_revoked = False
+        token.is_expired = False
         token.device_info = '{"user_agent": "test", "ip_address": "127.0.0.1"}'
         token.is_valid = True
         return token
@@ -164,7 +165,7 @@ class TestAuthServiceComprehensive:
         mock_db_session
     ):
         """リフレッシュトークン成功テスト"""
-        auth_service.refresh_token_repo.get_valid_token.return_value = mock_refresh_token
+        auth_service.refresh_token_repo.get_by_token.return_value = mock_refresh_token
         auth_service.user_repo.get.return_value = mock_user
 
         access_token, new_refresh_token, expires_in = await auth_service.refresh_access_token(
@@ -174,7 +175,7 @@ class TestAuthServiceComprehensive:
 
         assert access_token == "new_access_token"
         assert isinstance(expires_in, int)
-        auth_service.refresh_token_repo.get_valid_token.assert_called_once_with("old_refresh_token")
+        auth_service.refresh_token_repo.get_by_token.assert_called_once_with("old_refresh_token")
         auth_service.user_repo.get.assert_called_once_with(mock_refresh_token.user_id)
 
     @patch('libkoiki.services.auth_service.verify_refresh_token_format', return_value=True)
@@ -186,14 +187,67 @@ class TestAuthServiceComprehensive:
         mock_db_session
     ):
         """無効なリフレッシュトークンテスト（トークンが見つからない場合は例外）"""
-        auth_service.refresh_token_repo.get_valid_token.return_value = None
+        auth_service.refresh_token_repo.get_by_token.return_value = None
 
         with pytest.raises(AuthenticationException):
             await auth_service.refresh_access_token(
                 refresh_token="invalid_token",
                 db=mock_db_session
             )
-        auth_service.refresh_token_repo.get_valid_token.assert_called_once_with("invalid_token")
+        auth_service.refresh_token_repo.get_by_token.assert_called_once_with("invalid_token")
+        auth_service.refresh_token_repo.revoke_user_tokens.assert_not_called()
+
+    @patch('libkoiki.services.auth_service.verify_refresh_token_format', return_value=True)
+    @pytest.mark.asyncio
+    async def test_refresh_access_token_revoked_token_reuse_revokes_user_tokens(
+        self,
+        mock_verify_format,
+        auth_service,
+        mock_refresh_token,
+        mock_db_session
+    ):
+        """revoked token の再利用検知時は同一ユーザーの全 refresh token を失効する"""
+        mock_refresh_token.is_revoked = True
+        auth_service.refresh_token_repo.get_by_token.return_value = mock_refresh_token
+
+        with pytest.raises(AuthenticationException):
+            await auth_service.refresh_access_token(
+                refresh_token="reused_refresh_token",
+                db=mock_db_session
+            )
+
+        auth_service.refresh_token_repo.get_by_token.assert_called_once_with(
+            "reused_refresh_token"
+        )
+        auth_service.refresh_token_repo.revoke_user_tokens.assert_awaited_once_with(
+            user_id=mock_refresh_token.user_id
+        )
+        auth_service.user_repo.get.assert_not_called()
+
+    @patch('libkoiki.services.auth_service.verify_refresh_token_format', return_value=True)
+    @pytest.mark.asyncio
+    async def test_refresh_access_token_expired_token_does_not_revoke_user_tokens(
+        self,
+        mock_verify_format,
+        auth_service,
+        mock_refresh_token,
+        mock_db_session
+    ):
+        """期限切れ token は通常の invalid 扱いで、再利用検知の全失効はしない"""
+        mock_refresh_token.is_expired = True
+        auth_service.refresh_token_repo.get_by_token.return_value = mock_refresh_token
+
+        with pytest.raises(AuthenticationException):
+            await auth_service.refresh_access_token(
+                refresh_token="expired_refresh_token",
+                db=mock_db_session
+            )
+
+        auth_service.refresh_token_repo.get_by_token.assert_called_once_with(
+            "expired_refresh_token"
+        )
+        auth_service.refresh_token_repo.revoke_user_tokens.assert_not_called()
+        auth_service.user_repo.get.assert_not_called()
 
     @patch('libkoiki.services.auth_service.verify_refresh_token_format', return_value=True)
     @pytest.mark.asyncio
@@ -205,7 +259,7 @@ class TestAuthServiceComprehensive:
         mock_db_session
     ):
         """ユーザーが見つからない場合は例外"""
-        auth_service.refresh_token_repo.get_valid_token.return_value = mock_refresh_token
+        auth_service.refresh_token_repo.get_by_token.return_value = mock_refresh_token
         auth_service.user_repo.get.return_value = None
 
         with pytest.raises(AuthenticationException):
@@ -236,7 +290,7 @@ class TestAuthServiceComprehensive:
         monkeypatch.setattr(settings, "REFRESH_TOKEN_EXPIRE_DAYS", 14)
         expected_expires_at = datetime.now(timezone.utc) + timedelta(days=14)
         mock_create_expires_at.return_value = expected_expires_at
-        auth_service.refresh_token_repo.get_valid_token.return_value = mock_refresh_token
+        auth_service.refresh_token_repo.get_by_token.return_value = mock_refresh_token
         auth_service.user_repo.get.return_value = mock_user
 
         access_token, new_refresh_token, expires_in = await auth_service.refresh_access_token(

@@ -23,7 +23,7 @@
 | F5 CSRF TTL・鍵分離・非セッション拘束 | 一部済み | CSRF token に発行時刻を含め、`AUTH_CSRF_COOKIE_MAX_AGE_SECONDS` で TTL 検証するよう変更。署名鍵も `AUTH_CSRF_SECRET` へ分離。セッション拘束 / `__Host-` Cookie 採用方針は残件。 |
 | F6 rate limit 実効性 | 一部済み | endpoint decorator が使う共有 limiter を app 起動設定で再構成するよう修正。Redis 分散 rate limit と ALB/proxy client IP key 方針は残件。 |
 | F7 refresh Cookie Path | 済み | `AUTH_REFRESH_COOKIE_PATH` を追加し、refresh cookie を session auth route 配下へ限定。削除時は移行前の `/` path cookie も消去。 |
-| F8 refresh token 再利用検知 | 対応予定 | まずは既存モデルへの影響が小さく Redis なしで対応できる、同一ユーザー全 refresh token revoke 方針で進める。token family 方式は将来の拡張候補。 |
+| F8 refresh token 再利用検知 | 済み | revoked refresh token の再利用を検知した場合、同一ユーザーの refresh token を全 revoke するよう変更。token family 方式は将来の拡張候補。 |
 | F9 refresh 7日ハードコード | 済み | refresh rotation 時も `settings.REFRESH_TOKEN_EXPIRE_DAYS` を参照するよう変更。 |
 | F10 既定値・ヘッダ・CI | 対応予定 | 短時間で対応できる Cookie secure / nginx security headers / follow-up 更新を先に進める。CORS 本番方針、CSP、frontend CI は時間的区切りを設けて別途対応。 |
 
@@ -38,19 +38,18 @@
 | F5 CSRF TTL・鍵分離・非セッション拘束 | 一部対応済み | TTL と鍵分離は対応済み。セッション拘束や `__Host-` Cookie 採用は配備条件も絡むため追検討。 |
 | F6 rate limit 実効性 | 一部対応済み | endpoint decorator が使う共有 limiter を app 起動設定で再構成するよう修正済み。Redis 分散 rate limit と proxy headers 方針は残件。 |
 | F7 refresh Cookie Path | 対応済み | refresh cookie は `AUTH_REFRESH_COOKIE_PATH` または `API_PREFIX + /auth/session` に限定。access / CSRF cookie は従来どおり `AUTH_COOKIE_PATH` を使用。 |
-| F8 refresh token 再利用検知 | 対応予定 | revoked token 再利用時は、まず同一ユーザー全 refresh token revoke で対応する。token family / rotation chain は中期的な拡張候補。 |
+| F8 refresh token 再利用検知 | 対応済み | revoked token 再利用時は、同一ユーザー全 refresh token revoke で対応済み。token family / rotation chain は中期的な拡張候補。 |
 | F9 refresh 7日ハードコード | 対応済み | refresh rotation 時も `settings.REFRESH_TOKEN_EXPIRE_DAYS` を参照するよう変更済み。 |
 | F10 既定値・ヘッダ・CI | 分割対応予定 | Cookie secure と nginx security headers は先行対応候補。CORS 本番方針、CSP、frontend CI は動作確認と運用設計が必要なため別途対応。 |
 
 ## 推奨順序
 
-1. 対応済み: `F1`, `F2`, `F3`, `F4` の一部, `F5` の一部, `F6` の一部, `F7`, `F9`
-2. 明日以降に継続対応: `F8`, `F10`
+1. 対応済み: `F1`, `F2`, `F3`, `F4` の一部, `F5` の一部, `F6` の一部, `F7`, `F8`, `F9`
+2. 明日以降に継続対応: `F10`
 3. 別タイミングで設計・運用判断: `F4` 残件, `F5` 残件, `F6` 残件
 
 ## 追検討が必要な事項
 
-- `F8`: 次回以降に対応する。まずは revoked token 再利用時に同一ユーザー全 refresh token を失効する方針で進める。token family 方式は既存モデルへの影響が大きいため将来候補とする。
 - `F10`: 次回以降に分割対応する。短時間でできる `AUTH_COOKIE_SECURE` と nginx security headers を先に進め、CORS 本番方針、CSP、frontend CI は時間的区切りを設けて別途対応する。
 - `F4`: logout 後の access token denylist は Redis 等の共有ストア前提のため、別タイミングで設計判断する。
 - `F5`: CSRF token のセッション拘束を行うか。導入する場合は access token / session identifier との結合方式と、refresh 時の token 再発行タイミングを別タイミングで設計する。
@@ -66,7 +65,7 @@
 - `components/koiki_ref_app/src/koiki_ref_app/core/sso_config.py`: allowed redirect URI 未設定時に `is_redirect_uri_allowed()` が `True` を返す。
 - `components/libkoiki/src/libkoiki/core/config.py`: access token 既定 30 分、`AUTH_COOKIE_SECURE=False`。
 - `components/libkoiki/src/libkoiki/core/auth_cookies.py`: refresh cookie は session auth route 配下の専用 path、access / CSRF cookie は共通 path を使用。
-- `components/libkoiki/src/libkoiki/services/auth_service.py`: refresh rotation 時の有効期限は `REFRESH_TOKEN_EXPIRE_DAYS` を参照。
+- `components/libkoiki/src/libkoiki/services/auth_service.py`: refresh rotation 時の有効期限は `REFRESH_TOKEN_EXPIRE_DAYS` を参照。revoked refresh token 再利用時は同一ユーザーの refresh token を全 revoke。
 - `components/libkoiki/src/libkoiki/core/rate_limiter.py`: グローバル limiter は `get_remote_address` + メモリ前提。
 - `components/koiki_ref_app/src/koiki_ref_app/app_factory.py`: Redis-aware limiter を作成して `app.state.limiter` に保持。
 - `frontend/docker/nginx.conf`: SPA 静的配信側にセキュリティヘッダ設定なし。
