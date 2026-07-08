@@ -25,7 +25,7 @@
 | F7 refresh Cookie Path | 済み | `AUTH_REFRESH_COOKIE_PATH` を追加し、refresh cookie を session auth route 配下へ限定。削除時は移行前の `/` path cookie も消去。 |
 | F8 refresh token 再利用検知 | 済み | revoked refresh token の再利用を検知した場合、同一ユーザーの refresh token を全 revoke するよう変更。token family 方式は将来の拡張候補。 |
 | F9 refresh 7日ハードコード | 済み | refresh rotation 時も `settings.REFRESH_TOKEN_EXPIRE_DAYS` を参照するよう変更。 |
-| F10 既定値・ヘッダ・CI | 一部済み | production example で `AUTH_COOKIE_SECURE=true` を明示し、本番同一オリジン方針として CORS を無効化 / 最小化する設定例へ整理。frontend nginx に基本 security headers と CSP を追加。frontend CI は別途対応。 |
+| F10 既定値・ヘッダ・CI | 済み | production example で `AUTH_COOKIE_SECURE=true` を明示し、本番同一オリジン方針として CORS を無効化 / 最小化する設定例へ整理。frontend nginx に基本 security headers と CSP を追加。React SPA は参照実装のため frontend CI の必須ゲート化は保留し、`npm run build` / `npm run lint` の手動確認に留める。 |
 
 ## 対応可否・判断整理
 
@@ -40,17 +40,16 @@
 | F7 refresh Cookie Path | 対応済み | refresh cookie は `AUTH_REFRESH_COOKIE_PATH` または `API_PREFIX + /auth/session` に限定。access / CSRF cookie は従来どおり `AUTH_COOKIE_PATH` を使用。 |
 | F8 refresh token 再利用検知 | 対応済み | revoked token 再利用時は、同一ユーザー全 refresh token revoke で対応済み。token family / rotation chain は中期的な拡張候補。 |
 | F9 refresh 7日ハードコード | 対応済み | refresh rotation 時も `settings.REFRESH_TOKEN_EXPIRE_DAYS` を参照するよう変更済み。 |
-| F10 既定値・ヘッダ・CI | 一部対応済み | Cookie secure、CORS 本番方針、nginx security headers、CSP は対応済み。frontend CI は別途対応。 |
+| F10 既定値・ヘッダ・CI | 対応済み | Cookie secure、CORS 本番方針、nginx security headers、CSP は対応済み。React SPA は参照実装で frontend stack は差し替え可能なため、frontend CI の必須ゲート化は現時点では保留。現行サンプルとして `npm run build` / `npm run lint` は手動確認済み。 |
 
 ## 推奨順序
 
 1. 対応済み: `F1`, `F2`, `F3`, `F4` の一部, `F5` の一部, `F6` の一部, `F7`, `F8`, `F9`
-2. 別途対応: `F10` 残件
-3. 別タイミングで設計・運用判断: `F4` 残件, `F5` 残件, `F6` 残件
+2. 別タイミングで設計・運用判断: `F4` 残件, `F5` 残件, `F6` 残件
 
 ## 追検討が必要な事項
 
-- `F10`: frontend CI は時間的区切りを設けて別途対応する。
+- `F10`: frontend CI の必須ゲート化は現時点では保留する。React SPA は参照実装であり、将来 Vue.js 等を含む別 frontend stack へ差し替え可能な位置づけとする。現行サンプルとして `npm run build` / `npm run lint` は手動確認済み。
 - `F4`: logout 後の access token denylist は Redis 等の共有ストア前提のため、別タイミングで設計判断する。
 - `F5`: CSRF token のセッション拘束を行うか。導入する場合は access token / session identifier との結合方式と、refresh 時の token 再発行タイミングを別タイミングで設計する。
 - `F5`: `__Host-` Cookie 採用は `Secure` 必須、`Domain` 未指定、`Path=/` 固定が前提。本番 HTTPS 配備方針と合わせて別タイミングで判断する。
