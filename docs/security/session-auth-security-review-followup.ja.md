@@ -19,7 +19,7 @@
 | F1 todos CSRF 漏れ | 済み | todos の POST/PUT/DELETE に `CookieCSRFDep` を追加。追加確認で `business_clock` 更新 API にも `CookieCSRFDep` を追加。 |
 | F2 CSRF 適用が手作業・順序依存 | 済み | `get_current_active_user()` に CSRF 検証を集約し、cookie 認証の unsafe request が route 個別設定漏れでも拒否されるよう変更。Bearer API は CSRF 対象外。 |
 | F3 SSO redirect_uri fail-open | 済み | allowlist 未設定時は default redirect URI のみ許可し、default もなければ拒否する挙動に変更。`.env.example` の callback URL 誤りも修正。 |
-| F4 access token 60分・logout 後失効なし | 一部済み | `ACCESS_TOKEN_EXPIRE_MINUTES` の既定値と example を 30 分へ短縮。本番 example は 15 分を維持。logout 後の access token denylist は Redis 等を前提に別設計。 |
+| F4 access token 60分・logout 後失効なし | 一部済み | `ACCESS_TOKEN_EXPIRE_MINUTES` の既定値と example を 30 分へ短縮。本番 example は 15 分を維持。logout 時は refresh token を失効し cookie を削除する。logout 後に残存 access token が最長 `ACCESS_TOKEN_EXPIRE_MINUTES` 分だけ有効な制約は受け入れ、access token denylist は Redis 等の共有ストアが必要になった時点で検討する。 |
 | F5 CSRF TTL・鍵分離・非セッション拘束 | 一部済み | CSRF token に発行時刻を含め、`AUTH_CSRF_COOKIE_MAX_AGE_SECONDS` で TTL 検証するよう変更。署名鍵も `AUTH_CSRF_SECRET` へ分離。社内限定・同一オリジン・HTTPS・Domain 未指定前提では、現行の署名付き TTL double-submit 方式を当面許容する。セッション拘束 / `__Host-` Cookie 採用方針は強化候補として残す。 |
 | F6 rate limit 実効性 | 一部済み | endpoint decorator が使う共有 limiter を app 起動設定で再構成するよう修正。AWS ECS 2タスク程度の現行想定では memory rate limit を当面採用し、タスクごとにカウンタが分かれて実効上限がタスク数分に緩むことを制約として受け入れる。Redis 分散 rate limit と ALB/proxy client IP key 方針は将来対応。 |
 | F7 refresh Cookie Path | 済み | `AUTH_REFRESH_COOKIE_PATH` を追加し、refresh cookie を session auth route 配下へ限定。削除時は移行前の `/` path cookie も消去。 |
@@ -34,7 +34,7 @@
 | F1 todos CSRF 漏れ | 対応済み | todos の POST/PUT/DELETE と `business_clock` 更新 API に `CookieCSRFDep` を追加済み。 |
 | F2 CSRF 適用が手作業・順序依存 | 対応済み | `get_current_active_user()` に CSRF 検証を集約し、cookie 認証の unsafe request では route 個別の `CookieCSRFDep` 追加漏れがあっても fail-close する方針とした。 |
 | F3 SSO redirect_uri fail-open | 対応済み | allowlist 未設定時は default redirect URI のみ許可し、default もなければ拒否する方針で対応済み。 |
-| F4 access token 60分・logout 後失効なし | 一部対応済み | `ACCESS_TOKEN_EXPIRE_MINUTES` の既定値と example を 30 分へ短縮済み。access token denylist は Redis 等を前提にした設計判断。 |
+| F4 access token 60分・logout 後失効なし | 一部対応済み | `ACCESS_TOKEN_EXPIRE_MINUTES` の既定値と example を 30 分へ短縮済み。logout は refresh token 失効と cookie 削除で対応し、access token の即時失効は現行構成の制約として受け入れる。高保証・即時失効が必要になった段階で Redis denylist / token jti 導入を検討する。 |
 | F5 CSRF TTL・鍵分離・非セッション拘束 | 一部対応済み | TTL と鍵分離は対応済み。社内限定システムとしては現行の署名付き TTL double-submit 方式を不十分とは扱わず、当面採用する。セッション拘束や `__Host-` Cookie 採用は配備条件も絡むため追検討。 |
 | F6 rate limit 実効性 | 一部対応済み | endpoint decorator が使う共有 limiter を app 起動設定で再構成するよう修正済み。現行の小規模ECS想定では memory rate limit の制約を受け入れ、Redis 分散 rate limit と proxy headers 方針は将来対応とする。 |
 | F7 refresh Cookie Path | 対応済み | refresh cookie は `AUTH_REFRESH_COOKIE_PATH` または `API_PREFIX + /auth/session` に限定。access / CSRF cookie は従来どおり `AUTH_COOKIE_PATH` を使用。 |
@@ -50,7 +50,7 @@
 ## 追検討が必要な事項
 
 - `F10`: frontend CI の必須ゲート化は現時点では保留する。React SPA は参照実装であり、将来 Vue.js 等を含む別 frontend stack へ差し替え可能な位置づけとする。現行サンプルとして `npm run build` / `npm run lint` は手動確認済み。
-- `F4`: logout 後の access token denylist は Redis 等の共有ストア前提のため、別タイミングで設計判断する。
+- `F4`: logout 後の access token denylist は Redis 等の共有ストア前提のため、現時点では実装しない。access token は短寿命化済みであり、logout 時は refresh token を失効し cookie を削除する。logout 後に残存 access token が最長 `ACCESS_TOKEN_EXPIRE_MINUTES` 分だけ有効なリスクは現行制約として受け入れる。高保証・即時失効が必要になった段階で Redis denylist / token jti 導入を検討する。
 - `F5`: CSRF token のセッション拘束を行うか。現行は署名付き・TTL 付き double-submit cookie 方式であり、社内限定・同一オリジン・HTTPS・`AUTH_COOKIE_DOMAIN` 未指定・CORS 最小化・CSP 維持を前提に当面許容する。導入する場合は access token / session identifier との結合方式と、refresh 時の token 再発行タイミングを別タイミングで設計する。
 - `F5`: `__Host-` Cookie 採用は `Secure` 必須、`Domain` 未指定、`Path=/` 固定が前提。本番 HTTPS 配備方針と合わせて別タイミングで判断する。採用判断は、同一親ドメイン配下に複数アプリ / サブドメインがあるか、サブドメインの管理主体が分かれるか、将来同一親ドメイン配下に別アプリが増えるか、Cookie injection 耐性を明示的に高める必要があるかを基準にする。現時点では、社内限定・外部 IdP SSO・ALB HTTPS・同一オリジン・`AUTH_COOKIE_DOMAIN` 未指定・CORS 最小化・CSP 維持を前提に、`__Host-` Cookie は必須対応とせず強化候補として保留する。
 - `F6`: Redis storage による分散 rate limit は将来対応として扱う。AWS ECS 2タスク程度の現行想定では、当面は memory rate limit を採用し、カウンタがタスクごとに分かれるため実効上限がタスク数分に緩むことを制約として受け入れる。大規模スケール、厳密な認証試行制御、WAF 連携が必要になった時点で Redis storage または外部 rate limit を検討する。
