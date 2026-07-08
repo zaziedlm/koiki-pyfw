@@ -21,7 +21,7 @@
 | F3 SSO redirect_uri fail-open | 済み | allowlist 未設定時は default redirect URI のみ許可し、default もなければ拒否する挙動に変更。`.env.example` の callback URL 誤りも修正。 |
 | F4 access token 60分・logout 後失効なし | 一部済み | `ACCESS_TOKEN_EXPIRE_MINUTES` の既定値と example を 30 分へ短縮。本番 example は 15 分を維持。logout 後の access token denylist は Redis 等を前提に別設計。 |
 | F5 CSRF TTL・鍵分離・非セッション拘束 | 一部済み | CSRF token に発行時刻を含め、`AUTH_CSRF_COOKIE_MAX_AGE_SECONDS` で TTL 検証するよう変更。署名鍵も `AUTH_CSRF_SECRET` へ分離。社内限定・同一オリジン・HTTPS・Domain 未指定前提では、現行の署名付き TTL double-submit 方式を当面許容する。セッション拘束 / `__Host-` Cookie 採用方針は強化候補として残す。 |
-| F6 rate limit 実効性 | 一部済み | endpoint decorator が使う共有 limiter を app 起動設定で再構成するよう修正。Redis 分散 rate limit と ALB/proxy client IP key 方針は残件。 |
+| F6 rate limit 実効性 | 一部済み | endpoint decorator が使う共有 limiter を app 起動設定で再構成するよう修正。AWS ECS 2タスク程度の現行想定では memory rate limit を当面採用し、タスクごとにカウンタが分かれて実効上限がタスク数分に緩むことを制約として受け入れる。Redis 分散 rate limit と ALB/proxy client IP key 方針は将来対応。 |
 | F7 refresh Cookie Path | 済み | `AUTH_REFRESH_COOKIE_PATH` を追加し、refresh cookie を session auth route 配下へ限定。削除時は移行前の `/` path cookie も消去。 |
 | F8 refresh token 再利用検知 | 済み | revoked refresh token の再利用を検知した場合、同一ユーザーの refresh token を全 revoke するよう変更。token family 方式は将来の拡張候補。 |
 | F9 refresh 7日ハードコード | 済み | refresh rotation 時も `settings.REFRESH_TOKEN_EXPIRE_DAYS` を参照するよう変更。 |
@@ -36,7 +36,7 @@
 | F3 SSO redirect_uri fail-open | 対応済み | allowlist 未設定時は default redirect URI のみ許可し、default もなければ拒否する方針で対応済み。 |
 | F4 access token 60分・logout 後失効なし | 一部対応済み | `ACCESS_TOKEN_EXPIRE_MINUTES` の既定値と example を 30 分へ短縮済み。access token denylist は Redis 等を前提にした設計判断。 |
 | F5 CSRF TTL・鍵分離・非セッション拘束 | 一部対応済み | TTL と鍵分離は対応済み。社内限定システムとしては現行の署名付き TTL double-submit 方式を不十分とは扱わず、当面採用する。セッション拘束や `__Host-` Cookie 採用は配備条件も絡むため追検討。 |
-| F6 rate limit 実効性 | 一部対応済み | endpoint decorator が使う共有 limiter を app 起動設定で再構成するよう修正済み。Redis 分散 rate limit と proxy headers 方針は残件。 |
+| F6 rate limit 実効性 | 一部対応済み | endpoint decorator が使う共有 limiter を app 起動設定で再構成するよう修正済み。現行の小規模ECS想定では memory rate limit の制約を受け入れ、Redis 分散 rate limit と proxy headers 方針は将来対応とする。 |
 | F7 refresh Cookie Path | 対応済み | refresh cookie は `AUTH_REFRESH_COOKIE_PATH` または `API_PREFIX + /auth/session` に限定。access / CSRF cookie は従来どおり `AUTH_COOKIE_PATH` を使用。 |
 | F8 refresh token 再利用検知 | 対応済み | revoked token 再利用時は、同一ユーザー全 refresh token revoke で対応済み。token family / rotation chain は中期的な拡張候補。 |
 | F9 refresh 7日ハードコード | 対応済み | refresh rotation 時も `settings.REFRESH_TOKEN_EXPIRE_DAYS` を参照するよう変更済み。 |
@@ -53,8 +53,8 @@
 - `F4`: logout 後の access token denylist は Redis 等の共有ストア前提のため、別タイミングで設計判断する。
 - `F5`: CSRF token のセッション拘束を行うか。現行は署名付き・TTL 付き double-submit cookie 方式であり、社内限定・同一オリジン・HTTPS・`AUTH_COOKIE_DOMAIN` 未指定・CORS 最小化・CSP 維持を前提に当面許容する。導入する場合は access token / session identifier との結合方式と、refresh 時の token 再発行タイミングを別タイミングで設計する。
 - `F5`: `__Host-` Cookie 採用は `Secure` 必須、`Domain` 未指定、`Path=/` 固定が前提。本番 HTTPS 配備方針と合わせて別タイミングで判断する。採用判断は、同一親ドメイン配下に複数アプリ / サブドメインがあるか、サブドメインの管理主体が分かれるか、将来同一親ドメイン配下に別アプリが増えるか、Cookie injection 耐性を明示的に高める必要があるかを基準にする。現時点では、社内限定・外部 IdP SSO・ALB HTTPS・同一オリジン・`AUTH_COOKIE_DOMAIN` 未指定・CORS 最小化・CSP 維持を前提に、`__Host-` Cookie は必須対応とせず強化候補として保留する。
-- `F6`: Redis storage による分散 rate limit は将来対応として扱う。AWS ECS 2タスク想定では、当面は memory rate limit がタスク数分に緩む前提を明記する。
-- `F6`: AWS ALB 配下では proxy headers / real client IP の扱いを本番前に別タイミングで決める。`X-Forwarded-For` は trusted proxy 経由時のみ信頼する方針が必要。
+- `F6`: Redis storage による分散 rate limit は将来対応として扱う。AWS ECS 2タスク程度の現行想定では、当面は memory rate limit を採用し、カウンタがタスクごとに分かれるため実効上限がタスク数分に緩むことを制約として受け入れる。大規模スケール、厳密な認証試行制御、WAF 連携が必要になった時点で Redis storage または外部 rate limit を検討する。
+- `F6`: AWS ALB 配下では proxy headers / real client IP の扱いを将来対応として扱う。`X-Forwarded-For` は trusted proxy 境界を設計・検証するまで rate limit key として採用しない。採用する場合は、ALB 等の信頼済み proxy から到達したリクエストに限って左端の client IP を信頼する方針とする。
 
 ## 確認した主な根拠
 
