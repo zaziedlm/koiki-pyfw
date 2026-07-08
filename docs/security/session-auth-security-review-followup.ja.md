@@ -4,7 +4,7 @@
 - 対象文書: `docs/security/session-auth-security-review.ja.md`
 - 目的: React SPA 化に伴うセッション認証セキュリティ指摘について、現行コード上での成立状況、対応可否、追検討・判断事項を整理する。
 - 備考: 初回整理時点ではソースコード変更・テスト実行は行っていない。
-- 更新: 2026-07-07 に `F1`, `F2`, `F3`, `F4` の一部, `F6` の一部, `F9` を対応済み。2026-07-08 に `F5` の一部, `F7`, `F8`, `F10` の一部を対応済み。残件は本書の「対応状況」「追検討が必要な事項」を参照。
+- 更新: 2026-07-07 に `F1`, `F2`, `F3`, `F4` の一部, `F6` の一部, `F9` を対応済み。2026-07-08 に `F5` の一部, `F7`, `F8`, `F10` を対応済み。残件は本書の「対応状況」「追検討が必要な事項」を参照。
 
 ## 結論
 
@@ -44,7 +44,7 @@
 
 ## 推奨順序
 
-1. 対応済み: `F1`, `F2`, `F3`, `F4` の一部, `F5` の一部, `F6` の一部, `F7`, `F8`, `F9`
+1. 対応済み: `F1`, `F2`, `F3`, `F4` の一部, `F5` の一部, `F6` の一部, `F7`, `F8`, `F9`, `F10`
 2. 別タイミングで設計・運用判断: `F4` 残件, `F5` 残件, `F6` 残件
 
 ## 追検討が必要な事項
@@ -56,12 +56,20 @@
 - `F6`: Redis storage による分散 rate limit は将来対応として扱う。AWS ECS 2タスク程度の現行想定では、当面は memory rate limit を採用し、カウンタがタスクごとに分かれるため実効上限がタスク数分に緩むことを制約として受け入れる。大規模スケール、厳密な認証試行制御、WAF 連携が必要になった時点で Redis storage または外部 rate limit を検討する。
 - `F6`: AWS ALB 配下では proxy headers / real client IP の扱いを将来対応として扱う。`X-Forwarded-For` は trusted proxy 境界を設計・検証するまで rate limit key として採用しない。採用する場合は、ALB 等の信頼済み proxy から到達したリクエストに限って左端の client IP を信頼する方針とする。
 
+## 最終点検メモ
+
+React SPA 移行により、旧 Next.js BFF が担っていた Cookie 発行、CSRF、API proxy の責務は backend 側の session auth contract と frontend nginx 静的配信へ移った。今回の対応では、Cookie 認証時の CSRF 強制、SSO redirect_uri の fail-close、refresh token reuse 検知、Cookie path、Cookie Secure / CORS / CSP / security headers を確認・補強した。
+
+現時点で即時対応として残すべき追加実装はない。`F4`, `F5`, `F6` の残件は、いずれもセキュリティ上の強化余地ではあるが、KOIKI-FW が想定する社内向け・小規模 ECS 構成、AWS ALB による HTTPS 終端、同一オリジン配置、外部 IdP SSO を前提に、現行制約として認識管理する。
+
+React SPA 由来の追加確認事項として、BFF 削除による backend 権限制御の低下、Cookie 認証での CSRF 適用漏れ、Vite build-time env の誤設定、frontend nginx のヘッダ不足があった。権限制御 parity と session auth flow は integration test 記録で確認済み。Vite env は本番同一オリジンを推奨し、frontend は参照実装として扱うため CI 必須ゲート化は保留する。
+
 ## 確認した主な根拠
 
 - `components/libkoiki/src/libkoiki/api/v1/endpoints/todos.py`: todos 更新系に `CookieCSRFDep` を適用。
 - `components/libkoiki/src/libkoiki/api/dependencies.py`: `get_current_active_user()` で cookie 認証の unsafe request に CSRF 検証を適用。
 - `components/libkoiki/src/libkoiki/core/csrf.py`: `auth_method == "cookie"` の場合のみ unsafe request の CSRF を検証。CSRF token は発行時刻と `AUTH_CSRF_SECRET` 署名を持ち、TTL を検証する。
-- `components/koiki_ref_app/src/koiki_ref_app/core/sso_config.py`: allowed redirect URI 未設定時に `is_redirect_uri_allowed()` が `True` を返す。
+- `components/koiki_ref_app/src/koiki_ref_app/core/sso_config.py`: allowed redirect URI 未設定時は default redirect URI のみ許可し、default もなければ `is_redirect_uri_allowed()` が `False` を返す。
 - `components/libkoiki/src/libkoiki/core/config.py`: access token 既定 30 分、開発既定は `AUTH_COOKIE_SECURE=False`。production example では `AUTH_COOKIE_SECURE=true`。
 - `components/libkoiki/src/libkoiki/core/auth_cookies.py`: refresh cookie は session auth route 配下の専用 path、access / CSRF cookie は共通 path を使用。
 - `components/libkoiki/src/libkoiki/services/auth_service.py`: refresh rotation 時の有効期限は `REFRESH_TOKEN_EXPIRE_DAYS` を参照。revoked refresh token 再利用時は同一ユーザーの refresh token を全 revoke。
