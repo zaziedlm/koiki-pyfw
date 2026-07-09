@@ -4,6 +4,8 @@ Vite + React SPA for the KOIKI reference application.
 
 The frontend calls the FastAPI backend directly with `credentials: "include"` and uses backend-managed Cookie session endpoints. It does not run a BFF or Next.js server runtime.
 
+See `docs/frontend-spa-implementation-guide.ja.md` for current implementation guidance.
+
 ## Local Development
 
 ```bash
@@ -96,7 +98,11 @@ Removed from frontend runtime:
 Use these checks before committing frontend infrastructure changes:
 
 ```bash
+npm ci
+npm test
 npm run check-types
 npm run lint
 npm run build
 ```
+
+Frontend CI is staged in `.github/workflows/frontend-ci.dev-v0.8.yml.disabled` and is intentionally disabled until the React SPA refresh is adopted by `dev/v0.8`.

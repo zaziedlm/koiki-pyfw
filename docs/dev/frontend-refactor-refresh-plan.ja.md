@@ -10,7 +10,7 @@
 - API 呼び出し、エラー処理、CSRF、Query retry が一貫している
 - ルーティング、レイアウト、feature 配置が React SPA として説明可能である
 - Next.js 移行残骸が新規実装者を混乱させない
-- Lint、型チェック、テスト、CI が業務 UI の変更を継続的に検証できる
+- Lint、型チェック、テストが業務 UI の変更を検証でき、CI 有効化手順が用意されている
 - 後続のフロントエンド実装指針ガイドの前提として使える
 
 ## Version Baseline
@@ -56,7 +56,7 @@ Task 0-2 で確認した結果、React Router v8 への移行は保留する。v
 - `sonner` 通知が実際には表示されない
 - `src/app/**/page.tsx`、`'use client'`、`src/app/api/**`、`.next/` など Next.js 由来の語彙が残っている（Task 2-2 で整理対象）
 - `eslint.config.mjs` に実効ルールがない
-- frontend test stack と CI job がない
+- frontend test stack がなく、CI job も未準備である
 - dashboard の固定値、未定義 route 導線、production bundle の chunk size warning が残っている
 
 ## 目標アーキテクチャ
@@ -134,7 +134,7 @@ TanStack Query を server state の主責務にするため、React Router loade
 - `npm run check-types` が通る
 - `npm run lint` が実効ルール付きで通る
 - `npm run build` が通り、route-level lazy loading により初期 chunk warning が解消または明示的に判断済みである
-- frontend unit / component tests が追加され、CI で実行される
+- frontend unit / component tests が追加され、dev/v0.8 で CI に組み込む定義が用意されている
 - 少なくとも auth guard、CSRF retry、task mutation の代表フローがテストされている
 - `frontend/` の構成が Vite + React SPA として説明でき、Next.js App Router と誤認させる構造が残っていない
 - 改修結果を反映した frontend implementation guide が作成されている

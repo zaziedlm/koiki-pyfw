@@ -60,6 +60,6 @@
 - `npm run lint`: 成功。ただし Task 3-1 前なので ESLint は実効ルール未整備
 - `npm run build`: 通常権限で成功。axios 削除後、initial JS chunk は 569.36 kB。500 kB 超過 warning は継続し、Task 2-2 の lazy loading で扱う
 
-未実施:
+後続確認:
 
-- 401 / 403 / 422 / 429 / 500 retry 方針の単体テストまたは MSW テストは、Task 3-2 の frontend test baseline で追加する。
+- Task 3-2 で `ApiError` 正規化、CSRF invalid retry、TanStack Query retry 判定の Vitest / MSW テストを追加した。

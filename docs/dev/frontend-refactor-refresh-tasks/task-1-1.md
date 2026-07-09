@@ -56,6 +56,6 @@
 - `npm run lint`: 成功。ただし Task 3-1 前なので ESLint は実効ルール未整備
 - `npm run build`: 通常権限で成功。initial JS chunk size warning は継続し、Task 2-2 の lazy loading で扱う
 
-未実施:
+後続確認:
 
-- backend を起動したブラウザ手動確認は未実施。
+- backend / frontend コンテナ起動後の UI 操作で toast 表示を確認済み。

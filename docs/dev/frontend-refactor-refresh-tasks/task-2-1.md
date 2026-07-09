@@ -70,6 +70,7 @@
 - `npm run lint`: 成功。ただし Task 3-1 前なので ESLint は実効ルール未整備
 - `npm run build`: 通常権限で成功。initial JS chunk は 568.02 kB。500 kB 超過 warning は継続し、Task 2-2 の lazy loading で扱う
 
-未実施:
+後続確認:
 
-- backend を起動した login / me / task CRUD の手動確認は未実施。
+- backend / frontend コンテナ起動後に login と task create / update / delete を手動確認済み。
+- app log で `POST /api/v1/todos` -> 201、`PUT /api/v1/todos/17` -> 200、`DELETE /api/v1/todos/17` -> 204 を確認済み。
