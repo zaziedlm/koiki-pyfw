@@ -96,10 +96,11 @@ async function toApiError(response: Response): Promise<ApiError> {
 
 export class CookieApiClient {
   public csrfToken: string | null = null;
+  private csrfInitPromise: Promise<void> | null = null;
   private readonly baseUrl = normalizeBaseUrl(appConfig.api.baseUrl);
 
   constructor() {
-    this.initializeCSRFToken();
+    void this.initializeCSRFToken();
   }
 
   private apiUrl(path: string): string {
@@ -110,7 +111,7 @@ export class CookieApiClient {
     return `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
   }
 
-  public async initializeCSRFToken(): Promise<void> {
+  private async fetchCSRFToken(): Promise<void> {
     try {
       const response = await fetch(this.apiUrl('/auth/session/csrf'), {
         credentials: 'include',
@@ -129,6 +130,16 @@ export class CookieApiClient {
         console.error('[CSRF] init error');
       }
     }
+  }
+
+  public async initializeCSRFToken(): Promise<void> {
+    if (!this.csrfInitPromise) {
+      this.csrfInitPromise = this.fetchCSRFToken().finally(() => {
+        this.csrfInitPromise = null;
+      });
+    }
+
+    return this.csrfInitPromise;
   }
 
   private async refreshCSRFToken() {
@@ -173,6 +184,12 @@ export class CookieApiClient {
     options: RequestInit = {}
   ): Promise<Response> {
     const requestUrl = this.apiUrl(url);
+    const method = options.method?.toUpperCase() ?? 'GET';
+
+    if (!this.csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+      await this.initializeCSRFToken();
+    }
+
     const response = await fetch(requestUrl, {
       ...options,
       credentials: 'include',

@@ -58,6 +58,28 @@ describe('CookieApiClient', () => {
     expect(response.status).toBe(201);
     expect(seenTokens).toEqual(['stale-token', 'fresh-token']);
   });
+
+  it('coalesces concurrent CSRF initialization requests', async () => {
+    let csrfRequests = 0;
+
+    server.use(
+      http.get(`${API_BASE_URL}/auth/session/csrf`, async () => {
+        csrfRequests += 1;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return HttpResponse.json({ csrf_token: 'coalesced-token' });
+      })
+    );
+
+    const client = new CookieApiClient();
+
+    await Promise.all([
+      client.initializeCSRFToken(),
+      client.initializeCSRFToken(),
+    ]);
+
+    expect(csrfRequests).toBe(1);
+    expect(client.csrfToken).toBe('coalesced-token');
+  });
 });
 
 describe('ApiError', () => {
