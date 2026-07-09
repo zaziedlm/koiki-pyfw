@@ -1,5 +1,3 @@
-import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { ProtectedRoute } from '@/components/auth/auth-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckSquare, Users, Clock, TrendingUp } from 'lucide-react';
 
@@ -36,9 +34,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <ProtectedRoute>
-      <DashboardLayout>
-        <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6">
           {/* Page Header */}
           <div>
             <h1 className="text-3xl font-bold">Dashboard</h1>
@@ -144,8 +140,6 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-        </div>
-      </DashboardLayout>
-    </ProtectedRoute>
+    </div>
   );
 }

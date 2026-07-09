@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { config } from '@/lib/config';
 import { generateCodeChallenge, generateCodeVerifier } from '@/lib/pkce';

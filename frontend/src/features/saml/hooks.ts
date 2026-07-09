@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { config } from '@/lib/config';
 import { saveSamlContext } from '@/lib/saml-storage';

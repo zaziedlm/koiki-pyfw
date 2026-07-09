@@ -45,4 +45,29 @@ Vite + React SPA として routing を整理し、Next.js App Router と誤認�
 
 ## 実施結果
 
-未実施。
+完了。
+
+- React Router の route 定義を `frontend/src/routes/index.tsx` へ分離した。
+- `App.tsx` は `AppRoutes` を呼び出す root component に縮小した。
+- `ProtectedDashboardLayout` を route module に追加し、`/dashboard` 配下を layout route として `ProtectedRoute` + `DashboardLayout` で保護する形にした。
+- dashboard / tasks route component から個別の `ProtectedRoute` / `DashboardLayout` ラップを削除した。
+- route-level `lazy()` と `Suspense` を導入し、route component を画面単位で code splitting するようにした。
+- `frontend/src/app/**/page.tsx` を `frontend/src/routes/**` へ移動し、`frontend/src/app` は削除した。
+- global CSS を `frontend/src/styles/globals.css` へ移動し、`main.tsx` の import を更新した。
+- 効果を持たない `'use client'` を `frontend/src` から削除した。
+- 空の `frontend/src/app/api/**` ディレクトリと Next.js 由来の `frontend/src/app/favicon.ico` を削除した。
+- 生成物の `frontend/.next` と `frontend/tsconfig.tsbuildinfo` を削除した。`.gitignore` では既に `/.next/` と `*.tsbuildinfo` が無視されている。
+- 未使用の Next.js / Vercel template assets (`frontend/public/file.svg`, `globe.svg`, `next.svg`, `vercel.svg`, `window.svg`) を削除した。
+
+検証結果:
+
+- `rg "use client|src/app/api|next/" frontend/src frontend/package.json frontend/tsconfig.json`: 該当なし
+- `rg "@/app|src/app|next/" frontend/src frontend/package.json frontend/tsconfig.json frontend/index.html`: 該当なし
+- `npm run check-types`: 成功
+- `npm run lint`: 成功
+- `npm run build`: 通常権限で成功
+- route-level lazy loading により initial JS chunk は 441.23 kB となり、500 kB 超過 warning は解消した。
+
+未実施:
+
+- Docker/nginx fallback での deep link refresh 手動確認は未実施。`frontend/README.md` の nginx fallback 方針とは矛盾しない。

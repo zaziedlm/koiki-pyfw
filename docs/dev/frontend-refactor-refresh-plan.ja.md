@@ -54,7 +54,7 @@ Task 0-2 で確認した結果、React Router v8 への移行は保留する。v
 - API client が CSRF transport と feature API を 1 ファイルに抱え込んでいる
 - Query hooks が `Response` parse と domain 型変換を直接持っている
 - `sonner` 通知が実際には表示されない
-- `src/app/**/page.tsx`、`'use client'`、`src/app/api/**`、`.next/` など Next.js 由来の語彙が残っている
+- `src/app/**/page.tsx`、`'use client'`、`src/app/api/**`、`.next/` など Next.js 由来の語彙が残っている（Task 2-2 で整理対象）
 - `eslint.config.mjs` に実効ルールがない
 - frontend test stack と CI job がない
 - dashboard の固定値、未定義 route 導線、production bundle の chunk size warning が残っている
@@ -67,7 +67,7 @@ Task 0-2 で確認した結果、React Router v8 への移行は保留する。v
 
 React SPA として、次の責務分割を標準にする。
 
-- `src/app/`: SPA の bootstrapping、provider composition、route composition。Next.js App Router の意味では使わない
+- `src/App.tsx`: SPA root component。provider composition は `src/main.tsx`、route composition は `src/routes/` に置く
 - `src/routes/`: route 定義、layout route、route-level lazy loading
 - `src/shared/api/`: HTTP transport、CSRF、API error 正規化
 - `src/shared/config/`: `VITE_*` public config の読み取りと validation

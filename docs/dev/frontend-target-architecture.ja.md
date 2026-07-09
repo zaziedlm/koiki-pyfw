@@ -14,7 +14,7 @@
 |---|---|---|
 | `src/App.tsx` | `BrowserRouter` / `Routes` による route composition | 画面追加の入口が単一ファイルに集中している |
 | `src/main.tsx` | React root、React Query provider、Toaster、global CSS | bootstrapping と provider composition は妥当 |
-| `src/app/**/page.tsx` | 実際の route component | Next.js App Router の規約と誤認しやすい |
+| `src/routes/**` | 実際の route component と route composition | React Router の route entry として明確 |
 | `src/components/auth/` | login / register / auth guard | feature UI と auth policy が混在している |
 | `src/components/layout/` | dashboard shell と navigation | route 定義と navigation 定義が分離していない |
 | `src/components/tasks/` | task list / create / edit / delete UI | task feature として独立可能 |
@@ -31,7 +31,7 @@
 | 目標の場所 | 責務 |
 |---|---|
 | `src/main.tsx` | DOM root、global provider composition、global CSS import |
-| `src/app/` | SPA 全体の bootstrapping 補助。Next.js App Router の意味では使わない |
+| `src/App.tsx` | SPA root component。`src/routes` の route composition を呼び出す |
 | `src/routes/` | route 定義、layout route、route-level lazy loading、route error boundary |
 | `src/shared/api/` | HTTP transport、`credentials: "include"`、CSRF header、JSON parse、`ApiError` 正規化 |
 | `src/shared/config/` | `VITE_*` public config の読み取りと validation |
@@ -43,7 +43,7 @@
 | `src/features/<feature>/types.ts` | feature 専用型。backend schema と view model は必要に応じて分ける |
 | `src/stores/` | server state ではない client-only state |
 
-`src/app/**/page.tsx` は長期的には route component として明確な名前へ移す。移行中に `src/app` を残す場合でも、Next.js server runtime、Route Handler、App Router conventions は存在しないものとして扱う。
+Task 2-2 で `src/app/**/page.tsx` と `src/app/api/**` は削除済みである。route component は `src/routes/` 配下へ置き、Next.js server runtime、Route Handler、App Router conventions は frontend 内に置かない。
 
 ## 互換入口を残さない方針
 

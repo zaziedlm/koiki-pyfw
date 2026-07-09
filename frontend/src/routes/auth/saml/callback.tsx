@@ -1,14 +1,12 @@
-'use client';
-
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { cookieSsoApi } from '@/features/sso/api';
-import { clearSsoContext, loadSsoContext } from '@/lib/sso-storage';
+import { cookieSamlApi } from '@/features/saml/api';
+import { clearSamlContext, loadSamlContext } from '@/lib/saml-storage';
 import { Button } from '@/components/ui/button';
 
 type Status = 'pending' | 'error';
 
-function SsoCallbackContent() {
+function SamlCallbackContent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const hasFinalizedRef = useRef(false);
@@ -22,53 +20,52 @@ function SsoCallbackContent() {
     }
     hasFinalizedRef.current = true;
 
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
+    const samlTicket = searchParams.get('saml_ticket');
+    const relayStateFromQuery =
+      searchParams.get('relay_state') || searchParams.get('RelayState');
 
     const finalize = async () => {
-      if (!code) {
-        throw new Error('Missing authorization code in callback');
-      }
-      if (!state) {
-        throw new Error('Missing state value in callback');
+      if (!samlTicket) {
+        throw new Error('Missing SAML login ticket in callback');
       }
 
-      const stored = loadSsoContext();
-      if (!stored) {
-        throw new Error('SSO login session has expired. Please retry.');
+      const stored = loadSamlContext();
+      const relayState = stored?.relayState || relayStateFromQuery;
+      if (!relayState) {
+        throw new Error('Missing RelayState. Please retry the SAML login.');
+      }
+      if (
+        stored?.relayState &&
+        relayStateFromQuery &&
+        stored.relayState !== relayStateFromQuery
+      ) {
+        throw new Error('RelayState mismatch detected. Please retry the SAML login.');
       }
 
       try {
-        if (stored.state !== state) {
-          throw new Error('State verification failed. Please retry.');
-        }
-
-        if (stored.expiresAt) {
+        if (stored?.expiresAt) {
           const expiresAt = new Date(stored.expiresAt).getTime();
           if (!Number.isNaN(expiresAt) && Date.now() > expiresAt) {
-            throw new Error('Authorization state has expired. Please retry.');
+            throw new Error('SAML authorization state has expired. Please retry.');
           }
         }
 
-        const data = await cookieSsoApi.login({
-          authorization_code: code,
-          code_verifier: stored.codeVerifier,
-          state: stored.state,
-          nonce: stored.nonce,
-          redirect_uri: stored.redirectUri,
+        const data = await cookieSamlApi.login({
+          login_ticket: samlTicket,
+          relay_state: relayState,
         });
 
-        clearSsoContext();
+        clearSamlContext();
 
         navigate(data?.location || '/dashboard', { replace: true });
       } finally {
-        clearSsoContext();
+        clearSamlContext();
       }
     };
 
     finalize().catch((error: unknown) => {
-      console.error('[SSO][callback] failed', error);
-      const message = error instanceof Error ? error.message : 'SSO login failed. Please try again.';
+      console.error('[SAML][callback] failed', error);
+      const message = error instanceof Error ? error.message : 'SAML login failed. Please try again.';
       setErrorMessage(message);
       setStatus('error');
     });
@@ -78,14 +75,14 @@ function SsoCallbackContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center space-y-4">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
-        <p className="text-sm text-muted-foreground">Completing SSO login...</p>
+        <p className="text-sm text-muted-foreground">Completing SAML login...</p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center space-y-4 px-4 text-center">
-      <h1 className="text-xl font-semibold">SSO Login Failed</h1>
+      <h1 className="text-xl font-semibold">SAML Login Failed</h1>
       {errorMessage && <p className="text-sm text-muted-foreground max-w-md">{errorMessage}</p>}
       <div className="flex gap-2">
         <Button onClick={() => navigate('/auth/login', { replace: true })}>Go to Login</Button>
@@ -95,17 +92,17 @@ function SsoCallbackContent() {
   );
 }
 
-export default function SsoCallbackPage() {
+export default function SamlCallbackPage() {
   return (
     <Suspense
       fallback={
         <div className="min-h-screen flex flex-col items-center justify-center space-y-4">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
-          <p className="text-sm text-muted-foreground">Preparing SSO callback...</p>
+          <p className="text-sm text-muted-foreground">Preparing SAML callback...</p>
         </div>
       }
     >
-      <SsoCallbackContent />
+      <SamlCallbackContent />
     </Suspense>
   );
 }
