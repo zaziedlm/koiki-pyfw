@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { cookieApiClient } from '@/lib/cookie-api-client';
+import { cookieSamlApi } from '@/features/saml/api';
 import { clearSamlContext, loadSamlContext } from '@/lib/saml-storage';
 import { Button } from '@/components/ui/button';
 
@@ -52,18 +52,10 @@ function SamlCallbackContent() {
           }
         }
 
-        const response = await cookieApiClient.saml.login({
+        const data = await cookieSamlApi.login({
           login_ticket: samlTicket,
           relay_state: relayState,
         });
-
-        if (!response.ok) {
-          const payload = await response.json().catch(() => null);
-          const message = payload?.detail || payload?.message || 'Failed to complete SAML login';
-          throw new Error(message);
-        }
-
-        const data = await response.json().catch(() => ({}));
 
         clearSamlContext();
 

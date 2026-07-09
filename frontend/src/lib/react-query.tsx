@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { isApiError } from '@/lib/cookie-api-client';
+import { isApiError } from '@/shared/api';
 
 // React Query configuration
 function makeQueryClient() {

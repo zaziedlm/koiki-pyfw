@@ -1,23 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { cookieApiClient } from '@/lib/cookie-api-client';
 import { config } from '@/lib/config';
 import { generateCodeChallenge, generateCodeVerifier } from '@/lib/pkce';
 import { saveSsoContext } from '@/lib/sso-storage';
-
-interface SsoAuthorizationResponse {
-  authorization_endpoint: string;
-  authorization_base_url: string;
-  response_type: string;
-  client_id: string;
-  redirect_uri: string;
-  scope: string;
-  state: string;
-  nonce: string;
-  expires_at?: string;
-  code_challenge_method?: string;
-}
+import { cookieSsoApi } from './api';
 
 const DEFAULT_CODE_CHALLENGE_METHOD = 'S256';
 
@@ -44,15 +31,7 @@ export function useSsoLogin() {
     try {
       const redirectUri = buildRedirectUri(options?.redirectUri);
 
-      const response = await cookieApiClient.sso.authorization({ redirect_uri: redirectUri });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        const message = payload?.detail || payload?.message || 'SSO authorization request failed';
-        throw new Error(message);
-      }
-
-      const context = (await response.json()) as SsoAuthorizationResponse;
+      const context = await cookieSsoApi.authorization({ redirect_uri: redirectUri });
 
       const codeVerifier = generateCodeVerifier();
       const codeChallenge = await generateCodeChallenge(codeVerifier);

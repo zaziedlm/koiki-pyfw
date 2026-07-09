@@ -43,5 +43,33 @@
 
 ## 実施結果
 
-未実施。
+完了。
 
+- `frontend/src/shared/api/http-client.ts` を追加し、Cookie 付き fetch、CSRF bootstrap / header 付与、CSRF invalid 時の最大 1 回 retry、JSON parse、`ApiError` 正規化を transport 層へ移した。
+- `frontend/src/shared/api/index.ts` を追加し、`ApiError`, `isApiError`, `CookieApiClient`, `cookieApiClient` を shared API の公開入口にした。
+- feature API を次へ分割した。
+  - `frontend/src/features/auth/api.ts`
+  - `frontend/src/features/tasks/api.ts`
+  - `frontend/src/features/sso/api.ts`
+  - `frontend/src/features/saml/api.ts`
+  - `frontend/src/features/users/api.ts`
+- query key factory と query hooks を次へ分割した。
+  - `frontend/src/features/auth/queries.ts`
+  - `frontend/src/features/tasks/queries.ts`
+- 旧 `frontend/src/hooks/use-cookie-auth-queries.ts`、`frontend/src/hooks/use-cookie-todo-queries.ts`、`frontend/src/hooks/use-sso-login.ts`、`frontend/src/hooks/use-saml-login.ts`、`frontend/src/hooks/index.ts` を削除し、互換 re-export は残さない方針にした。
+- 旧 `frontend/src/lib/cookie-api-client.ts` を削除し、API client の入口を `shared/api` と `features/*/api.ts` に統一した。
+- login / register / auth guard / dashboard layout / task components は feature query から import する形へ更新した。
+- SSO / SAML authorization hooks と callback routes は feature API を使うようにし、raw `Response` parse を UI / hook 側から除去した。
+- `types/` の本格的な backend schema / view model 分割は、現時点では既存 UI への影響が大きいため実施しなかった。feature API / query の所在を先に固定し、型の物理分割は後続の feature 整理で扱う。
+
+検証結果:
+
+- `rg "@/hooks|@/lib/cookie-api-client|use-cookie-auth-queries|use-cookie-todo-queries|use-sso-login|use-saml-login|cookieApiClient\\.(auth|sso|saml)|cookieApi\\.auth" frontend/src`: 該当なし
+- `rg "response\\.ok|response\\.status|\\.json\\(\\)" frontend/src`: raw response handling は `shared/api/http-client.ts` に限定されていることを確認した
+- `npm run check-types`: 成功
+- `npm run lint`: 成功。ただし Task 3-1 前なので ESLint は実効ルール未整備
+- `npm run build`: 通常権限で成功。initial JS chunk は 568.02 kB。500 kB 超過 warning は継続し、Task 2-2 の lazy loading で扱う
+
+未実施:
+
+- backend を起動した login / me / task CRUD の手動確認は未実施。

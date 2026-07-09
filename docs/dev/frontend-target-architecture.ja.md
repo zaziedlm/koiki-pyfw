@@ -45,6 +45,18 @@
 
 `src/app/**/page.tsx` は長期的には route component として明確な名前へ移す。移行中に `src/app` を残す場合でも、Next.js server runtime、Route Handler、App Router conventions は存在しないものとして扱う。
 
+## 互換入口を残さない方針
+
+この frontend refresh では、旧配置を温存するための compatibility wrapper、互換 re-export、legacy import alias を原則として追加しない。
+
+- ファイル移動時は呼び出し側 import を新しい責務境界へ更新する
+- 旧 `src/hooks/*` や旧 `src/lib/cookie-api-client.ts` のような入口は、利用元を移した時点で削除する
+- 移行中の一時 wrapper が必要になった場合でも、同じタスク内で削除まで完了させる
+- 下位互換のためだけの barrel export は作らない
+- 例外は外部公開 API として維持が必要な場合に限り、理由と削除条件をタスクの `実施結果` に明記する
+
+この方針は frontend 内の刷新対象に適用する。repository root の `app/` が backend legacy import compatibility を担うという既存 backend 境界とは別の話として扱う。
+
 ## Router 方針
 
 当面は React Router の Declarative / Library Mode を継続する。

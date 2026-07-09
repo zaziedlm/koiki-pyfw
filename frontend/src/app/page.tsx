@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCookieAuth } from '@/hooks/use-cookie-auth-queries';
+import { useCookieAuth } from '@/features/auth/queries';
 import { config } from '@/lib/config';
 import { CheckCircle, Users, Shield, Clock } from 'lucide-react';
-import { useSsoLogin } from '@/hooks/use-sso-login';
-import { useSamlLogin } from '@/hooks/use-saml-login';
+import { useSsoLogin } from '@/features/sso/hooks';
+import { useSamlLogin } from '@/features/saml/hooks';
 
 export default function Home() {
   const navigate = useNavigate();

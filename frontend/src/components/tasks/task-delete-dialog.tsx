@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useCookieDeleteTodo } from '@/hooks/use-cookie-todo-queries';
+import { useCookieDeleteTodo } from '@/features/tasks/queries';
 import { useUIStore } from '@/stores';
 import { TodoResponse } from '@/types';
 import { Loader2, AlertTriangle } from 'lucide-react';

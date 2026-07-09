@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCookieLogin } from '@/hooks/use-cookie-auth-queries';
+import { useCookieLogin } from '@/features/auth/queries';
 import { useUIStore } from '@/stores';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 

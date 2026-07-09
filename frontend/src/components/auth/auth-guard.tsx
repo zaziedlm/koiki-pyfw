@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useCookieAuth } from '@/hooks/use-cookie-auth-queries';
+import { useCookieAuth } from '@/features/auth/queries';
 import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {

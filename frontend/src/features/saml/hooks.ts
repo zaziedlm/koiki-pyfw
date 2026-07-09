@@ -2,24 +2,10 @@
 
 import { useState } from 'react';
 import { config } from '@/lib/config';
-import { cookieApiClient } from '@/lib/cookie-api-client';
 import { saveSamlContext } from '@/lib/saml-storage';
+import { cookieSamlApi } from './api';
 
-/**
- * IdP リダイレクト前に RelayState の残り有効時間をチェックする最小閾値（秒）。
- * この秒数未満しか残っていない場合、IdP でのログイン中に期限切れになる可能性が
- * 高いため、リダイレクトを中止してエラーを返す。
- */
 const MIN_REMAINING_SECONDS = 30;
-
-interface SamlAuthorizationResponse {
-  sso_url: string;
-  saml_request: string;
-  relay_state: string;
-  redirect_url: string;
-  sso_binding: string;
-  expires_at?: string;
-}
 
 function buildRedirectUri(explicitRedirect?: string): string {
   if (typeof window === 'undefined') {
@@ -44,17 +30,8 @@ export function useSamlLogin() {
     try {
       const redirectUri = buildRedirectUri(options?.redirectUri);
 
-      const response = await cookieApiClient.saml.authorization({ redirect_uri: redirectUri });
+      const context = await cookieSamlApi.authorization({ redirect_uri: redirectUri });
 
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        const message = payload?.detail || payload?.message || 'SAML authorization request failed';
-        throw new Error(message);
-      }
-
-      const context = (await response.json()) as SamlAuthorizationResponse;
-
-      // ── 4-C: IdP リダイレクト前に RelayState 有効期限を事前チェック ──
       if (context.expires_at) {
         const expiresMs = new Date(context.expires_at).getTime();
         if (!Number.isNaN(expiresMs)) {
@@ -67,7 +44,6 @@ export function useSamlLogin() {
         }
       }
 
-      // Save SAML context to sessionStorage
       saveSamlContext({
         relayState: context.relay_state,
         redirectUri,
@@ -75,7 +51,6 @@ export function useSamlLogin() {
         createdAt: new Date().toISOString(),
       });
 
-      // RelayState付きのURL（後方互換で sso_url もフォールバック）
       const redirectTarget = context.redirect_url || context.sso_url;
       window.location.href = redirectTarget;
     } catch (error) {

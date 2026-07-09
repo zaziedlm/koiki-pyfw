@@ -15,7 +15,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { useUIStore } from '@/stores';
-import { useCookieLogout, useCookieAuth } from '@/hooks/use-cookie-auth-queries';
+import { useCookieLogout, useCookieAuth } from '@/features/auth/queries';
 import { config } from '@/lib/config';
 import {
   LayoutDashboard,

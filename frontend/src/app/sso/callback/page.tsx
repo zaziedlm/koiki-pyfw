@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { cookieApiClient } from '@/lib/cookie-api-client';
+import { cookieSsoApi } from '@/features/sso/api';
 import { clearSsoContext, loadSsoContext } from '@/lib/sso-storage';
 import { Button } from '@/components/ui/button';
 
@@ -50,21 +50,13 @@ function SsoCallbackContent() {
           }
         }
 
-        const response = await cookieApiClient.sso.login({
+        const data = await cookieSsoApi.login({
           authorization_code: code,
           code_verifier: stored.codeVerifier,
           state: stored.state,
           nonce: stored.nonce,
           redirect_uri: stored.redirectUri,
         });
-
-        if (!response.ok) {
-          const payload = await response.json().catch(() => null);
-          const message = payload?.detail || payload?.message || 'Failed to complete SSO login';
-          throw new Error(message);
-        }
-
-        const data = await response.json().catch(() => ({}));
 
         clearSsoContext();
 

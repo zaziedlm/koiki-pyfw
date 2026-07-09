@@ -24,7 +24,7 @@ import {
   Circle,
   Clock
 } from 'lucide-react';
-import { useCookieTodos, useCookieUpdateTodo } from '@/hooks/use-cookie-todo-queries';
+import { useCookieTodos, useCookieUpdateTodo } from '@/features/tasks/queries';
 import { TodoResponse, TodoFilter } from '@/types';
 import { useUIStore } from '@/stores';
 import { formatDistanceToNow } from 'date-fns';
