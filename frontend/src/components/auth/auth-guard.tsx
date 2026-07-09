@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useCookieAuth } from '@/features/auth/queries';
 import { Loader2 } from 'lucide-react';
 

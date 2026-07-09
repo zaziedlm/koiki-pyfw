@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, renderHook, type RenderOptions } from '@testing-library/react';
-import { MemoryRouter, type MemoryRouterProps } from 'react-router-dom';
+import { MemoryRouter, type MemoryRouterProps } from 'react-router';
 
 export function createTestQueryClient() {
   return new QueryClient({

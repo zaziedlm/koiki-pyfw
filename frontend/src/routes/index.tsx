@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router';
 
 import { ProtectedRoute } from '@/components/auth/auth-guard';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';

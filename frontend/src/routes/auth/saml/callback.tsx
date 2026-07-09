@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import { cookieSamlApi } from '@/features/saml/api';
 import { clearSamlContext, loadSamlContext } from '@/lib/saml-storage';
 import { Button } from '@/components/ui/button';

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { formatDistanceToNow } from 'date-fns';
 import { CheckSquare, Circle, ListTodo, TrendingUp } from 'lucide-react';
 

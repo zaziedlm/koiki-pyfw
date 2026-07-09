@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import { cookieSsoApi } from '@/features/sso/api';
 import { clearSsoContext, loadSsoContext } from '@/lib/sso-storage';
 import { Button } from '@/components/ui/button';
