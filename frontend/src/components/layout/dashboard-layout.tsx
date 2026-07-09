@@ -1,7 +1,5 @@
-'use client';
-
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -15,7 +13,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { useUIStore } from '@/stores';
-import { useCookieLogout, useCookieAuth } from '@/hooks/use-cookie-auth-queries';
+import { useCookieLogout, useCookieAuth } from '@/features/auth/queries';
 import { config } from '@/lib/config';
 import {
   LayoutDashboard,
@@ -96,16 +94,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const logoutMutation = useCookieLogout();
 
   const handleLogout = async () => {
-    console.log('🚪 Starting logout process...', { user: !!user });
-
     try {
-      console.log('🚪 Executing logout mutation...');
       await logoutMutation.mutateAsync();
-      console.log('🚪 Logout successful, redirecting to login page');
       navigate('/auth/login');
-    } catch (error) {
-      console.error('🚪 Logout API call failed:', error);
-      console.log('🚪 Cookie auth: forcing logout despite API error');
+    } catch {
       navigate('/auth/login');
     }
   };

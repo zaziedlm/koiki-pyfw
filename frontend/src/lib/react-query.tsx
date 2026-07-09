@@ -1,47 +1,6 @@
-'use client';
-
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { isAxiosError } from 'axios';
-
-// React Query configuration
-function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        // With SSR, we usually want to set some default staleTime
-        // above 0 to avoid refetching immediately on the client
-        staleTime: 60 * 1000, // 1 minute
-        gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
-        retry: (failureCount, error: unknown) => {
-          // Don't retry on 4xx errors except 429 (rate limit)
-          if (isAxiosError(error)) {
-            const status = error.response?.status;
-            if (status && status >= 400 && status < 500 && status !== 429) {
-              return false;
-            }
-          }
-          return failureCount < 3;
-        },
-        refetchOnWindowFocus: false,
-        refetchOnMount: true,
-        refetchOnReconnect: true,
-      },
-      mutations: {
-        retry: (failureCount, error: unknown) => {
-          // Don't retry mutations on client errors
-          if (isAxiosError(error)) {
-            const status = error.response?.status;
-            if (status && status >= 400 && status < 500) {
-              return false;
-            }
-          }
-          return failureCount < 2;
-        },
-      },
-    },
-  });
-}
+import { makeQueryClient } from './react-query-client';
 
 let browserQueryClient: QueryClient | undefined = undefined;
 

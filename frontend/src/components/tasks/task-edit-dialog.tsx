@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useCookieUpdateTodo } from '@/hooks/use-cookie-todo-queries';
+import { useCookieUpdateTodo } from '@/features/tasks/queries';
 import { useUIStore } from '@/stores';
 import { TodoResponse } from '@/types';
 import { Loader2 } from 'lucide-react';

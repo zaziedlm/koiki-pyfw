@@ -1,5 +1,8 @@
 # フロントエンド アプリケーション開発ガイド（Next.js 15 + FastAPI）
 
+> 注意: この文書は旧 Next.js 15 / App Router / BFF 前提の historical guide です。
+> 現行の `frontend/` は Vite + React SPA へ刷新済みであり、実装時は `docs/frontend-spa-implementation-guide.ja.md` を参照してください。
+
 最終更新: 2025-09-03
 
 本ガイドは、本リポジトリの `frontend/` に実装されたダッシュボード、ログイン画面、Task（Todo）管理機能を基に、同様の機能を今後拡張/追加する開発者向けに技術情報・アーキテクチャ・バックエンド FastAPI との連携方式を体系化したものです。

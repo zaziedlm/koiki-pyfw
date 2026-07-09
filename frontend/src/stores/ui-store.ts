@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { toast } from 'sonner';
 import { UIState, Notification } from '@/types';
 
 interface UIStore extends UIState {
@@ -61,6 +62,27 @@ export const useUIStore = create<UIStore>()(
         set((state) => ({
           notifications: [newNotification, ...state.notifications],
         }));
+
+        const toastOptions = {
+          id,
+          description: notification.message,
+          duration: notification.duration || 5000,
+        };
+
+        switch (notification.type) {
+          case 'success':
+            toast.success(notification.title, toastOptions);
+            break;
+          case 'error':
+            toast.error(notification.title, toastOptions);
+            break;
+          case 'warning':
+            toast.warning(notification.title, toastOptions);
+            break;
+          case 'info':
+            toast.info(notification.title, toastOptions);
+            break;
+        }
 
         // Auto-remove notification after duration
         const duration = notification.duration || 5000;

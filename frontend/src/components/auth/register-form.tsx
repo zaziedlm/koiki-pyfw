@@ -1,7 +1,5 @@
-'use client';
-
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCookieRegister } from '@/hooks/use-cookie-auth-queries';
+import { useCookieRegister } from '@/features/auth/queries';
 import { useUIStore } from '@/stores';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 
