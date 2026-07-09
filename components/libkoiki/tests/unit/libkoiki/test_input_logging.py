@@ -199,11 +199,9 @@ class TestServiceInputLogging:
     ):
         repository = MagicMock()
         repository.set_session = MagicMock()
+        repository.apply_versioned_update = AsyncMock(return_value=1)
         repository.get_by_id_and_owner = AsyncMock(
-            return_value=SimpleNamespace(id=7, owner_id=1)
-        )
-        repository.update = AsyncMock(
-            return_value=SimpleNamespace(id=7, owner_id=1)
+            return_value=SimpleNamespace(id=7, owner_id=1, version=2)
         )
 
         service = todo_service_module.TodoService(repository=repository)
@@ -213,13 +211,13 @@ class TestServiceInputLogging:
         await endpoint(
             service,
             todo_id=7,
-            todo_in=TodoUpdate(title="Secret title", description="Secret body"),
+            todo_in=TodoUpdate(title="Secret title", description="Secret body", version=1),
             owner_id=1,
             db=MagicMock(),
         )
 
         info_kwargs = [call.kwargs for call in todo_service_module.logger.info.call_args_list]
-        assert any(kwargs.get("update_fields") == ["description", "title"] for kwargs in info_kwargs)
+        assert any(kwargs.get("update_fields") == ["description", "title", "version"] for kwargs in info_kwargs)
         assert all("data" not in kwargs for kwargs in info_kwargs)
 
 
@@ -298,7 +296,7 @@ class TestEndpointInputLogging:
         await update_endpoint(
             request=SimpleNamespace(),
             todo_id=10,
-            todo_in=TodoUpdate(title="Private title", description="Private body"),
+            todo_in=TodoUpdate(title="Private title", description="Private body", version=1),
             current_user=SimpleNamespace(id=3),
             csrf=None,
             todo_service=todo_service,
@@ -306,7 +304,7 @@ class TestEndpointInputLogging:
         )
 
         update_kwargs = todos_endpoint_module.logger.info.call_args_list[2].kwargs
-        assert update_kwargs["update_fields"] == ["description", "title"]
+        assert update_kwargs["update_fields"] == ["description", "title", "version"]
         assert "data" not in update_kwargs
 
 

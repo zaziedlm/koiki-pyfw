@@ -6,6 +6,7 @@ export interface TodoResponse {
   description?: string;
   is_completed: boolean;
   owner_id: number;
+  version: number; // optimistic lock version
   created_at: string; // ISO datetime
   updated_at: string; // ISO datetime
 }
@@ -19,6 +20,7 @@ export interface TodoUpdate {
   title?: string; // 1-255 chars
   description?: string;
   is_completed?: boolean;
+  version: number; // version read by the client before editing (optimistic lock)
 }
 
 // Frontend-specific todo types

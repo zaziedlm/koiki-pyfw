@@ -81,10 +81,10 @@ export function useCookieToggleTodo() {
       if (!currentData) {
         const todo = await cookieTodoApi.getById(id);
 
-        return cookieTodoApi.update(id, { is_completed: !todo.is_completed });
+        return cookieTodoApi.update(id, { is_completed: !todo.is_completed, version: todo.version });
       }
 
-      return cookieTodoApi.update(id, { is_completed: !currentData.is_completed });
+      return cookieTodoApi.update(id, { is_completed: !currentData.is_completed, version: currentData.version });
     },
     onSuccess: (data: TodoResponse, id) => {
       queryClient.setQueryData(cookieTodoKeys.detail(id), data);

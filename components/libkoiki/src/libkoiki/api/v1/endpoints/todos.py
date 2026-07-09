@@ -13,7 +13,7 @@ from libkoiki.api.dependencies import (
     # RateLimitDep, # ヘルパーを使う場合
 )
 from libkoiki.models.user import UserModel
-from libkoiki.core.exceptions import ResourceNotFoundException, AuthorizationException
+from libkoiki.core.exceptions import ConflictException, ResourceNotFoundException, AuthorizationException
 from libkoiki.core.logging import get_logger, get_log_field_names
 from libkoiki.core.rate_limiter import limiter
 from libkoiki.core.transaction import transactional  # transactionalデコレータを追加
@@ -148,24 +148,32 @@ async def update_todo(
     - **description**: 新しい説明 (任意)
     - **is_completed**: 完了状態 (任意)
     """
+    # 更新に失敗した場合のログ出力でORMオブジェクト(current_user)の属性へ再アクセスすると、
+    # サービス層内のロールバック後にセッションが期限切れ状態となり MissingGreenlet を誘発する。
+    # そのためスカラー値としてここで一度だけ取り出しておく。
+    owner_id = current_user.id
+
     logger.info(
         "Updating todo",
         todo_id=todo_id,
-        user_id=current_user.id,
+        user_id=owner_id,
         update_fields=get_log_field_names(todo_in),
     )
     try:
         updated_todo = await todo_service.update_todo(
-            todo_id=todo_id, todo_in=todo_in, owner_id=current_user.id, db=db
+            todo_id=todo_id, todo_in=todo_in, owner_id=owner_id, db=db
         )
-        logger.info("Todo updated successfully", todo_id=todo_id, user_id=current_user.id)
+        logger.info("Todo updated successfully", todo_id=todo_id, user_id=owner_id)
         return updated_todo
     except ResourceNotFoundException:
-        logger.warning("Todo not found for update", todo_id=todo_id, user_id=current_user.id)
+        logger.warning("Todo not found for update", todo_id=todo_id, user_id=owner_id)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ToDo not found")
     except AuthorizationException: # 念のため
-        logger.warning("Authorization denied for todo update", todo_id=todo_id, user_id=current_user.id)
+        logger.warning("Authorization denied for todo update", todo_id=todo_id, user_id=owner_id)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this ToDo")
+    except ConflictException as e:
+        logger.warning("Version conflict for todo update", todo_id=todo_id, user_id=owner_id)
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e.detail))
 
 # --- ToDo削除 ---
 @router.delete(

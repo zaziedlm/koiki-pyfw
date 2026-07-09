@@ -15,7 +15,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useCookieUpdateTodo } from '@/features/tasks/queries';
+import { useQueryClient } from '@tanstack/react-query';
+import { cookieTodoKeys, useCookieUpdateTodo } from '@/features/tasks/queries';
+import { isApiError } from '@/shared/api';
 import { useUIStore } from '@/stores';
 import { TodoResponse } from '@/types';
 import { Loader2 } from 'lucide-react';
@@ -43,6 +45,7 @@ interface TaskEditDialogProps {
 export function TaskEditDialog({ task, open, onOpenChange }: TaskEditDialogProps) {
   const addNotification = useUIStore((state) => state.addNotification);
   const updateTaskMutation = useCookieUpdateTodo();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -79,6 +82,7 @@ export function TaskEditDialog({ task, open, onOpenChange }: TaskEditDialogProps
           title: data.title,
           description: data.description || undefined,
           is_completed: data.is_completed,
+          version: task.version,
         },
       });
 
@@ -90,6 +94,18 @@ export function TaskEditDialog({ task, open, onOpenChange }: TaskEditDialogProps
 
       onOpenChange(false);
     } catch (error: unknown) {
+      if (isApiError(error) && error.status === 409) {
+        queryClient.invalidateQueries({ queryKey: cookieTodoKeys.detail(task.id) });
+        queryClient.invalidateQueries({ queryKey: cookieTodoKeys.lists() });
+        addNotification({
+          type: 'error',
+          title: 'Task was updated elsewhere',
+          message: 'This task was changed by another request. Showing the latest version.',
+        });
+        onOpenChange(false);
+        return;
+      }
+
       const message = error instanceof Error ? error.message : 'Please try again';
       addNotification({
         type: 'error',

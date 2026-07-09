@@ -12,6 +12,9 @@ class TodoModel(Base):
     description = Column(Text, nullable=True)
     is_completed = Column(Boolean, default=False, nullable=False, server_default='false')
 
+    # 楽観ロック用のバージョン番号 (アトミックUPDATEでのみインクリメントする)
+    version = Column(Integer, nullable=False, server_default='1')
+
     # 所有者 (User) への外部キー
     owner_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
 
