@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { cookieApiClient } from '@/lib/cookie-api-client';
+import { cookieAuthApi, isApiError } from '@/lib/cookie-api-client';
 import { LoginCredentials, RegisterData } from '@/types';
 
 // dev-only minimal logger (no sensitive data)
@@ -20,25 +20,15 @@ export function useCookieMe() {
   return useQuery({
     queryKey: cookieAuthKeys.me(),
     queryFn: async () => {
-      const response = await cookieApiClient.auth.getMe();
-
-      // 未ログイン(401)は例外ではなく「未認証」として扱う
-      if (response.status === 401) {
-        return null;
-      }
-
-      if (!response.ok) {
-        // 401 以外の異常はエラーにする
-        let message = `Failed to fetch user (${response.status})`;
-        try {
-          const data = await response.json();
-          message = data?.detail || data?.message || message;
-        } catch {
-          // ignore
+      try {
+        return await cookieAuthApi.getMe();
+      } catch (error) {
+        // 未ログイン(401)は例外ではなく「未認証」として扱う
+        if (isApiError(error) && error.status === 401) {
+          return null;
         }
-        throw new Error(message);
+        throw error;
       }
-      return response.json();
     },
     staleTime: 5 * 60 * 1000, // 5分
     // 未認証時の 401 は例外にしないため、基本的に再試行は不要
@@ -54,20 +44,14 @@ export function useCookieLogin() {
     mutationFn: async (credentials: LoginCredentials) => {
       devLog('login: start');
 
-      const response = await cookieApiClient.auth.login({
+      const result = await cookieAuthApi.login({
         email: credentials.email,
         password: credentials.password,
       });
 
-      devLog('login: response', { status: response.status, ok: response.ok });
+      devLog('login: response');
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        const errorMessage = (errorData && (errorData.detail || errorData.message)) || `Login failed (${response.status})`;
-        throw new Error(errorMessage);
-      }
-
-      return response.json();
+      return result;
     },
     onSuccess: async (data) => {
       devLog('login: success');
@@ -101,14 +85,7 @@ export function useCookieLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await cookieApiClient.auth.logout();
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Logout failed');
-      }
-
-      return response.json();
+      return cookieAuthApi.logout();
     },
     onSuccess: () => {
       // ログアウト成功時にキャッシュをクリア
@@ -130,14 +107,7 @@ export function useCookieRegister() {
 
   return useMutation({
     mutationFn: async (userData: RegisterData) => {
-      const response = await cookieApiClient.auth.register(userData);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Registration failed');
-      }
-
-      return response.json();
+      return cookieAuthApi.register(userData);
     },
     onSuccess: (data) => {
       // 登録成功時にユーザー情報をキャッシュ
@@ -157,14 +127,7 @@ export function useCookieRefreshToken() {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await cookieApiClient.auth.refreshToken();
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Token refresh failed');
-      }
-
-      return response.json();
+      return cookieAuthApi.refreshToken();
     },
     onSuccess: () => {
       // トークン更新成功時にユーザー情報を再取得

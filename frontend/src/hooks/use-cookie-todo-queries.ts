@@ -16,11 +16,7 @@ export function useCookieTodos(params: TodoListParams = {}) {
   return useQuery({
     queryKey: cookieTodoKeys.list(params),
     queryFn: async () => {
-      const response = await cookieTodoApi.getAll(params);
-      if (!response.ok) {
-        throw new Error('Failed to fetch todos');
-      }
-      return response.json();
+      return cookieTodoApi.getAll(params);
     },
     staleTime: 30 * 1000, // 30 seconds
   });
@@ -31,11 +27,7 @@ export function useCookieTodo(id: number) {
   return useQuery({
     queryKey: cookieTodoKeys.detail(id),
     queryFn: async () => {
-      const response = await cookieTodoApi.getById(id);
-      if (!response.ok) {
-        throw new Error('Failed to fetch todo');
-      }
-      return response.json();
+      return cookieTodoApi.getById(id);
     },
     enabled: !!id,
   });
@@ -47,12 +39,7 @@ export function useCookieCreateTodo() {
   
   return useMutation({
     mutationFn: async (data: TodoCreate) => {
-      const response = await cookieTodoApi.create(data);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to create todo');
-      }
-      return response.json();
+      return cookieTodoApi.create(data);
     },
     onSuccess: () => {
       // Invalidate all todo lists
@@ -67,12 +54,7 @@ export function useCookieUpdateTodo() {
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: TodoUpdate }) => {
-      const response = await cookieTodoApi.update(id, data);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to update todo');
-      }
-      return response.json();
+      return cookieTodoApi.update(id, data);
     },
     onSuccess: (data: TodoResponse, variables) => {
       // Update the specific todo in cache
@@ -89,13 +71,7 @@ export function useCookieDeleteTodo() {
   
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await cookieTodoApi.delete(id);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to delete todo');
-      }
-      // DELETE は 204 No Content（空ボディ）を返すため response.json() は呼ばない
-      return null;
+      return cookieTodoApi.delete(id);
     },
     onSuccess: (_, id) => {
       // Remove the todo from cache
@@ -117,26 +93,12 @@ export function useCookieToggleTodo() {
       
       if (!currentData) {
         // If not in cache, fetch it first
-        const response = await cookieTodoApi.getById(id);
-        if (!response.ok) {
-          throw new Error('Failed to fetch todo');
-        }
-        const todo = await response.json();
+        const todo = await cookieTodoApi.getById(id);
         
-        const updateResponse = await cookieTodoApi.update(id, { is_completed: !todo.is_completed });
-        if (!updateResponse.ok) {
-          const errorData = await updateResponse.json();
-          throw new Error(errorData.detail || 'Failed to toggle todo');
-        }
-        return updateResponse.json();
+        return cookieTodoApi.update(id, { is_completed: !todo.is_completed });
       }
       
-      const response = await cookieTodoApi.update(id, { is_completed: !currentData.is_completed });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to toggle todo');
-      }
-      return response.json();
+      return cookieTodoApi.update(id, { is_completed: !currentData.is_completed });
     },
     onSuccess: (data: TodoResponse, id) => {
       // Update the specific todo in cache

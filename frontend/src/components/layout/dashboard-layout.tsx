@@ -96,16 +96,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const logoutMutation = useCookieLogout();
 
   const handleLogout = async () => {
-    console.log('🚪 Starting logout process...', { user: !!user });
-
     try {
-      console.log('🚪 Executing logout mutation...');
       await logoutMutation.mutateAsync();
-      console.log('🚪 Logout successful, redirecting to login page');
       navigate('/auth/login');
-    } catch (error) {
-      console.error('🚪 Logout API call failed:', error);
-      console.log('🚪 Cookie auth: forcing logout despite API error');
+    } catch {
       navigate('/auth/login');
     }
   };

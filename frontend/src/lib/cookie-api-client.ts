@@ -1,6 +1,42 @@
 import { config as appConfig } from './config';
+import type { RegisterData, TodoCreate, TodoResponse, TodoUpdate, UserResponse } from '@/types';
 
 const CSRF_COOKIE_NAME = 'koiki_csrf_token';
+
+interface ApiErrorPayload {
+  message?: string;
+  detail?: string | { code?: string; message?: string; [key: string]: unknown };
+  code?: string;
+  [key: string]: unknown;
+}
+
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code?: string;
+  readonly details?: unknown;
+
+  constructor({
+    status,
+    message,
+    code,
+    details,
+  }: {
+    status: number;
+    message: string;
+    code?: string;
+    details?: unknown;
+  }) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
+}
+
+export function isApiError(error: unknown): error is ApiError {
+  return error instanceof ApiError;
+}
 
 function isDev(): boolean {
   return import.meta.env.DEV;
@@ -18,6 +54,52 @@ function readCookie(name: string): string | null {
     .find((row) => row.startsWith(`${name}=`));
 
   return cookie ? decodeURIComponent(cookie.split('=')[1] ?? '') : null;
+}
+
+async function parseJsonResponse(response: Response): Promise<unknown> {
+  if (response.status === 204) {
+    return null;
+  }
+
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+async function toApiError(response: Response): Promise<ApiError> {
+  const payload = await parseJsonResponse(response).catch(() => null) as ApiErrorPayload | string | null;
+  const detail = typeof payload === 'object' && payload !== null ? payload.detail : undefined;
+  const detailMessage = typeof detail === 'object' && detail !== null ? detail.message : detail;
+  const detailCode = typeof detail === 'object' && detail !== null ? detail.code : undefined;
+  const message =
+    (typeof payload === 'object' && payload !== null ? payload.message : undefined) ||
+    detailMessage ||
+    response.statusText ||
+    `Request failed (${response.status})`;
+  const code =
+    (typeof payload === 'object' && payload !== null ? payload.code : undefined) ||
+    detailCode;
+
+  return new ApiError({
+    status: response.status,
+    message,
+    code,
+    details: payload,
+  });
+}
+
+interface AuthSessionResponse {
+  message?: string;
+  data?: Record<string, unknown>;
+  user?: UserResponse;
+  location?: string;
 }
 
 // Cookie認証用のAPIクライアント
@@ -137,6 +219,19 @@ class CookieApiClient {
     }
 
     return response;
+  }
+
+  public async requestJson<T>(
+    url: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const response = await this.fetchWithCredentials(url, options);
+
+    if (!response.ok) {
+      throw await toApiError(response);
+    }
+
+    return parseJsonResponse(response) as Promise<T>;
   }
 
   // 認証API
@@ -298,34 +393,34 @@ export const cookieApi = {
 export const cookieTodoApi = {
   getAll: (params?: { skip?: number; limit?: number }) => {
     const queryString = params ? `?${new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString()}` : '';
-    return cookieApiClient.fetchWithCredentials(`/todos${queryString}`, {
+    return cookieApiClient.requestJson<TodoResponse[]>(`/todos${queryString}`, {
       method: 'GET',
     });
   },
 
-  getById: (id: number) => cookieApiClient.fetchWithCredentials(`/todos/${id}`, {
+  getById: (id: number) => cookieApiClient.requestJson<TodoResponse>(`/todos/${id}`, {
     method: 'GET',
   }),
 
-  create: async (data: { title: string; description?: string }) => {
+  create: async (data: TodoCreate) => {
     // CSRFトークンを確実に取得
     if (!cookieApiClient.csrfToken) {
       await cookieApiClient.initializeCSRFToken();
     }
 
-    return cookieApiClient.fetchWithCredentials('/todos', {
+    return cookieApiClient.requestJson<TodoResponse>('/todos', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  update: async (id: number, data: { title?: string; description?: string; is_completed?: boolean }) => {
+  update: async (id: number, data: TodoUpdate) => {
     // CSRFトークンを確実に取得
     if (!cookieApiClient.csrfToken) {
       await cookieApiClient.initializeCSRFToken();
     }
 
-    return cookieApiClient.fetchWithCredentials(`/todos/${id}`, {
+    return cookieApiClient.requestJson<TodoResponse>(`/todos/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -337,10 +432,44 @@ export const cookieTodoApi = {
       await cookieApiClient.initializeCSRFToken();
     }
 
-    return cookieApiClient.fetchWithCredentials(`/todos/${id}`, {
+    return cookieApiClient.requestJson<null>(`/todos/${id}`, {
       method: 'DELETE',
     });
   },
+};
+
+export const cookieAuthApi = {
+  getMe: () => cookieApiClient.requestJson<UserResponse>('/auth/session/me'),
+
+  login: async (credentials: { email: string; password: string }) => {
+    if (!cookieApiClient.csrfToken) {
+      await cookieApiClient.initializeCSRFToken();
+    }
+
+    return cookieApiClient.requestJson<AuthSessionResponse>('/auth/session/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  },
+
+  logout: () => cookieApiClient.requestJson<unknown>('/auth/session/logout', {
+    method: 'POST',
+  }),
+
+  register: async (userData: RegisterData) => {
+    if (!cookieApiClient.csrfToken) {
+      await cookieApiClient.initializeCSRFToken();
+    }
+
+    return cookieApiClient.requestJson<AuthSessionResponse>('/auth/session/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  },
+
+  refreshToken: () => cookieApiClient.requestJson<unknown>('/auth/session/refresh', {
+    method: 'POST',
+  }),
 };
 
 // User API methods (Cookie版)

@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { isAxiosError } from 'axios';
+import { isApiError } from '@/lib/cookie-api-client';
 
 // React Query configuration
 function makeQueryClient() {
@@ -15,9 +15,8 @@ function makeQueryClient() {
         gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
         retry: (failureCount, error: unknown) => {
           // Don't retry on 4xx errors except 429 (rate limit)
-          if (isAxiosError(error)) {
-            const status = error.response?.status;
-            if (status && status >= 400 && status < 500 && status !== 429) {
+          if (isApiError(error)) {
+            if (error.status >= 400 && error.status < 500 && error.status !== 429) {
               return false;
             }
           }
@@ -30,9 +29,8 @@ function makeQueryClient() {
       mutations: {
         retry: (failureCount, error: unknown) => {
           // Don't retry mutations on client errors
-          if (isAxiosError(error)) {
-            const status = error.response?.status;
-            if (status && status >= 400 && status < 500) {
+          if (isApiError(error)) {
+            if (error.status >= 400 && error.status < 500) {
               return false;
             }
           }
