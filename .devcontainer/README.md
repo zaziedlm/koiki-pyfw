@@ -46,7 +46,7 @@ VSCode が起動したら、右下の通知または コマンドパレット（
 | 操作 | VSCode タスク |
 |------|--------------|
 | バックエンド起動（FastAPI） | `Start Backend` |
-| フロントエンド起動（Next.js） | `Start Frontend` |
+| フロントエンド起動（Vite React SPA） | `Start Frontend` |
 | 両方同時起動 | `Start All` |
 | DB マイグレーション（手動） | `DB Migration (upgrade head)` |
 
@@ -57,8 +57,11 @@ VSCode が起動したら、右下の通知または コマンドパレット（
 | ポート | 用途 |
 |--------|------|
 | 8000 | FastAPI バックエンド |
-| 3000 | Next.js フロントエンド |
+| 3000 | Vite React SPA 開発サーバー |
 | 5432 | PostgreSQL |
+
+Node.js はフロントエンド成果物のビルドと、必要に応じた Vite 開発サーバーの実行に使用します。
+Next.js のサーバーランタイムや BFF は使用しません。
 
 ## Keycloak（オプション）
 

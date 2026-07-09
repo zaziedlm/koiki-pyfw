@@ -62,7 +62,7 @@
   "forwardPorts": [8000, 3000, 5432, 8090],
   "portsAttributes": {
     "8000": { "label": "FastAPI Backend" },
-    "3000": { "label": "Next.js Frontend" },
+    "3000": { "label": "Vite React SPA Dev Server" },
     "5432": { "label": "PostgreSQL" },
     "8090": { "label": "Keycloak" }
   },
@@ -71,7 +71,7 @@
 
   // 1. .env がなければ .env.example からコピー
   // 2. Python 依存関係インストール (uv workspace メンバーを editable インストール)
-  // 3. フロントエンド依存関係インストール
+  // 3. React SPA のビルド・開発サーバー用 Node 依存関係をインストール
   //
   // 注意: /workspace/.venv と /workspace/frontend/node_modules は docker-compose.devcontainer.yml の
   // anonymous volume で遮蔽されており、Dockerfile.devcontainer で vscode:vscode 所有にした
