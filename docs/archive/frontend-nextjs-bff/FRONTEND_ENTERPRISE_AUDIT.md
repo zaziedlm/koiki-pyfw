@@ -1,5 +1,7 @@
 # Frontend Enterprise Readiness Audit (Next.js 15)
 
+> **Historical record (archived 2026-07-10):** This audit applies to the former Next.js 15 / App Router / BFF frontend, not the current Vite + React SPA. Use `docs/frontend-spa-implementation-guide.ja.md` for current guidance.
+
 - Target: `frontend/` (Next.js 15, React 19, App Router)
 - Backend: FastAPI (BFF-style proxy via Next Route Handlers)
 - Date: 2025-09-04
@@ -223,4 +225,3 @@ For CSP, prefer strict `script-src 'self' 'nonce-<generated>'` with nonces attac
 ## Closing Note
 
 The prototype is well-structured and applies modern Next.js patterns with robust auth fundamentals. Addressing the listed hardening items—especially headers/CSP, rate limiting, observability, and CI coverage—will move it to an enterprise-ready posture. I can raise a follow-up PR to implement the quick fixes (middleware export, duplicate var) and a baseline security-headers configuration if desired.
-

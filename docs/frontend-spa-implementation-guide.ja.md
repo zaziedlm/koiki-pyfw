@@ -203,7 +203,7 @@ frontend CI は現時点では有効化していない。
 
 ## Stale Docs
 
-`docs/frontend-application-development-guide.md` は旧 Next.js 15 + BFF 前提の historical guide である。現行 Vite + React SPA の実装手順としては使わない。
+旧 Next.js 15 + BFF 前提の guide と audit は `docs/archive/frontend-nextjs-bff/` に保存している。現行 Vite + React SPA の実装手順としては使わない。
 
 認証 API の backend contract を確認する場合は `docs/authentication-api-guide.md` を参照してよいが、frontend 実装例のうち Next Route Handlers / BFF / axios / localStorage 前提の記述は現行 frontend の実装方針ではない。
 
@@ -212,4 +212,4 @@ frontend CI は現時点では有効化していない。
 - dev/v0.8 作成時に frontend CI を既存 `ci.yml` へ統合する。
 - Playwright による login -> task CRUD -> logout E2E を追加する。
 - `react-refresh/only-export-components` warning を消すため、UI helper export を別ファイルへ分離する。
-- 旧 Next.js guide を削除または historical docs 配下へ移動する。
+- 旧 Next.js guide と audit は `docs/archive/frontend-nextjs-bff/` に保存済み。内容を現行実装の判断根拠としては使わない。

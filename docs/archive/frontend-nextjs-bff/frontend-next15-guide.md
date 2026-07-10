@@ -1,10 +1,12 @@
 # KOIKI Frontend 実装精査レポートと Next.js 15 開発ガイド（改訂）
 
+> **履歴資料（2026-07-10 に archive 化）**: この文書は Next.js 15 / App Router / BFF 構成を記録する。現行の実装指針ではない。`docs/frontend-spa-implementation-guide.ja.md` を参照すること。
+
 最終更新: 2025-09-03
 
 本書はフロントエンド実装（Next.js 15 / React 19）の現状に合わせて最新化した開発ガイドです。詳細なアーキテクチャと実装パターンは、あわせて作成した「フロントエンド アプリケーション開発ガイド」を参照してください。
 
-- 参照: `docs/frontend-application-development-guide.md`
+- 参照: 同ディレクトリの `frontend-application-development-guide.md`
 
 ---
 

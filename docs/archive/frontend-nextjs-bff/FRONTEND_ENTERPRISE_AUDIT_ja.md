@@ -1,5 +1,7 @@
 # フロントエンド エンタープライズ対応度監査（Next.js 15）
 
+> **履歴資料（2026-07-10 に archive 化）**: この監査は旧 Next.js 15 / App Router / BFF 構成を対象とする。現行 Vite + React SPA の評価・実装指針には使用しない。現行ガイドは `docs/frontend-spa-implementation-guide.ja.md` を参照する。
+
 - 対象: `frontend/`（Next.js 15, React 19, App Router）
 - バックエンド: FastAPI（Next ルートハンドラ経由の BFF 構成）
 - 日付: 2025-09-04
@@ -223,4 +225,3 @@ CSP は本番で `script-src 'self' 'nonce-<generated>'` を推奨。レイア�
 ## 補足
 
 本プロトタイプは、モダンな Next.js のパターンを踏まえた堅牢な認証基盤を有しています。特に、CSP を含むセキュリティヘッダー、レート制限、可観測性、フロントエンド CI の整備を優先実装することで、エンタープライズレベルへ到達可能です。ご要望があれば、ミドルウェア修正・重複変数修正・セキュリティヘッダー導入の小規模 PR を作成します。
-

@@ -1,7 +1,6 @@
 # フロントエンド アプリケーション開発ガイド（Next.js 15 + FastAPI）
 
-> 注意: この文書は旧 Next.js 15 / App Router / BFF 前提の historical guide です。
-> 現行の `frontend/` は Vite + React SPA へ刷新済みであり、実装時は `docs/frontend-spa-implementation-guide.ja.md` を参照してください。
+> **履歴資料（2026-07-10 に archive 化）**: この文書は旧 Next.js 15 / App Router / BFF 前提です。現行の `frontend/` は Vite + React SPA であり、実装時は `docs/frontend-spa-implementation-guide.ja.md`、認証契約は `docs/authentication-api-guide.md` を参照してください。
 
 最終更新: 2025-09-03
 
@@ -13,7 +12,7 @@
 - UI/状態: shadcn/ui + Tailwind、Zustand（UI 状態のみ）
 
 関連ドキュメント:
-- `docs/dev/frontend-next15-guide.md`（実装精査レポートと改善指針）
+- 同ディレクトリの `frontend-next15-guide.md`（当時の実装精査レポートと改善指針）
 - `docs/authentication-api-guide.md`（FastAPI 側の認証API完全ガイド）
 
 

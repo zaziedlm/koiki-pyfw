@@ -4,7 +4,7 @@
 - 対象文書: `docs/security/session-auth-security-review.ja.md`
 - 目的: React SPA 化に伴うセッション認証セキュリティ指摘について、現行コード上での成立状況、対応可否、追検討・判断事項を整理する。
 - 備考: 初回整理時点ではソースコード変更・テスト実行は行っていない。
-- 更新: 2026-07-07 に `F1`, `F2`, `F3`, `F4` の一部, `F6` の一部, `F9` を対応済み。2026-07-08 に `F5` の一部, `F7`, `F8`, `F10` を対応済み。残件は本書の「対応状況」「追検討が必要な事項」を参照。
+- 更新: 2026-07-07 に `F1`, `F2`, `F3`, `F4` の一部, `F6` の一部, `F9` を対応済み。2026-07-08 に `F5` の一部, `F7`, `F8`, `F10` を対応済み。2026-07-10 に frontend CI の採用・配備ゲートを `docs/dev/react-spa-adoption-release-gates.ja.md` へ分離した。残件は本書の「対応状況」「追検討が必要な事項」を参照。
 
 ## 結論
 
@@ -25,7 +25,7 @@
 | F7 refresh Cookie Path | 済み | `AUTH_REFRESH_COOKIE_PATH` を追加し、refresh cookie を session auth route 配下へ限定。削除時は移行前の `/` path cookie も消去。 |
 | F8 refresh token 再利用検知 | 済み | revoked refresh token の再利用を検知した場合、同一ユーザーの refresh token を全 revoke するよう変更。token family 方式は将来の拡張候補。 |
 | F9 refresh 7日ハードコード | 済み | refresh rotation 時も `settings.REFRESH_TOKEN_EXPIRE_DAYS` を参照するよう変更。 |
-| F10 既定値・ヘッダ・CI | 済み | production example で `AUTH_COOKIE_SECURE=true` を明示し、本番同一オリジン方針として CORS を無効化 / 最小化する設定例へ整理。frontend nginx に基本 security headers と CSP を追加。React SPA は参照実装のため frontend CI の必須ゲート化は保留し、`npm run build` / `npm run lint` の手動確認に留める。 |
+| F10 既定値・ヘッダ・CI | 済み | production example で `AUTH_COOKIE_SECURE=true` を明示し、本番同一オリジン方針として CORS を無効化 / 最小化する設定例へ整理。frontend nginx に基本 security headers と CSP を追加。`dev/v0.7-react-only` では CI を保留し、SPA を採用対象にする branch では frontend CI を必須とする方針を別文書へ記録した。 |
 
 ## 対応可否・判断整理
 
@@ -40,7 +40,7 @@
 | F7 refresh Cookie Path | 対応済み | refresh cookie は `AUTH_REFRESH_COOKIE_PATH` または `API_PREFIX + /auth/session` に限定。access / CSRF cookie は従来どおり `AUTH_COOKIE_PATH` を使用。 |
 | F8 refresh token 再利用検知 | 対応済み | revoked token 再利用時は、同一ユーザー全 refresh token revoke で対応済み。token family / rotation chain は中期的な拡張候補。 |
 | F9 refresh 7日ハードコード | 対応済み | refresh rotation 時も `settings.REFRESH_TOKEN_EXPIRE_DAYS` を参照するよう変更済み。 |
-| F10 既定値・ヘッダ・CI | 対応済み | Cookie secure、CORS 本番方針、nginx security headers、CSP は対応済み。React SPA は参照実装で frontend stack は差し替え可能なため、frontend CI の必須ゲート化は現時点では保留。現行サンプルとして `npm run build` / `npm run lint` は手動確認済み。 |
+| F10 既定値・ヘッダ・CI | 対応済み | Cookie secure、CORS 本番方針、nginx security headers、CSP は対応済み。`dev/v0.7-react-only` では CI を保留し、SPA を採用対象にする branch では frontend CI を必須とする。詳細は `docs/dev/react-spa-adoption-release-gates.ja.md` を参照。 |
 
 ## 推奨順序
 
@@ -49,7 +49,7 @@
 
 ## 追検討が必要な事項
 
-- `F10`: frontend CI の必須ゲート化は現時点では保留する。React SPA は参照実装であり、将来 Vue.js 等を含む別 frontend stack へ差し替え可能な位置づけとする。現行サンプルとして `npm run build` / `npm run lint` は手動確認済み。
+- `F10`: `dev/v0.7-react-only` の frontend CI は保留する。SPA を採用対象にする branch では frontend CI を必須とする。別 frontend stack を採用する場合は、その stack 用の CI contract を定義する。詳細は `docs/dev/react-spa-adoption-release-gates.ja.md` を参照。
 - `F4`: logout 後の access token denylist は Redis 等の共有ストア前提のため、現時点では実装しない。access token は短寿命化済みであり、logout 時は refresh token を失効し cookie を削除する。logout 後に残存 access token が最長 `ACCESS_TOKEN_EXPIRE_MINUTES` 分だけ有効なリスクは現行制約として受け入れる。高保証・即時失効が必要になった段階で Redis denylist / token jti 導入を検討する。
 - `F5`: CSRF token のセッション拘束を行うか。現行は署名付き・TTL 付き double-submit cookie 方式であり、社内限定・同一オリジン・HTTPS・`AUTH_COOKIE_DOMAIN` 未指定・CORS 最小化・CSP 維持を前提に当面許容する。導入する場合は access token / session identifier との結合方式と、refresh 時の token 再発行タイミングを別タイミングで設計する。
 - `F5`: `__Host-` Cookie 採用は `Secure` 必須、`Domain` 未指定、`Path=/` 固定が前提。本番 HTTPS 配備方針と合わせて別タイミングで判断する。採用判断は、同一親ドメイン配下に複数アプリ / サブドメインがあるか、サブドメインの管理主体が分かれるか、将来同一親ドメイン配下に別アプリが増えるか、Cookie injection 耐性を明示的に高める必要があるかを基準にする。現時点では、社内限定・外部 IdP SSO・ALB HTTPS・同一オリジン・`AUTH_COOKIE_DOMAIN` 未指定・CORS 最小化・CSP 維持を前提に、`__Host-` Cookie は必須対応とせず強化候補として保留する。
@@ -62,7 +62,7 @@ React SPA 移行により、旧 Next.js BFF が担っていた Cookie 発行、C
 
 現時点で即時対応として残すべき追加実装はない。`F4`, `F5`, `F6` の残件は、いずれもセキュリティ上の強化余地ではあるが、KOIKI-FW が想定する社内向け・小規模 ECS 構成、AWS ALB による HTTPS 終端、同一オリジン配置、外部 IdP SSO を前提に、現行制約として認識管理する。
 
-React SPA 由来の追加確認事項として、BFF 削除による backend 権限制御の低下、Cookie 認証での CSRF 適用漏れ、Vite build-time env の誤設定、frontend nginx のヘッダ不足があった。権限制御 parity と session auth flow は integration test 記録で確認済み。Vite env は本番同一オリジンを推奨し、frontend は参照実装として扱うため CI 必須ゲート化は保留する。
+React SPA 由来の追加確認事項として、BFF 削除による backend 権限制御の低下、Cookie 認証での CSRF 適用漏れ、Vite build-time env の誤設定、frontend nginx のヘッダ不足があった。権限制御 parity と session auth flow は integration test 記録で確認済み。Vite env は本番同一オリジンを推奨する。frontend CI は `dev/v0.7-react-only` では保留し、SPA を採用対象にする branch では必須とする。
 
 ## 確認した主な根拠
 
