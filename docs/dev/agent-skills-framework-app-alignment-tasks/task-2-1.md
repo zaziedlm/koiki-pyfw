@@ -41,4 +41,38 @@ root `frontend/` の上流・参照 frontend を対象とする独立 Skill を�
 
 ## 実施結果
 
-未実施。
+完了（2026-07-11）。
+
+### 新設した Skill
+
+- canonical Skill: `docs/agent/skills/koiki-frontend-work/`
+  - `SKILL.md`
+  - `agents/openai.yaml`
+  - `references/frontend-contract.md`
+- Claude Code discovery wrapper: `.claude/skills/koiki-frontend-work/SKILL.md`
+
+`koiki-frontend-work` は root `frontend/` の Vite + React SPA を対象にし、routes、UI、feature API、TanStack Query、Cookie/CSRF browser integration、config、frontend test を扱う。backend API ownership、backend authorization、Cookie issuance / validation、および `apps/` 配下への frontend 配置は対象外とした。
+
+### 既存 guidance との接続
+
+- `koiki-project-overview` は root frontend task を `koiki-frontend-work` へ routing し、API ownership が曖昧な場合は引き続き overview から開始する。
+- backend API contract を変更する場合は、所有する backend Skill と `koiki-frontend-work` を併用する。
+- Cookie session / CSRF / SSO / SAML browser flow は `koiki-auth-security` を併用する。
+- test scope は `koiki-testing` を併用する。
+- `AGENTS.md`、Copilot global / frontend instruction、Skill README、future role alignment を新 Skill へ接続した。
+
+### Catalog / contract test
+
+- `prompt_cases.yaml` に `koiki-frontend-work` を追加した。
+- frontend-only UI change は `koiki-frontend-work` を required first skill とした。
+- Cookie session response schema を消費する frontend API client change は、`koiki-frontend-work` を先頭に `koiki-auth-security` を併用する case とした。
+- smoke script fixture と Agent Skill testing plan を新 routing に更新した。
+
+## Validation
+
+- skill-creator `quick_validate.py`（project locked environment）
+  - `Skill is valid!`
+- `DEBUG=False uv run --locked pytest tests/unit/agent_guidance/`
+  - 17 passed in 1.01s
+- `git diff --check`
+  - 成功

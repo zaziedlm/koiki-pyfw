@@ -1,6 +1,6 @@
 ---
 name: koiki-auth-security
-description: Use when working on authentication, authorization, RBAC, token flows, security monitoring, SSO, or SAML-related behavior across components/libkoiki/ and components/koiki_ref_app/.
+description: Use when working on authentication, authorization, RBAC, token flows, security monitoring, SSO, SAML, or Cookie/CSRF browser contracts across components/libkoiki/ and components/koiki_ref_app/.
 ---
 
 # KOIKI Auth and Security
@@ -16,6 +16,7 @@ This skill applies to:
 - login and password flows
 - security logging and monitoring
 - SSO and SAML integration
+- Cookie session and CSRF contracts used by browser clients
 
 ## Future Role Alignment
 
@@ -28,12 +29,15 @@ This skill remains cross-cutting across future maintainer and template skill fam
 3. preserve existing security boundaries and failure behavior
 4. update validation, logging, and test coverage together
 5. review for unintended privilege, token, redirect, or session regressions
+6. for browser-facing changes, preserve the Cookie session / Bearer-client boundary and check the root `frontend/` contract
 
 ## Guardrails
 
 - do not weaken validation, rate limiting, or audit behavior without explicit reason
 - do not change auth flows in only one layer if the behavior spans framework and app code
 - do not assume frontend-only controls are sufficient for authorization
+- do not expose access or refresh token values to browser storage when using the session contract
+- do not apply Cookie CSRF rules to Bearer clients without an explicit contract decision
 
 ## Validate
 

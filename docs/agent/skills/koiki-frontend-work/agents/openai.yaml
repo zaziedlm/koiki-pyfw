@@ -1,0 +1,4 @@
+interface:
+  display_name: "KOIKI Frontend Work"
+  short_description: "Build and maintain the KOIKI reference frontend."
+  default_prompt: "Use $koiki-frontend-work to implement this root frontend change while preserving the KOIKI API and session contract."

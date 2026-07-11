@@ -40,4 +40,33 @@
 
 ## 実施結果
 
-未実施。
+完了（2026-07-11）。
+
+### 更新内容
+
+- `docs/agent/` の boundaries、architecture、libkoiki、reference app、auth-security、testing、README に、backend API 変更時の frontend contract 確認を追加した。
+  - 確認対象は schema、status/error、authorization、Cookie/CSRF、public config、frontend cache / test である。
+- 既存 backend Skills を更新した。
+  - `koiki-business-app-feature-work`、`koiki-refapp-feature-work`、`koiki-libkoiki-feature-work` は、frontend contract 影響と consumer validation を確認するようにした。
+  - `koiki-auth-security` は Cookie session / CSRF と Bearer client の境界、browser storage 非保持、browser integration coverage を明記した。
+  - `koiki-testing` は backend enforcement test と frontend transport / cache / UI test の責務分離を明記した。
+  - `koiki-project-overview` は root `frontend/` を確認し、`apps/` を frontend placement としない判断を明記した。
+- `future-role-alignment.md` を現行境界へ更新した。
+  - `apps/<project-slug>/frontend/` を前提にする案を削除した。
+  - root `frontend/` を起点とする frontend adoption と、`apps/` の backend-only 境界を明記した。
+- Codex、Claude Code、GitHub Copilot の導線を整合した。
+  - `AGENTS.md` に root frontend / browser contract の確認導線を追加した。
+  - Claude Code wrapper の description を canonical Skill の frontend contract 範囲へ整合した。wrapper 本体は canonical Skill を参照する thin adapter のまま維持した。
+  - Copilot global instruction を補強し、root `frontend/` 専用の `.github/instructions/frontend.instructions.md` を追加した。
+- `tests/unit/agent_guidance/test_skill_catalog.py` を拡張し、既存 Skill の frontend contract guidance と、Codex / Copilot / shared agent docs の root frontend・`apps/` backend-only 境界を contract test で確認するようにした。
+
+### Catalog の扱い
+
+`prompt_cases.yaml` はこのタスクでは変更していない。現時点では frontend-only task が overview へ routing する現行 catalog が正しい。Task 2-1 で `koiki-frontend-work` を追加する同一 change window に、catalog と smoke script fixture を更新する。
+
+## Validation
+
+- `DEBUG=False uv run --locked pytest tests/unit/agent_guidance/`
+  - 17 passed in 1.10s
+- `git diff --check`
+  - 成功

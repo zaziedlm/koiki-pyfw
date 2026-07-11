@@ -56,6 +56,8 @@ When implementing an application change:
 4. keep application wiring in current router and service patterns
 5. check whether config, migrations, or frontend contracts must change too
 
+For a frontend contract impact, check request/response schemas, status and error behavior, authorization, Cookie/CSRF behavior, public configuration, and the matching root `frontend/` feature API / Query / test. `apps/` remains backend-only; do not add a project frontend placement under it.
+
 ## Current Structure
 
 In the current repository:
@@ -84,6 +86,7 @@ Avoid:
 - pushing business-specific assumptions into `components/libkoiki/`
 - treating the current `libkoiki` Todo sample as precedent for placing new business APIs in `components/libkoiki/`
 - placing downstream customer-specific APIs in the reference app when they belong under `apps/`
+- treating `apps/` as a frontend placement area
 - creating parallel patterns when a nearby app module already defines the convention
 - adding unnecessary layers for a small feature
 

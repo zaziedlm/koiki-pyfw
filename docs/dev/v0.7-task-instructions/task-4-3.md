@@ -1,5 +1,7 @@
 # Task 4-3: 案件固有 code の `apps/` 配置ルール定義
 
+> **履歴記録（現行方針ではない）**: この Task の完了時点では `apps/<project-slug>/frontend/` を含む layout を検討していた。現行の正本は `CONTEXT.md` と `docs/agent/` であり、`apps/` は downstream business **backend** composition layer、frontend の配置先は root `frontend/` とする。本書中の旧 layout は過去の判断記録としてのみ参照すること。
+
 ## 目的
 
 `components/` と `apps/` の境界を運用可能にし、案件固有 code をどの時点で `apps/` に出すか、どのような名前で管理するかを定義する。

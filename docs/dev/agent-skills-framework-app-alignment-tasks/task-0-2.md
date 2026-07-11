@@ -31,4 +31,20 @@
 
 ## 実施結果
 
-未実施。
+完了（2026-07-11）。
+
+backend API / frontend contract の影響マップを [task-0-2-contract-impact-map.ja.md](./task-0-2-contract-impact-map.ja.md) に記録した。
+
+整理結果:
+
+- `components/libkoiki/` は reusable API と browser session / Cookie-CSRF の contract、`components/koiki_ref_app/` は SSO/SAML / reference app integration、`apps/` は業務固有 backend API composition、root `frontend/` は API consumer として分離されている。
+- API 変更時は ownership、schema / status / error、backend authorization、Cookie-CSRF / Bearer compatibility、config、migration、backend / frontend test を確認する。
+- Vite + React SPA 固有の推奨と、将来の別 frontend 技術にも共通する browser contract を分離した。
+- 代表シナリオごとの expected Skill routing を定義し、Task 1-1 と Task 2-1 で反映する guidance を特定した。
+- current implementation から、CSRF header-name 設定と frontend transport の連動、Todo optimistic lock の 409 contract、legacy user API client の raw Response 利用を、Skill guidance に載せる注意点として記録した。これらの code 修正は本タスクの対象外である。
+
+## Validation
+
+- current router、endpoint、schema、dependency、frontend feature API / Query、shared agent docs を突合した。
+- `git diff --check`
+  - 成功

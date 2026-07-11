@@ -51,6 +51,15 @@ Authorization must not depend only on UI behavior.
 - endpoint-level access rules must stay explicit
 - role and permission checks must remain enforceable independently of frontend state
 
+## Browser Session and CSRF Contract
+
+For the reference browser SPA, backend session endpoints own Cookie issuance, refresh, logout, CSRF validation, and token secrecy. The frontend uses `credentials: "include"`, sends the backend CSRF header for Cookie-authenticated unsafe requests, and must not persist access or refresh tokens in browser storage.
+
+- preserve the distinction between Cookie session endpoints and token-returning Bearer-client endpoints
+- do not require CSRF for Bearer authentication solely because a route is unsafe
+- when changing session schema, Cookie attributes, CSRF header or failure behavior, or SSO/SAML exchange, check the browser client and its integration coverage
+- frontend route guards and hidden controls never replace backend authorization
+
 ## SSO and SAML Rules
 
 SSO and SAML are application-facing integrations and should usually remain in `components/koiki_ref_app/`.

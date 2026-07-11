@@ -1,6 +1,6 @@
 ---
 name: koiki-libkoiki-feature-work
-description: Implement reusable framework or explicit starter/sample changes under components/libkoiki/, including shared API, services, repositories, schemas, configuration, security, and infrastructure behavior.
+description: Implement reusable framework or explicit starter/sample changes under components/libkoiki/, including shared API, services, repositories, schemas, configuration, security, infrastructure behavior, and affected consumer contracts.
 ---
 
 # KOIKI libkoiki Feature Work
