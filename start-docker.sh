@@ -254,73 +254,73 @@ case "${1:-up}" in
     "unified-dev")
         echo "[INFO] Starting unified stack (dev profile)..."
         ensure_base_env
-        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile dev up
+        ENV_FILE=${ENV_FILE:-.env} docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile dev up
         ;;
     "unified-dev-build")
         echo "[INFO] Building unified stack images (dev profile)..."
         ensure_base_env
-        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile dev build
+        ENV_FILE=${ENV_FILE:-.env} docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile dev build
         ;;
     "unified-dev-down")
         echo "[INFO] Stopping unified stack (dev profile)..."
         set_base_compose_env_readonly
-        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile dev down
+        ENV_FILE=${ENV_FILE:-.env} docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile dev down
         ;;
     "unified-optimized")
         echo "[INFO] Starting unified stack (optimized profile)..."
         ensure_base_env
-        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile optimized up -d
+        ENV_FILE=${ENV_FILE:-.env} docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile optimized up -d
         ;;
     "unified-optimized-build")
         echo "[INFO] Building unified stack images (optimized profile)..."
         ensure_base_env
-        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile optimized build --no-cache
+        ENV_FILE=${ENV_FILE:-.env} docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile optimized build --no-cache
         ;;
     "unified-optimized-down")
         echo "[INFO] Stopping unified stack (optimized profile)..."
         set_base_compose_env_readonly
-        ENV_FILE=${ENV_FILE:-.env} docker compose -f docker-compose.unified.yml --profile optimized down
+        ENV_FILE=${ENV_FILE:-.env} docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile optimized down
         ;;
     "unified-prod")
         echo "[INFO] Starting unified stack (prod profile)..."
         ensure_production_env
-        docker compose -f docker-compose.unified.yml --profile prod up -d
+        docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile prod up -d
         ;;
     "unified-prod-build")
         echo "[INFO] Building unified stack images (prod profile)..."
         ensure_production_env
-        docker compose -f docker-compose.unified.yml --profile prod build --no-cache
+        docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile prod build --no-cache
         ;;
     "unified-prod-down")
         echo "[INFO] Stopping unified stack (prod profile)..."
         set_production_compose_env_readonly
-        docker compose -f docker-compose.unified.yml --profile prod down
+        docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile prod down
         ;;
     "unified-prod-external")
         echo "[INFO] Starting unified stack (prod-external profile, external DB/IdP)..."
         ensure_production_env
-        docker compose -f docker-compose.unified.yml --profile prod-external up -d
+        docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile prod-external up -d
         ;;
     "unified-prod-external-build")
         echo "[INFO] Building unified stack images (prod-external profile)..."
         ensure_production_env
-        docker compose -f docker-compose.unified.yml --profile prod-external build --no-cache
+        docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile prod-external build --no-cache
         ;;
     "unified-prod-external-down")
         echo "[INFO] Stopping unified stack (prod-external profile)..."
         set_production_compose_env_readonly
-        docker compose -f docker-compose.unified.yml --profile prod-external down
+        docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile prod-external down
         ;;
     "unified-down")
         echo "[INFO] Stopping unified stack..."
         # Stop all unified profiles so containers created with any profile are removed
         set_production_compose_env_readonly
-        docker compose -f docker-compose.unified.yml --profile dev --profile optimized --profile prod --profile prod-external down
+        docker compose -p koiki_v07_unified -f docker-compose.unified.yml --profile dev --profile optimized --profile prod --profile prod-external down
         ;;
     "unified-logs")
         echo "[INFO] Showing logs for unified stack..."
         set_production_compose_env_readonly
-        docker compose -f docker-compose.unified.yml logs -f
+        docker compose -p koiki_v07_unified -f docker-compose.unified.yml logs -f
         ;;
     "help"|"-h"|"--help")
         show_help
