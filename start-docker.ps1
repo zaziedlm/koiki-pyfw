@@ -91,6 +91,11 @@ function Set-ProductionComposeEnvReadOnly {
     $env:FRONTEND_BUILD_ENV_FILE = "unused-for-down"
 }
 
+function Set-OptimizedComposeEnv {
+    $env:ENV_FILE = ".env"
+    $env:FRONTEND_BUILD_ENV_FILE = ".env.docker"
+}
+
 function Show-Help {
     Write-Host ""
     Write-Host "Available commands:"
@@ -317,18 +322,18 @@ switch ($Command.ToLower()) {
     "unified-optimized" {
         Write-Host "[INFO] Starting unified stack (optimized profile)..."
         Ensure-BaseEnv
-        $env:ENV_FILE = ".env"
+        Set-OptimizedComposeEnv
         docker compose -f docker-compose.unified.yml --profile optimized up -d
     }
     "unified-optimized-build" {
         Write-Host "[INFO] Building unified stack images (optimized profile)..."
         Ensure-BaseEnv
-        $env:ENV_FILE = ".env"
+        Set-OptimizedComposeEnv
         docker compose -f docker-compose.unified.yml --profile optimized build --no-cache
     }
     "unified-optimized-down" {
         Write-Host "[INFO] Stopping unified stack (optimized profile)..."
-        Set-BaseComposeEnvReadOnly
+        Set-OptimizedComposeEnv
         docker compose -f docker-compose.unified.yml --profile optimized down
     }
     "unified-prod" {
