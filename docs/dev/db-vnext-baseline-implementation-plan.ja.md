@@ -233,6 +233,7 @@ M1に含める:
 - Repository、fixture、`ops/`、Docker、CI、現行運用文書にある管理対象テーブル名の更新
 - 外部quoted `"user"`を改名対象から除外
 - 現行カラム、NULL、default、FK削除動作、制約、Indexを極力維持した暫定vNext baseline
+- 現行migrationが行う`kkbiz_business_clock(id=1)`の初期行投入を、M1の改名以外の挙動を変えないための暫定例外として維持
 - 空PostgreSQL DBでのupgrade、downgrade base、再upgrade
 - ORM metadataとDBテーブル名の一致
 - 代表的なauth、Todo、SSO、SAML、business clockのsmoke
@@ -249,29 +250,49 @@ M1に含めない:
 
 M1は「現行スキーマ意味論を保った名前だけのbreaking change」としてレビューする。後続タスクは暫定baselineを更新して最終vNext baselineへ仕上げる。
 
+M1の暫定baselineに限り、旧headの挙動互換のため`kkbiz_business_clock(id=1)`の初期行投入を含める。DB-06でこの投入責任をreference-app bootstrap seedへ移し、DB-05で最終化するbaselineからDMLを除去する。第2節の「baselineはDDLだけを所有」は最終vNext baselineの完了条件であり、M1の暫定例外を常態化しない。
+
+M1コミット作成後は正式なレビューゲートで一度停止する。レビューで改名範囲、外部quoted `"user"`の非変更、暫定baselineの往復、代表smokeのgreenを承認するまで、DB-03以降のスキーマ意味論変更に着手しない。
+
+M1の検証マトリクス:
+
+- Alembic: `heads`、空PostgreSQL DBへの`upgrade head`、`downgrade base`、再`upgrade head`
+- Schema: 管理対象12テーブルの新名、旧名不在、ORM metadataとDBのテーブル名一致、外部quoted `"user"`の非管理対象性
+- Runtime: auth、Todo、標準`user_sso` backend、SAML、business clockの代表smoke
+- Tooling: security setupと直接SQLを持つ`ops/`ツール、Docker起動経路、DB統合テスト実行経路
+- Static audit: 実行コード、fixture、CI、現行運用文書の管理対象旧DBオブジェクト参照がゼロ。API resource名、Python変数名、ログ用のSQL文字列などDB物理参照でない同名語は判定根拠を残して除外
+
+現行の`scripts/run-db-integration-tests.ps1`は認証APIとサービス統合テストが中心であり、Todo、SSO、SAML、business clockのM1検証を単独では網羅しない。M1では不足領域の既存テストを明示的に追加実行し、必要なら同スクリプトまたはM1専用検証入口へ統合する。
+
 ### DB-00: 作業境界の固定と旧履歴タグ
 
 - 本計画とADRを確定する。
 - 旧Alembic履歴の基準commitを`382920e4559150059f38160250aa04544c331101`、旧Alembic headを`20260709001`として確認する。
 - 文書レビュー完了後、旧revisionを削除する前に、基準commitへannotated tag `db-schema-pre-vnext-202607`を作成する。
+- annotated tag `db-schema-pre-vnext-202607`を`origin`へpushし、remoteから基準commitと旧revision一式を参照できることを確認する。
 - タグから旧Alembic revision一式と旧head `20260709001`を参照できることを確認する。
 - タグ名、commit、旧headを移行ノートへ記録する。
 
-完了条件: `db-schema-pre-vnext-202607`から旧revision一式を復元でき、タグ対象commitと旧headが記録され、vNextの旧DB非互換が明記されている。
+完了条件: `origin`上の`db-schema-pre-vnext-202607`から旧revision一式を復元でき、タグ対象commitと旧headが記録され、vNextの旧DB非互換が明記されている。remote tagの存在確認が終わるまでDB-02へ進まない。
 
 ### DB-01: スキーマと参照箇所の完全棚卸し
 
 - ORM、関連Table、FK文字列、SQLAlchemy Core、生SQLを一覧化する。
 - tests、`ops/`、seed、Docker、CI、現行文書の旧名参照を検索する。
 - 各モデルを`koiki_`、`kkref_`、`kkbiz_`へ分類する。
-- `models/user.py`と`models/associations.py`にある`user_roles`定義の重複を解消する。
+- 旧Alembic head `20260709001`が生成する物理スキーマ、現行ORM metadata、Repository／運用SQLの実利用を12テーブルごとに比較し、schema drift監査表を作成する。
+- schema drift監査表は`docs/dev/db-vnext-schema-drift-audit.ja.md`に記録し、M1実装と分離した文書専用コミットで固定する。
+- schema drift監査表に型、NULL、Python／server default、PK、FKと削除動作、UNIQUE、CHECK、Index、migration内DMLを記録する。
+- 各差異を「名称のみでM1対象」「M1を阻害しない既存driftでDB-03～DB-05対象」「M1を成立させない阻害差異」に分類し、判定根拠と対応タスクを記録する。
+- `models/user.py`と`models/associations.py`にある`user_roles`重複定義を特定し、DB-02で単一の正本へ整理する方針と影響importを記録する。
 - `user_table_sso_repository.py`のquoted `"user"`を外部所有テーブルとして棚卸しし、改名対象から除外する。
 
-完了条件: 旧名ごとの変更対象が追跡され、同一テーブル定義の曖昧さがなく、外部quoted `"user"`がKOIKI-FW管理テーブルと明確に区別されている。
+完了条件: 旧名ごとの変更対象が追跡され、同一テーブル定義の曖昧さがなく、外部quoted `"user"`がKOIKI-FW管理テーブルと明確に区別されている。12テーブルのschema drift監査表が完成し、すべての差異に分類、根拠、対応タスクがある。監査表がM1実装と分離した文書専用コミットで固定されている。M1阻害差異がある場合はDB-02へ進まず、独立修正の要否とコミット境界をレビューで決定する。
 
 ### DB-02: M1 管理対象テーブル名の変更と暫定baseline
 
 - 全`__tablename__`、関連Table、FK参照を新名称へ変更する。
+- `user_roles`は`models/associations.py`の関連Table定義を正本とし、`models/user.py`の重複定義と`extend_existing=True`への依存を解消する。`role_permissions`と同じ定義元からrelationshipが参照する。
 - relationshipの文字列`secondary`と、管理対象テーブルを参照するSQLAlchemy Core定義を新名称へ変更する。
 - Repository、fixture、metadata assertion、`ops/`、Docker、CI、現行運用文書の管理対象テーブル名を一括更新する。
 - API resource名などDB名ではない文字列を機械的に変更しない。
@@ -279,11 +300,12 @@ M1は「現行スキーマ意味論を保った名前だけのbreaking change」
 - bootstrap後の共有metadataがKOIKI-FW管理対象の想定12テーブルを持つことを検証する。独立した`MetaData`を使う外部quoted `"user"`はこの件数に含めない。
 - DB-00のタグ作成後に旧revision群をvNextの`versions/`から外し、`down_revision = None`の暫定vNext baselineを作成する。
 - 暫定baselineは現行カラム、NULL、Python／server default、FK削除動作、制約、Indexを極力維持し、テーブル名変更以外の意味論変更を混入させない。
+- 旧headの`kkbiz_business_clock(id=1)`初期行投入は暫定baselineに限って維持し、DB-06でreference-app bootstrap seedへ移管した後、最終baselineから除去する。
 - 暫定baselineの`upgrade()`は空DBへ全DDLを作成し、`downgrade()`は依存関係の逆順で空DBへ戻す。
 - 空PostgreSQL DBでupgrade、downgrade base、再upgradeを行い、ORM metadataとのテーブル名一致を確認する。
 - 代表的なauth、Todo、SSO、SAML、business clockのsmokeを実行する。
 
-完了条件: KOIKI-FW管理対象に旧テーブル名が残らず、外部quoted `"user"`が維持され、暫定baselineが単一headとして空PostgreSQL DBを往復できる。代表smokeが成功し、テーブル名以外の意図的なschema／runtime挙動変更が差分に含まれていない。M1コミット`refactor(db)!: rename managed tables by ownership`をgreenな状態で作成できる。
+完了条件: KOIKI-FW管理対象に旧テーブル名が残らず、外部quoted `"user"`が維持され、暫定baselineが単一headとして空PostgreSQL DBを往復できる。代表smokeが成功し、`kkbiz_business_clock(id=1)`の暫定投入を除いてテーブル名以外の意図的なschema／runtime挙動変更が差分に含まれていない。M1コミット`refactor(db)!: rename managed tables by ownership`をgreenな状態で作成できる。
 
 ### DB-03: 全管理テーブルのスキーマ契約監査
 
@@ -323,6 +345,7 @@ M1は「現行スキーマ意味論を保った名前だけのbreaking change」
 
 - DB-02で作成した`down_revision = None`の暫定baselineを、DB-03とDB-04で確定した最終schemaへ更新する。
 - 共有Base、命名規則、NULL／default、CHECK、FK削除動作、Indexの後続変更をbaselineへ反映する。
+- DB-06でreference-app bootstrap seedへ移管する`kkbiz_business_clock(id=1)`初期行投入を暫定baselineから除去し、最終baselineをDDL-onlyにする。
 - autogenerate結果を手動レビューし、依存順、FK、server default、CHECK、UNIQUE、部分Indexを確認する。
 - `upgrade()`は空DBから全DDLを作成し、`downgrade()`は逆順で削除する。
 - baselineへ初期データを含めない。
@@ -401,13 +424,20 @@ M1は「現行スキーマ意味論を保った名前だけのbreaking change」
 ## 7. 実行順
 
 ```text
-DB-00 -> DB-01 -> DB-02 -> DB-03 -> DB-04 -> DB-05
-      -> DB-06 -> DB-07 -> DB-08 -> DB-09 -> DB-10
+DB-00 -> DB-01 -> DB-02 -> [M1レビューゲート]
+      -> DB-03 -> DB-04 -> DB-06 -> DB-05
+      -> DB-07 -> DB-08 -> DB-09 -> DB-10
 
 DB-09またはDB-10完了後 -> DB-PERF-01（後続、機能baselineの非ブロッキング）
 ```
 
-DB-02のM1コミットでは、改名、全参照更新、暫定baseline、代表smokeを同時に揃え、参照名が不整合な中間コミットを作らない。M1後のDB-03～DB-07も、共通Base、制約、Index、seed、cleanupなどの挙動変更を可能な限り分離し、各コミットで対象テストをgreenにする。DB-08のbaseline契約テストへ進む前に、DB-05の最終baselineとDB-07の後続参照更新を揃える。
+DB-02のM1コミットでは、改名、全参照更新、暫定baseline、代表smokeを同時に揃え、参照名が不整合な中間コミットを作らない。M1後のDB-03～DB-07も、共通Base、制約、Index、seed、cleanupなどの挙動変更を可能な限り分離し、各コミットで対象テストをgreenにする。DB-06でbusiness clock初期行の投入責任をbootstrap seedへ移管した後に、DB-05で暫定baselineからDMLを除去して最終化する。DB-08のbaseline契約テストへ進む前に、DB-05の最終baselineとDB-07の後続参照更新を揃える。
+
+DB-01でM1阻害差異が見つかった場合は作業を停止し、独立修正のスコープとコミットを承認するまでDB-02に着手しない。
+
+DB-01の監査表は文書専用コミットで確定する。M1阻害差異がなければ、そのコミット後にDB-02の実装へ進む。
+
+DB-02とM1コミットがgreenになった時点で作業を停止し、M1レビュー承認をDB-03の着手条件とする。
 
 機能baselineの集中作業目安は3～5稼働日、統合修正を含む場合は5～7稼働日とする。DB-PERF-01は別途1～2稼働日を目安とし、機能baselineのリリース判断を待たせない。
 
