@@ -11,11 +11,14 @@ from libkoiki.db.base import Base
 class RefreshTokenModel(Base):
     """リフレッシュトークンモデル"""
 
-    __tablename__ = "refresh_tokens"
+    __tablename__ = "koiki_refresh_tokens"
 
     # BaseからのIDカラムを使用（手動定義不要）
     user_id = Column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        Integer,
+        ForeignKey("koiki_users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     token_hash = Column(String(255), nullable=False, unique=True, index=True)
     expires_at = Column(DateTime(timezone=True), nullable=False, index=True)

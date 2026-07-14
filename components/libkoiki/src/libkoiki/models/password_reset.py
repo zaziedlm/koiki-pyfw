@@ -12,11 +12,14 @@ from libkoiki.db.base import Base
 class PasswordResetModel(Base):
     """パスワードリセットトークンモデル"""
 
-    __tablename__ = "password_reset_tokens"
+    __tablename__ = "koiki_password_reset_tokens"
 
     # BaseからのIDカラムを使用（手動定義不要）
     user_id = Column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        Integer,
+        ForeignKey("koiki_users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     token_hash = Column(String(255), nullable=False, unique=True, index=True)
     expires_at = Column(DateTime(timezone=True), nullable=False, index=True)

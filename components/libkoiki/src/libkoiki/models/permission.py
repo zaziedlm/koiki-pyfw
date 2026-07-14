@@ -9,7 +9,7 @@ from libkoiki.db.base import Base
 
 
 class PermissionModel(Base):
-    __tablename__ = "permissions"
+    __tablename__ = "koiki_permissions"
 
     # SQLAlchemy 2.0形式の型アノテーションに変更
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -34,7 +34,9 @@ class PermissionModel(Base):
 
     # RoleModelとの双方向リレーションシップを設定
     roles = relationship(
-        "RoleModel", secondary="role_permissions", back_populates="permissions"
+        "RoleModel",
+        secondary="koiki_role_permissions",
+        back_populates="permissions",
     )
 
     def __repr__(self):

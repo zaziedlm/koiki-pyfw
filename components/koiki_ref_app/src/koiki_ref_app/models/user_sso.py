@@ -31,12 +31,12 @@ class UserSSO(Base):
     一人のユーザーが複数のSSOプロバイダーと連携可能な設計。
     """
 
-    __tablename__ = "user_sso"
+    __tablename__ = "kkref_user_sso_links"
 
     # ローカルユーザーとの関連
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("koiki_users.id", ondelete="CASCADE"),
         nullable=False,
         comment="連携するローカルユーザーID",
     )
@@ -71,16 +71,22 @@ class UserSSO(Base):
     __table_args__ = (
         # sso_subject_id + sso_provider の組み合わせで一意制約
         UniqueConstraint(
-            "sso_subject_id", "sso_provider", name="uq_user_sso_subject_provider"
+            "sso_subject_id",
+            "sso_provider",
+            name="uq_kkref_user_sso_links_subject_provider",
         ),
         # user_id + sso_provider の組み合わせで一意制約
         # （同一ユーザーが同一プロバイダーで複数連携することを防ぐ）
-        UniqueConstraint("user_id", "sso_provider", name="uq_user_sso_user_provider"),
+        UniqueConstraint(
+            "user_id",
+            "sso_provider",
+            name="uq_kkref_user_sso_links_user_provider",
+        ),
         # 検索パフォーマンス向上のためのインデックス
-        Index("ix_user_sso_subject_id", "sso_subject_id"),
-        Index("ix_user_sso_provider", "sso_provider"),
-        Index("ix_user_sso_user_id", "user_id"),
-        Index("ix_user_sso_last_login", "last_sso_login"),
+        Index("ix_kkref_user_sso_links_subject_id", "sso_subject_id"),
+        Index("ix_kkref_user_sso_links_provider", "sso_provider"),
+        Index("ix_kkref_user_sso_links_user_id", "user_id"),
+        Index("ix_kkref_user_sso_links_last_login", "last_sso_login"),
     )
 
     def __repr__(self) -> str:

@@ -191,7 +191,7 @@ function Test-Database {
     Write-Host ""
     Write-Header "権限一覧:"
     try {
-        docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "SELECT name, resource, action, description FROM permissions ORDER BY resource, action;" 2>$null
+        docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "SELECT name, resource, action, description FROM koiki_permissions ORDER BY resource, action;" 2>$null
     }
     catch {
         Write-Error "権限テーブルにアクセスできません"
@@ -200,7 +200,7 @@ function Test-Database {
     Write-Host ""
     Write-Header "ロール一覧:"
     try {
-        docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "SELECT r.name as role_name, r.description, COUNT(rp.permission_id) as permission_count FROM roles r LEFT JOIN role_permissions rp ON r.id = rp.role_id GROUP BY r.id, r.name, r.description ORDER BY r.name;" 2>$null
+        docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "SELECT r.name as role_name, r.description, COUNT(rp.permission_id) as permission_count FROM koiki_roles r LEFT JOIN koiki_role_permissions rp ON r.id = rp.role_id GROUP BY r.id, r.name, r.description ORDER BY r.name;" 2>$null
     }
     catch {
         Write-Error "ロールテーブルにアクセスできません"
@@ -209,7 +209,7 @@ function Test-Database {
     Write-Host ""
     Write-Header "ユーザーロール割り当て:"
     try {
-        docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "SELECT u.email, u.username, r.name as role_name FROM users u JOIN user_roles ur ON u.id = ur.user_id JOIN roles r ON r.id = ur.role_id ORDER BY u.email;" 2>$null
+        docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "SELECT u.email, u.username, r.name as role_name FROM koiki_users u JOIN koiki_user_roles ur ON u.id = ur.user_id JOIN koiki_roles r ON r.id = ur.role_id ORDER BY u.email;" 2>$null
     }
     catch {
         Write-Error "ユーザーテーブルにアクセスできません"

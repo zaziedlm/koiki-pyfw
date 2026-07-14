@@ -32,7 +32,7 @@ class SamlAuthFlow(Base):
     DBレベルのユニーク制約と行ロックで保証する。
     """
 
-    __tablename__ = "saml_auth_flow"
+    __tablename__ = "kkref_saml_auth_flows"
 
     # --- AuthnRequest時に記録 ---
     request_id = Column(
@@ -63,7 +63,7 @@ class SamlAuthFlow(Base):
     # --- ACS時に記録 ---
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey("koiki_users.id", ondelete="SET NULL"),
         nullable=True,
         comment="認証されたローカルユーザーID",
     )
@@ -116,16 +116,18 @@ class SamlAuthFlow(Base):
     # --- インデックスと制約 ---
     __table_args__ = (
         # ticket_idはユニーク（二重使用防止の要）
-        UniqueConstraint("ticket_id", name="uq_saml_auth_flow_ticket_id"),
+        UniqueConstraint("ticket_id", name="uq_kkref_saml_auth_flows_ticket_id"),
         # relay_nonceもユニーク（フロー一意性保証）
-        UniqueConstraint("relay_nonce", name="uq_saml_auth_flow_relay_nonce"),
+        UniqueConstraint(
+            "relay_nonce", name="uq_kkref_saml_auth_flows_relay_nonce"
+        ),
         # 検索パフォーマンス用インデックス
-        Index("ix_saml_auth_flow_status", "status"),
-        Index("ix_saml_auth_flow_ticket_id", "ticket_id"),
-        Index("ix_saml_auth_flow_relay_nonce", "relay_nonce"),
-        Index("ix_saml_auth_flow_user_id", "user_id"),
+        Index("ix_kkref_saml_auth_flows_status", "status"),
+        Index("ix_kkref_saml_auth_flows_ticket_id", "ticket_id"),
+        Index("ix_kkref_saml_auth_flows_relay_nonce", "relay_nonce"),
+        Index("ix_kkref_saml_auth_flows_user_id", "user_id"),
         Index(
-            "ix_saml_auth_flow_status_expires",
+            "ix_kkref_saml_auth_flows_status_expires",
             "status",
             "login_ticket_expires_at",
         ),

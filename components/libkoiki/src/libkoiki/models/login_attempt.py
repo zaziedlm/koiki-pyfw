@@ -11,14 +11,17 @@ from libkoiki.db.base import Base
 class LoginAttemptModel(Base):
     """ログイン試行履歴モデル"""
 
-    __tablename__ = "login_attempts"
+    __tablename__ = "koiki_login_attempts"
 
     # BaseからのIDカラムを使用（手動定義不要）
     email = Column(
         String(255), nullable=False, index=True
     )  # ログイン試行されたメールアドレス
     user_id = Column(
-        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+        Integer,
+        ForeignKey("koiki_users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )  # 存在する場合のユーザーID
     ip_address = Column(String(45), nullable=False, index=True)  # IPv6対応
     user_agent = Column(Text, nullable=True)

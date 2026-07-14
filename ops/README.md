@@ -217,7 +217,7 @@ docker compose -f docker-compose.unified.yml --profile prod exec app-prod python
 投入内容を確認する例:
 
 ```powershell
-docker compose -f docker-compose.unified.yml --profile prod exec db psql -U koiki_user -d koiki_todo_db -c "SELECT email, username, is_active, is_superuser FROM users ORDER BY email;"
+docker compose -f docker-compose.unified.yml --profile prod exec db psql -U koiki_user -d koiki_todo_db -c "SELECT email, username, is_active, is_superuser FROM koiki_users ORDER BY email;"
 ```
 
 通常の `docker-compose.yml` 構成を使っている場合は、従来どおり次を使います。
@@ -289,17 +289,17 @@ docker compose -f docker-compose.unified.yml --profile prod exec app-prod python
 # 通常 docker-compose.yml 構成の権限一覧確認
 docker-compose exec db psql -U koiki_user -d koiki_todo_db -c "
 SELECT p.name, p.description, p.resource, p.action 
-FROM permissions p ORDER BY p.name;
+FROM koiki_permissions p ORDER BY p.name;
 "
 
 # ユーザーロール確認
 docker-compose exec db psql -U koiki_user -d koiki_todo_db -c "
 SELECT u.email, r.name as role_name, p.name as permission_name
-FROM users u
-JOIN user_roles ur ON u.id = ur.user_id
-JOIN roles r ON r.id = ur.role_id
-JOIN role_permissions rp ON r.id = rp.role_id
-JOIN permissions p ON p.id = rp.permission_id
+FROM koiki_users u
+JOIN koiki_user_roles ur ON u.id = ur.user_id
+JOIN koiki_roles r ON r.id = ur.role_id
+JOIN koiki_role_permissions rp ON r.id = rp.role_id
+JOIN koiki_permissions p ON p.id = rp.permission_id
 ORDER BY u.email, p.name;
 "
 ```

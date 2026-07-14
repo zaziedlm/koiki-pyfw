@@ -8,7 +8,7 @@ from libkoiki.db.base import Base
 
 
 class RoleModel(Base):
-    __tablename__ = "roles"
+    __tablename__ = "koiki_roles"
 
     # SQLAlchemy 2.0形式の型アノテーションに変更
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -20,12 +20,14 @@ class RoleModel(Base):
     )
 
     # usersリレーションシップを追加
-    users = relationship("UserModel", secondary="user_roles", back_populates="roles")
+    users = relationship(
+        "UserModel", secondary="koiki_user_roles", back_populates="roles"
+    )
 
     # permissionsリレーションシップを追加（双方向リレーションシップ）
     permissions = relationship(
         "PermissionModel",
-        secondary="role_permissions",
+        secondary="koiki_role_permissions",
         back_populates="roles",
         lazy="joined",
     )

@@ -6,7 +6,7 @@ from libkoiki.db.base import Base
 from libkoiki.models.user import UserModel # ownerとのリレーション用
 
 class TodoModel(Base):
-    __tablename__ = 'todos' # テーブル名
+    __tablename__ = "koiki_todos"
 
     title = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
@@ -16,7 +16,12 @@ class TodoModel(Base):
     version = Column(Integer, nullable=False, server_default='1')
 
     # 所有者 (User) への外部キー
-    owner_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    owner_id = Column(
+        Integer,
+        ForeignKey("koiki_users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
 
     # Userモデルとのリレーション (Todo側から所有者Userを参照)
     owner: UserModel = relationship("UserModel", back_populates="todos")
