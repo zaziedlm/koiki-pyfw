@@ -74,19 +74,19 @@ Copy-Item frontend\.env.production.example frontend\.env.production
 ```
 
 #### 初期セキュリティデータ投入
-`unified-prod` 起動後、権限・ロール・テストユーザーを投入する場合は backend コンテナ内で `ops/scripts/setup_security.py` を実行します。
+`unified-prod` 起動後、権限・ロール・business clockを投入する場合は、固定パスワードユーザーを作らないreference bootstrap seedを実行します。
 
 ```powershell
-docker compose -f docker-compose.unified.yml --profile prod exec app-prod python ops/scripts/setup_security.py
+docker compose -f docker-compose.unified.yml --profile prod exec app-prod python -m koiki_ref_app.bootstrap.reference_seed
 ```
 
 投入内容を確認する例:
 
 ```powershell
-docker compose -f docker-compose.unified.yml --profile prod exec db psql -U koiki_user -d koiki_todo_db -c "SELECT email, username, is_active, is_superuser FROM users ORDER BY email;"
+docker compose -f docker-compose.unified.yml --profile prod exec db psql -U koiki_user -d koiki_todo_db -c "SELECT name FROM koiki_roles ORDER BY name;"
 ```
 
-このスクリプトは `ops/security/roles_permissions.py` に定義されたテストユーザーを作り直します。
+`ops/scripts/setup_security.py`は固定パスワードの開発・E2Eユーザー専用であり、`APP_ENV=development`または`testing`以外では拒否されます。production相当環境で実行してはいけません。
 
 ### 本番相当（外部 DB/IdP）
 ```powershell
