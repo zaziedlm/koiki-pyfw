@@ -1,5 +1,16 @@
 # Frontend Target Architecture
 
+> **本書は Task 4-1 完了時点の初期計画案であり、現行の配置方針ではない。**
+> 現行の配置方針は `docs/frontend-spa-implementation-guide.ja.md` を参照すること。
+>
+> 実装を進める過程で、より シンプルで迷わない実装を提供するために構成を見直した結果、本書の「目標構成」とは以下の点で異なる、より単純な構成が採用された。
+>
+> - `src/shared/config/`, `src/shared/ui/`, `src/shared/lib/` は分離せず、`src/shared/api/` のみを置く
+> - feature 配下の `components/`・`types.ts` は採用せず、トップレベルの `src/components/<domain>/`・`src/types/` に統一する
+> - `src/hooks/` は廃止し、`src/features/<feature>/queries.ts` に統合する
+>
+> 本書は初期検討時の設計意図を記録した参考資料として残す。現行実装との整合判断は常に `docs/frontend-spa-implementation-guide.ja.md` を優先すること。
+
 ## 目的
 
 この文書は、`frontend/` を Vite + React SPA として保守・拡張するための配置方針と責務境界を固定する。
