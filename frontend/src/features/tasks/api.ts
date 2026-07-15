@@ -13,35 +13,20 @@ export const cookieTodoApi = {
     method: 'GET',
   }),
 
-  create: async (data: TodoCreate) => {
-    if (!cookieApiClient.csrfToken) {
-      await cookieApiClient.initializeCSRFToken();
-    }
-
-    return cookieApiClient.requestJson<TodoResponse>('/todos', {
+  create: (data: TodoCreate) =>
+    cookieApiClient.requestJson<TodoResponse>('/todos', {
       method: 'POST',
       body: JSON.stringify(data),
-    });
-  },
+    }),
 
-  update: async (id: number, data: TodoUpdate) => {
-    if (!cookieApiClient.csrfToken) {
-      await cookieApiClient.initializeCSRFToken();
-    }
-
-    return cookieApiClient.requestJson<TodoResponse>(`/todos/${id}`, {
+  update: (id: number, data: TodoUpdate) =>
+    cookieApiClient.requestJson<TodoResponse>(`/todos/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
-    });
-  },
+    }),
 
-  delete: async (id: number) => {
-    if (!cookieApiClient.csrfToken) {
-      await cookieApiClient.initializeCSRFToken();
-    }
-
-    return cookieApiClient.requestJson<null>(`/todos/${id}`, {
+  delete: (id: number) =>
+    cookieApiClient.requestJson<null>(`/todos/${id}`, {
       method: 'DELETE',
-    });
-  },
+    }),
 };

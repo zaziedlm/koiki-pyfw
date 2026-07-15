@@ -37,8 +37,7 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  const cookieLoginMutation = useCookieLogin();
-  const loginMutation = cookieLoginMutation;
+  const loginMutation = useCookieLogin();
 
   const onSubmit = async (data: LoginFormData) => {
     try {

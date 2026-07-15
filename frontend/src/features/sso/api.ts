@@ -28,20 +28,15 @@ export const cookieSsoApi = {
     return cookieApiClient.requestJson<SsoAuthorizationResponse>(`/auth/sso/authorization${queryString}`);
   },
 
-  login: async (payload: {
+  login: (payload: {
     authorization_code: string;
     code_verifier: string;
     state: string;
     nonce: string;
     redirect_uri: string;
-  }) => {
-    if (!cookieApiClient.csrfToken) {
-      await cookieApiClient.initializeCSRFToken();
-    }
-
-    return cookieApiClient.requestJson<SsoLoginResponse>('/auth/session/sso/login', {
+  }) =>
+    cookieApiClient.requestJson<SsoLoginResponse>('/auth/session/sso/login', {
       method: 'POST',
       body: JSON.stringify(payload),
-    });
-  },
+    }),
 };

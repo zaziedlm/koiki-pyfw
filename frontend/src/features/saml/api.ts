@@ -24,14 +24,9 @@ export const cookieSamlApi = {
     return cookieApiClient.requestJson<SamlAuthorizationResponse>(`/auth/saml/authorization${queryString}`);
   },
 
-  login: async (payload: { login_ticket: string; relay_state: string }) => {
-    if (!cookieApiClient.csrfToken) {
-      await cookieApiClient.initializeCSRFToken();
-    }
-
-    return cookieApiClient.requestJson<SamlLoginResponse>('/auth/session/saml/login', {
+  login: (payload: { login_ticket: string; relay_state: string }) =>
+    cookieApiClient.requestJson<SamlLoginResponse>('/auth/session/saml/login', {
       method: 'POST',
       body: JSON.stringify(payload),
-    });
-  },
+    }),
 };

@@ -11,31 +11,21 @@ export interface AuthSessionResponse {
 export const cookieAuthApi = {
   getMe: () => cookieApiClient.requestJson<UserResponse>('/auth/session/me'),
 
-  login: async (credentials: { email: string; password: string }) => {
-    if (!cookieApiClient.csrfToken) {
-      await cookieApiClient.initializeCSRFToken();
-    }
-
-    return cookieApiClient.requestJson<AuthSessionResponse>('/auth/session/login', {
+  login: (credentials: { email: string; password: string }) =>
+    cookieApiClient.requestJson<AuthSessionResponse>('/auth/session/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
-    });
-  },
+    }),
 
   logout: () => cookieApiClient.requestJson<unknown>('/auth/session/logout', {
     method: 'POST',
   }),
 
-  register: async (userData: RegisterData) => {
-    if (!cookieApiClient.csrfToken) {
-      await cookieApiClient.initializeCSRFToken();
-    }
-
-    return cookieApiClient.requestJson<AuthSessionResponse>('/auth/session/register', {
+  register: (userData: RegisterData) =>
+    cookieApiClient.requestJson<AuthSessionResponse>('/auth/session/register', {
       method: 'POST',
       body: JSON.stringify(userData),
-    });
-  },
+    }),
 
   refreshToken: () => cookieApiClient.requestJson<unknown>('/auth/session/refresh', {
     method: 'POST',

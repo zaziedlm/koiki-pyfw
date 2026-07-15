@@ -45,8 +45,7 @@ export function RegisterForm() {
     resolver: zodResolver(registerSchema),
   });
 
-  const cookieRegisterMutation = useCookieRegister();
-  const registerMutation = cookieRegisterMutation;
+  const registerMutation = useCookieRegister();
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
