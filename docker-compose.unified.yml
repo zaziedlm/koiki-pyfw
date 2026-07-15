@@ -6,7 +6,10 @@ x-app-base: &app-base
   env_file:
     - ${ENV_FILE:-.env}
   environment:
-    - UVICORN_WORKERS=${UVICORN_WORKERS:-4}
+    # ECS-oriented default: one Uvicorn worker per container.
+    # Scale the ECS service by task count; set this explicitly only for a
+    # verified, intentional in-container multi-worker deployment.
+    - UVICORN_WORKERS=${UVICORN_WORKERS:-1}
     - ENVIRONMENT=production
   ports:
     - "8000:8000"
