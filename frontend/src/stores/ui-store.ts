@@ -1,7 +1,21 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
-import { UIState, Notification } from '@/types';
+
+interface Notification {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
+  message?: string;
+  duration?: number;
+  timestamp: number;
+}
+
+interface UIState {
+  sidebarOpen: boolean;
+  theme: 'light' | 'dark' | 'system';
+  notifications: Notification[];
+}
 
 interface UIStore extends UIState {
   // Actions

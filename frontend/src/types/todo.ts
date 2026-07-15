@@ -29,27 +29,7 @@ export interface TodoListParams {
   limit?: number;
 }
 
-export interface TodoState {
-  todos: TodoResponse[];
-  isLoading: boolean;
-  error: string | null;
-  totalCount: number;
-  filter: TodoFilter;
-}
-
 export interface TodoFilter {
   completed?: boolean;
   search?: string;
-}
-
-export interface TodoFormData {
-  title: string;
-  description: string;
-}
-
-export interface TodoStats {
-  total: number;
-  completed: number;
-  pending: number;
-  completionRate: number;
 }
