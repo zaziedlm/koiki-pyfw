@@ -6,11 +6,11 @@ saml_auth_flowテーブルへのデータアクセス層。
 SELECT FOR UPDATEによる排他制御でチケット二重使用を防止。
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import structlog
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from koiki_ref_app.models.saml_auth_flow import SamlAuthFlow
@@ -181,26 +181,59 @@ class SamlAuthFlowRepository:
             logger.debug("No session_index found for user", user_id=user_id)
         return session_index
 
-    async def cleanup_expired_flows(
+    async def expire_active_flows(
         self,
         db: AsyncSession,
+        *,
+        now: Optional[datetime] = None,
     ) -> int:
-        """期限切れフローのクリーンアップ
+        """期限切れのアクティブフローを ``expired`` に遷移する。
 
-        定期実行（バッチ/タスク）で呼び出すことを想定。
+        ``authn_requested`` は RelayState の期限、``acs_verified`` は
+        ログインチケットの期限で判定する。状態ごとの期限列を混同しない。
         """
-        now = datetime.now(timezone.utc)
-        stmt = (
+        current_time = now or datetime.now(timezone.utc)
+        authn_requested_stmt = (
             update(SamlAuthFlow)
             .where(
-                SamlAuthFlow.status.in_(["authn_requested", "acs_verified"]),
-                SamlAuthFlow.login_ticket_expires_at.isnot(None),
-                SamlAuthFlow.login_ticket_expires_at < now,
+                SamlAuthFlow.status == "authn_requested",
+                SamlAuthFlow.relay_expires_at.isnot(None),
+                SamlAuthFlow.relay_expires_at < current_time,
             )
-            .values(status="expired", updated_at=now)
+            .values(status="expired", updated_at=current_time)
+        )
+        acs_verified_stmt = (
+            update(SamlAuthFlow)
+            .where(
+                SamlAuthFlow.status == "acs_verified",
+                SamlAuthFlow.login_ticket_expires_at.isnot(None),
+                SamlAuthFlow.login_ticket_expires_at < current_time,
+            )
+            .values(status="expired", updated_at=current_time)
+        )
+        authn_requested_result = await db.execute(authn_requested_stmt)
+        acs_verified_result = await db.execute(acs_verified_stmt)
+        count = authn_requested_result.rowcount + acs_verified_result.rowcount
+        if count > 0:
+            logger.info("Expired active SAML auth flows", count=count)
+        return count
+
+    async def delete_terminal_flows(
+        self,
+        db: AsyncSession,
+        *,
+        retention_days: int,
+        now: Optional[datetime] = None,
+    ) -> int:
+        """保持期間を過ぎたterminal SAMLフローを物理削除する。"""
+        current_time = now or datetime.now(timezone.utc)
+        cutoff = current_time - timedelta(days=retention_days)
+        stmt = delete(SamlAuthFlow).where(
+            SamlAuthFlow.status.in_(["expired", "ticket_consumed"]),
+            SamlAuthFlow.updated_at < cutoff,
         )
         result = await db.execute(stmt)
         count = result.rowcount
         if count > 0:
-            logger.info("Cleaned up expired SAML auth flows", count=count)
+            logger.info("Deleted retained SAML terminal flows", count=count)
         return count

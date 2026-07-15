@@ -247,6 +247,10 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
 # {"access_token": "eyJ...", "token_type": "bearer"}
 ```
 
+### 認証データの定期cleanup
+
+アプリケーション稼働中は、認証系の一時・履歴データを既定5分ごとにcleanupします。保持方針は、login attemptが`LOGIN_ATTEMPT_RETENTION_DAYS`（既定30日）、SAMLの`expired`／`ticket_consumed`フローが`SAML_TERMINAL_FLOW_RETENTION_DAYS`（既定30日）です。refresh tokenとpassword reset tokenは各`expires_at`到達後に削除します。SAMLの未完了フローは、`authn_requested`ではRelayState期限、`acs_verified`ではログインチケット期限で`expired`へ遷移します。
+
 ### 2. セキュリティメトリクス取得
 
 ```bash

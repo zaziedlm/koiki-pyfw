@@ -134,6 +134,9 @@ class SAMLSettings(BaseSettings):
     SAML_LOGIN_TICKET_TTL_SECONDS: int = 120
     """ログインチケットの有効期限（秒）"""
 
+    SAML_TERMINAL_FLOW_RETENTION_DAYS: int = 30
+    """expired／ticket_consumed SAMLフローの保持日数"""
+
     # === デバッグ設定 ===
     SAML_DEBUG_MODE: bool = False
     """SAMLデバッグモード - 詳細ログ出力"""

@@ -109,6 +109,7 @@ SAML_RELAY_STATE_SIGNING_KEY=<強力なランダム文字列>
 
 # チケットTTL（デフォルト: 120秒）
 SAML_LOGIN_TICKET_TTL_SECONDS=120
+SAML_TERMINAL_FLOW_RETENTION_DAYS=30
 
 # リダイレクト設定
 SAML_DEFAULT_REDIRECT_URI=http://localhost:3000/auth/saml/callback
@@ -405,9 +406,10 @@ Phase 2 で導入された DB ベースの認証フロー管理に関する設�
 
 | 環境変数 | デフォルト | 説明 |
 |---|---|---|
-| `DATABASE_URL` | （必須） | PostgreSQL接続先。`saml_auth_flow` テーブルを使用 |
+| `DATABASE_URL` | （必須） | PostgreSQL接続先。`kkref_saml_auth_flows` テーブルを使用 |
 | `SAML_LOGIN_TICKET_TTL_SECONDS` | `120` | ログインチケットの有効期限（秒） |
 | `SAML_RELAY_STATE_TTL_SECONDS` | `600` | RelayState の有効期限（秒） |
+| `SAML_TERMINAL_FLOW_RETENTION_DAYS` | `30` | `expired`／`ticket_consumed` SAMLフローの保持日数 |
 
 - チケット交換時に `SELECT FOR UPDATE` による行ロックで、分散環境でも二重消費を防止
 - 期限切れフローは 5 分間隔のバックグラウンドタスクで自動クリーンアップ

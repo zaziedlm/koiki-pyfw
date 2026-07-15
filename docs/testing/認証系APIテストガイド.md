@@ -56,7 +56,7 @@ docker-compose up -d db
 uv run --locked pytest tests/integration/services/test_user_service_db.py::TestUserServiceDatabase::test_create_user_success -v
 
 # 統合テストの実行（データベースクリーンアップ後）
-docker-compose exec db psql -U koiki_user -d koiki_todo_db -c "DELETE FROM refresh_tokens; DELETE FROM login_attempts; DELETE FROM users;"
+docker-compose exec db psql -U koiki_user -d koiki_todo_db -c "DELETE FROM koiki_refresh_tokens; DELETE FROM koiki_login_attempts; DELETE FROM koiki_users;"
 uv run --locked pytest tests/integration/services/test_user_service_db.py::TestUserServiceDatabase::test_create_user_success -v
 ```
 
@@ -321,7 +321,7 @@ existing_user = await user_service.repository.get_by_email(user_data.email)
 **解決策**: データベースのクリーンアップ
 ```bash
 # テスト前にデータをクリーンアップ
-docker-compose exec db psql -U koiki_user -d koiki_todo_db -c "DELETE FROM refresh_tokens; DELETE FROM login_attempts; DELETE FROM users;"
+docker-compose exec db psql -U koiki_user -d koiki_todo_db -c "DELETE FROM koiki_refresh_tokens; DELETE FROM koiki_login_attempts; DELETE FROM koiki_users;"
 
 # 個別テストの実行
 uv run --locked pytest tests/integration/services/test_user_service_db.py::TestUserServiceDatabase::test_create_user_success -v

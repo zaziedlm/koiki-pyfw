@@ -15,6 +15,7 @@ KOIKI-FW v0.6.0における認証系APIの包括的なガイドドキュメン�
 - 本文中に v0.6 系の root `libkoiki/` や root `alembic/` の記述が残る箇所があります。
 - 現行の framework 正本は `components/libkoiki`、reference app 正本は `components/koiki_ref_app`、migration 正本は `components/koiki_ref_app/alembic` です。
 - 本書の古い path は履歴的な実装説明として読み、現行作業では `docs/agent/` と current implementation を優先してください。
+- 「データベース設計」の旧テーブル名は v0.6 の履歴記録です。現行vNextの物理名は `koiki_*`／`kkref_*`／`kkbiz_*` であり、`docs/dev/db-vnext-schema-contract.ja.md` を正とします。
 
 ## 目次
 
