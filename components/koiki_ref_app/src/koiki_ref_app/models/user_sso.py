@@ -16,6 +16,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import relationship
 
@@ -38,30 +39,29 @@ class UserSSO(Base):
         Integer,
         ForeignKey("koiki_users.id", ondelete="CASCADE"),
         nullable=False,
-        comment="連携するローカルユーザーID",
     )
 
     # SSOサービス識別情報
     sso_subject_id = Column(
-        String(255), nullable=False, comment="SSOサービスでの一意識別子 (sub claim)"
+        String(255), nullable=False
     )
 
     sso_provider = Column(
-        String(50), nullable=False, default="oidc", comment="SSOプロバイダー識別子"
+        String(50), nullable=False, default="oidc", server_default=text("'oidc'")
     )
 
     # 連携メタデータ
     sso_email = Column(
-        String(255), nullable=True, comment="SSO側で管理されているメールアドレス"
+        String(255), nullable=True
     )
 
     sso_display_name = Column(
-        String(100), nullable=True, comment="SSO側で管理されている表示名"
+        String(100), nullable=True
     )
 
     # タイムスタンプ
     last_sso_login = Column(
-        DateTime(timezone=True), nullable=True, comment="最終SSO経由ログイン日時"
+        DateTime(timezone=True), nullable=True
     )
 
     # リレーションシップ
@@ -70,23 +70,14 @@ class UserSSO(Base):
     # インデックスと制約
     __table_args__ = (
         # sso_subject_id + sso_provider の組み合わせで一意制約
-        UniqueConstraint(
-            "sso_subject_id",
-            "sso_provider",
-            name="uq_kkref_user_sso_links_subject_provider",
-        ),
+        UniqueConstraint("sso_subject_id", "sso_provider"),
         # user_id + sso_provider の組み合わせで一意制約
         # （同一ユーザーが同一プロバイダーで複数連携することを防ぐ）
-        UniqueConstraint(
-            "user_id",
-            "sso_provider",
-            name="uq_kkref_user_sso_links_user_provider",
-        ),
+        UniqueConstraint("user_id", "sso_provider"),
         # 検索パフォーマンス向上のためのインデックス
-        Index("ix_kkref_user_sso_links_subject_id", "sso_subject_id"),
-        Index("ix_kkref_user_sso_links_provider", "sso_provider"),
-        Index("ix_kkref_user_sso_links_user_id", "user_id"),
-        Index("ix_kkref_user_sso_links_last_login", "last_sso_login"),
+        Index("ix_kkref_user_sso_links_user_id_last_sso_login_desc", user_id, last_sso_login.desc()),
+        Index("ix_kkref_user_sso_links_sso_provider_last_sso_login_desc", sso_provider, last_sso_login.desc()),
+        Index("ix_kkref_user_sso_links_recent_last_sso_login_desc", last_sso_login.desc(), postgresql_where=last_sso_login.is_not(None), sqlite_where=last_sso_login.is_not(None)),
     )
 
     def __repr__(self) -> str:

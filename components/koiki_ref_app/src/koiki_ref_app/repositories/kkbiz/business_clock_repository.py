@@ -16,15 +16,15 @@ class BusinessClockRepository(BaseRepository[BusinessClock, Any, Any]):
         super().__init__(BusinessClock)
 
     async def get_singleton(self) -> Optional[BusinessClock]:
-        stmt = select(BusinessClock).limit(1)
+        stmt = select(BusinessClock).where(BusinessClock.id == 1)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
     async def get_for_update(self) -> Optional[BusinessClock]:
         stmt = (
             select(BusinessClock)
+            .where(BusinessClock.id == 1)
             .with_for_update()
-            .limit(1)
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()

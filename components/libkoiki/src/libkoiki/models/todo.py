@@ -1,5 +1,5 @@
 # src/models/todo.py
-from sqlalchemy import Column, String, Text, Boolean, Integer, ForeignKey
+from sqlalchemy import Boolean, CheckConstraint, Column, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.orm import relationship
 
 from libkoiki.db.base import Base
@@ -8,23 +8,27 @@ from libkoiki.models.user import UserModel # ownerとのリレーション用
 class TodoModel(Base):
     __tablename__ = "koiki_todos"
 
-    title = Column(String(255), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    is_completed = Column(Boolean, default=False, nullable=False, server_default='false')
+    is_completed = Column(Boolean, default=False, nullable=False, server_default=text("false"))
 
     # 楽観ロック用のバージョン番号 (アトミックUPDATEでのみインクリメントする)
-    version = Column(Integer, nullable=False, server_default='1')
+    version = Column(Integer, default=1, nullable=False, server_default=text("1"))
 
     # 所有者 (User) への外部キー
     owner_id = Column(
         Integer,
         ForeignKey("koiki_users.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
 
     # Userモデルとのリレーション (Todo側から所有者Userを参照)
     owner: UserModel = relationship("UserModel", back_populates="todos")
+
+    __table_args__ = (
+        CheckConstraint("version >= 1", name="positive_version"),
+        Index("ix_koiki_todos_owner_id_created_at_desc", owner_id, text("created_at DESC")),
+    )
 
     def __repr__(self):
         status = "Completed" if self.is_completed else "Pending"

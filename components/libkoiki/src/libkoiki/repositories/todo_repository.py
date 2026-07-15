@@ -1,4 +1,5 @@
 # src/repositories/todo_repository.py
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -62,7 +63,11 @@ class TodoRepository(BaseRepository[TodoModel, TodoCreate, TodoUpdate]):
                 self.model.owner_id == owner_id,
                 self.model.version == expected_version,
             )
-            .values(version=expected_version + 1, **update_data)
+            .values(
+                version=expected_version + 1,
+                updated_at=datetime.now(timezone.utc),
+                **update_data,
+            )
         )
         result = await self.db.execute(stmt)
         return result.rowcount

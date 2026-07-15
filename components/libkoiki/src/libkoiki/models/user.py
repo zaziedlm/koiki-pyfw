@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, String
+from sqlalchemy import Boolean, Column, String, text
 from sqlalchemy.orm import relationship
 
 from libkoiki.db.base import Base
@@ -9,13 +9,13 @@ class UserModel(Base):
 
     # BaseからのIDカラムを使用（手動定義不要）
     username = Column(
-        String(50), unique=True, index=True, nullable=False
+        String(50), unique=True, nullable=False
     )  # ユーザー名追加
-    email = Column(String, unique=True, index=True)
+    email = Column(String, unique=True)
     hashed_password = Column(String)
-    full_name = Column(String, index=True)
-    is_active = Column(Boolean, default=True)
-    is_superuser = Column(Boolean, default=False)
+    full_name = Column(String)
+    is_active = Column(Boolean, default=True, server_default=text("true"), nullable=False)
+    is_superuser = Column(Boolean, default=False, server_default=text("false"), nullable=False)
 
     # todos = relationship("TodoModel", back_populates="user")
     todos = relationship(
