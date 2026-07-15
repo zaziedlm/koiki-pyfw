@@ -147,6 +147,8 @@ export function LoginForm() {
             </Link>
           </div>
 
+          {/* Reference layout placeholder — route not registered yet
+              (see "Follow-up Candidates" in docs/frontend-spa-implementation-guide.ja.md). */}
           <div className="text-center">
             <Link
               to="/auth/forgot-password"

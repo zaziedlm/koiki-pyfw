@@ -213,3 +213,4 @@ frontend CI は現時点では有効化していない。
 - Playwright による login -> task CRUD -> logout E2E を追加する。
 - `react-refresh/only-export-components` warning を消すため、UI helper export を別ファイルへ分離する。
 - 旧 Next.js guide と audit は `docs/archive/frontend-nextjs-bff/` に保存済み。内容を現行実装の判断根拠としては使わない。
+- `dashboard-layout.tsx` の navigation と `login-form.tsx` の `/auth/forgot-password` は、ダッシュボードUIレイアウトの参考配置例として残している。対応する route は未実装(意図的な保留)。実装するか、UIから外すかは今後のタスクで判断する。

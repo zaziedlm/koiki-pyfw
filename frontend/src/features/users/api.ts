@@ -1,37 +1,56 @@
 import { cookieApiClient } from '@/shared/api';
+import type { UserCreate, UserListParams, UserResponse, UserUpdate } from '@/types';
 
 export const cookieUserApi = {
-  getMe: () => cookieApiClient.get('/users/me'),
+  getMe: () => cookieApiClient.requestJson<UserResponse>('/users/me'),
 
-  updateMe: (data: {
-    username?: string;
-    email?: string;
-    full_name?: string;
-    is_active?: boolean;
-  }) => cookieApiClient.put('/users/me', data),
+  updateMe: async (data: UserUpdate) => {
+    if (!cookieApiClient.csrfToken) {
+      await cookieApiClient.initializeCSRFToken();
+    }
 
-  getAll: (params?: { skip?: number; limit?: number }) => {
-    const queryString = params ? `?${new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString()}` : '';
-    return cookieApiClient.get(`/users${queryString}`);
+    return cookieApiClient.requestJson<UserResponse>('/users/me', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   },
 
-  getById: (id: number) => cookieApiClient.get(`/users/${id}`),
+  getAll: (params?: UserListParams) => {
+    const queryString = params ? `?${new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString()}` : '';
+    return cookieApiClient.requestJson<UserResponse[]>(`/users${queryString}`);
+  },
 
-  create: (data: {
-    username: string;
-    email: string;
-    password: string;
-    full_name?: string;
-    is_active?: boolean;
-  }) => cookieApiClient.post('/users', data),
+  getById: (id: number) => cookieApiClient.requestJson<UserResponse>(`/users/${id}`),
 
-  update: (id: number, data: {
-    username?: string;
-    email?: string;
-    full_name?: string;
-    is_active?: boolean;
-    password?: string;
-  }) => cookieApiClient.put(`/users/${id}`, data),
+  create: async (data: UserCreate) => {
+    if (!cookieApiClient.csrfToken) {
+      await cookieApiClient.initializeCSRFToken();
+    }
 
-  delete: (id: number) => cookieApiClient.delete(`/users/${id}`),
+    return cookieApiClient.requestJson<UserResponse>('/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async (id: number, data: UserUpdate) => {
+    if (!cookieApiClient.csrfToken) {
+      await cookieApiClient.initializeCSRFToken();
+    }
+
+    return cookieApiClient.requestJson<UserResponse>(`/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (id: number) => {
+    if (!cookieApiClient.csrfToken) {
+      await cookieApiClient.initializeCSRFToken();
+    }
+
+    return cookieApiClient.requestJson<UserResponse>(`/users/${id}`, {
+      method: 'DELETE',
+    });
+  },
 };

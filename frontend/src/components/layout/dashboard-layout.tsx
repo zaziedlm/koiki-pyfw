@@ -39,6 +39,9 @@ interface NavigationItem {
   roles?: string[];
 }
 
+// Profile/Users/Security/Settings are reference layout placeholders with no
+// registered route yet (intentionally deferred — see "Follow-up Candidates"
+// in docs/frontend-spa-implementation-guide.ja.md).
 const navigation: NavigationItem[] = [
   {
     name: 'Dashboard',
