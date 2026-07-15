@@ -14,6 +14,8 @@
 
 `origin`上のタグとローカルのannotated tag objectが一致し、タグのpeeled commitが対象commitを指すことをDB-00で確認した。タグ対象commitの`components/koiki_ref_app/alembic/versions/`に旧revision 19本が保存されている。
 
+vNext DBの再作成、seed、検証手順は[DB再作成runbook](db-vnext-rebuild-runbook.ja.md)を参照する。
+
 ## 互換性の境界
 
 - vNextは空のPostgreSQL DBから再作成する。

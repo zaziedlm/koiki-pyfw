@@ -110,6 +110,10 @@ docker compose -f docker-compose.unified.yml --profile prod exec db psql -U koik
 - ローカル開発のみ `frontend/.env.local`
 - 詳細な一覧は `docs/dev/env-files.md` を参照
 
+## DB再作成
+
+vNext DBは空のPostgreSQL DBへ単一baselineを適用して再現します。破壊操作前の対象確認、reference bootstrap seed、開発専用seedの境界、再作成後の検証は[DB再作成runbook](docs/dev/db-vnext-rebuild-runbook.ja.md)を参照してください。
+
 ## 不要になったファイル
 - `docker-compose.production*.yml`、`docker-compose.optimized.yml`、`docker-compose.base.yml`、`docker-compose.unified.dev.yml` は廃止済み
 - それに対応する `Dockerfile.production` / `Dockerfile.optimized`（ルート・frontend）も廃止対象
