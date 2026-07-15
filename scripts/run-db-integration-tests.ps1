@@ -6,6 +6,7 @@ param(
     [string]$TestDbName = "test_db",
     [string]$TestDbUser = "test_user",
     [string]$TestDbPassword = "test_pass",
+    [string]$BaselineContractDbName = "koiki_baseline_contract",
     [string]$EnvFile = ".env.ci"
 )
 
@@ -105,6 +106,12 @@ Write-Host "[INFO] Verifying connection as '$TestDbUser' to '$TestDbName'..."
 docker exec -i $DbContainerName psql -U $TestDbUser -d $TestDbName -c "SELECT current_database(), current_user;"
 Assert-LastExitCode -StepName "verify test database connection"
 
+Write-Host "[INFO] Ensuring dedicated baseline-contract database '$BaselineContractDbName' exists..."
+$baselineDatabaseExists = Invoke-ContainerPsqlScalar -Sql "SELECT 1 FROM pg_database WHERE datname = '$BaselineContractDbName';"
+if (-not $baselineDatabaseExists) {
+    Invoke-ContainerPsql -Sql "CREATE DATABASE $BaselineContractDbName OWNER $TestDbUser;"
+}
+
 $env:RUN_DB_INTEGRATION = "1"
 $env:DATABASE_URL = "postgresql+asyncpg://$TestDbUser`:$TestDbPassword@localhost:5432/$TestDbName"
 $env:ENV_FILE = $EnvFile
@@ -120,6 +127,14 @@ uv run pytest `
   -m db_integration
 
 Assert-LastExitCode -StepName "db_integration pytest"
+
+$baselineDatabaseUrl = "postgresql+asyncpg://$TestDbUser`:$TestDbPassword@localhost:5432/$BaselineContractDbName"
+$env:DATABASE_URL = $baselineDatabaseUrl
+$env:BASELINE_CONTRACT_DATABASE_URL = $baselineDatabaseUrl
+
+Write-Host "[INFO] Running vNext baseline contract test..."
+uv run pytest components/koiki_ref_app/tests/integration/app/test_vnext_baseline_contract.py -m db_integration
+Assert-LastExitCode -StepName "vNext baseline contract pytest"
 
 Write-Host ""
 Write-Host "[DONE] db_integration tests completed successfully."

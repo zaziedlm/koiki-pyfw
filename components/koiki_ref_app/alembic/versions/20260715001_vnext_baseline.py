@@ -78,7 +78,7 @@ def upgrade() -> None:
         sa.Column("is_completed", sa.Boolean(), server_default=sa.text("false"), nullable=False),
         sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False), sa.Column("owner_id", sa.Integer(), nullable=False),
         *_timestamps(),
-        sa.CheckConstraint("version >= 1", name="ck_koiki_todos_positive_version"),
+        sa.CheckConstraint("version >= 1", name="positive_version"),
         sa.ForeignKeyConstraint(["owner_id"], ["koiki_users.id"], name="fk_koiki_todos_owner_id_koiki_users", ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id", name="pk_koiki_todos"),
     )
@@ -132,7 +132,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False), sa.Column("request_id", sa.String(255)), sa.Column("relay_nonce", sa.String(255), nullable=False),
         sa.Column("sso_provider", sa.String(50), server_default=sa.text("'saml'"), nullable=False), sa.Column("redirect_uri", sa.String(2048)), sa.Column("user_id", sa.Integer()), sa.Column("subject_id", sa.String(255)), sa.Column("session_index", sa.String(512)), sa.Column("ticket_id", sa.String(255)),
         sa.Column("relay_expires_at", sa.DateTime(timezone=True)), sa.Column("login_ticket_expires_at", sa.DateTime(timezone=True)), sa.Column("status", sa.String(30), server_default=sa.text("'authn_requested'"), nullable=False), sa.Column("consumed_at", sa.DateTime(timezone=True)), *_timestamps(),
-        sa.CheckConstraint("status IN ('authn_requested', 'acs_verified', 'ticket_consumed', 'expired')", name="ck_kkref_saml_auth_flows_valid_status"),
+        sa.CheckConstraint("status IN ('authn_requested', 'acs_verified', 'ticket_consumed', 'expired')", name="valid_status"),
         sa.ForeignKeyConstraint(["user_id"], ["koiki_users.id"], name="fk_kkref_saml_auth_flows_user_id_koiki_users", ondelete="SET NULL"), sa.PrimaryKeyConstraint("id", name="pk_kkref_saml_auth_flows"),
         sa.UniqueConstraint("ticket_id", name="uq_kkref_saml_auth_flows_ticket_id"), sa.UniqueConstraint("relay_nonce", name="uq_kkref_saml_auth_flows_relay_nonce"),
     )
@@ -146,7 +146,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False), *_timestamps(),
         sa.Column("mode", sa.String(16), server_default=sa.text("'REALTIME'"), nullable=False), sa.Column("base_timezone", sa.String(64), server_default=sa.text("'Asia/Tokyo'"), nullable=False),
         sa.Column("frozen_business_date", sa.Date()), sa.Column("frozen_business_time", sa.Time()), sa.Column("offset_days", sa.Integer(), server_default=sa.text("0"), nullable=False), sa.Column("offset_minutes", sa.Integer(), server_default=sa.text("0"), nullable=False), sa.Column("comment", sa.Text()), sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False), sa.Column("updated_by", sa.String(255), server_default=sa.text("'system'"), nullable=False),
-        sa.CheckConstraint("id = 1", name="ck_kkbiz_business_clock_singleton"), sa.CheckConstraint("version >= 1", name="ck_kkbiz_business_clock_positive_version"), sa.CheckConstraint("mode IN ('REALTIME', 'OFFSET', 'FROZEN')", name="ck_kkbiz_business_clock_valid_mode"), sa.CheckConstraint("(mode = 'FROZEN' AND frozen_business_date IS NOT NULL AND frozen_business_time IS NOT NULL) OR (mode != 'FROZEN' AND frozen_business_date IS NULL AND frozen_business_time IS NULL)", name="ck_kkbiz_business_clock_frozen_value_pair"),
+        sa.CheckConstraint("id = 1", name="singleton"), sa.CheckConstraint("version >= 1", name="positive_version"), sa.CheckConstraint("mode IN ('REALTIME', 'OFFSET', 'FROZEN')", name="valid_mode"), sa.CheckConstraint("(mode = 'FROZEN' AND frozen_business_date IS NOT NULL AND frozen_business_time IS NOT NULL) OR (mode != 'FROZEN' AND frozen_business_date IS NULL AND frozen_business_time IS NULL)", name="frozen_value_pair"),
         sa.PrimaryKeyConstraint("id", name="pk_kkbiz_business_clock"),
     )
 
