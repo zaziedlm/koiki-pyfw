@@ -123,6 +123,9 @@ Write-Host "[INFO] Running db_integration tests..."
 
 uv run pytest `
   components/koiki_ref_app/tests/integration/app/api/test_auth_api.py `
+  components/koiki_ref_app/tests/integration/app/api/test_auth_session_api.py `
+  components/koiki_ref_app/tests/integration/app/api/test_todos_api.py `
+  components/koiki_ref_app/tests/integration/app/test_vnext_reference_db_workflows.py `
   tests/integration/services/ `
   -m db_integration
 
