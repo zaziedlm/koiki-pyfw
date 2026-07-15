@@ -1,6 +1,5 @@
-import asyncio
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -53,7 +52,6 @@ from libkoiki.core.middleware import (  # AccessLogMiddlewareはオプション
 )
 from libkoiki.core.monitoring import setup_monitoring
 from libkoiki.core.rate_limiter import configure_limiter
-from libkoiki.db import session as db_session
 from libkoiki.db.session import connect_db, disconnect_db
 from libkoiki.events.handlers import (  # サンプルハンドラ
     EventHandler,
@@ -69,35 +67,6 @@ setup_logging()
 logger = get_logger(__name__)
 
 from koiki_ref_app.bootstrap import bootstrap_orm  # noqa: E402
-from koiki_ref_app.core.saml_config import saml_settings  # noqa: E402
-from koiki_ref_app.maintenance.auth_data_cleanup import cleanup_auth_data  # noqa: E402
-
-_cleanup_task: Optional[asyncio.Task] = None
-
-async def _periodic_auth_data_cleanup() -> None:
-    """認証系の一時・履歴データを定期的にcleanupする。"""
-    while True:
-        try:
-            await asyncio.sleep(settings.AUTH_DATA_CLEANUP_INTERVAL_SECONDS)
-            if db_session.AsyncSessionFactory is None:
-                continue
-            async with db_session.AsyncSessionFactory() as session:
-                counts = await cleanup_auth_data(
-                    session,
-                    login_attempt_retention_days=settings.LOGIN_ATTEMPT_RETENTION_DAYS,
-                    saml_terminal_flow_retention_days=(
-                        saml_settings.SAML_TERMINAL_FLOW_RETENTION_DAYS
-                    ),
-                )
-                if any(counts.values()):
-                    logger.info("Periodic auth data cleanup completed", **counts)
-        except asyncio.CancelledError:
-            logger.info("Auth data cleanup task cancelled")
-            break
-        except Exception:
-            logger.exception("Error in periodic auth data cleanup")
-
-
 # --- Application Lifespan ---
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -198,25 +167,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     logger.info("Application startup sequence completed.")
 
-    # --- 認証系データ定期クリーンアップ開始 ---
-    global _cleanup_task
-    _cleanup_task = asyncio.create_task(_periodic_auth_data_cleanup())
-    logger.info(
-        "Auth data cleanup task started",
-        interval_seconds=settings.AUTH_DATA_CLEANUP_INTERVAL_SECONDS,
-    )
-
     yield  # アプリケーション実行
     logger.info("Application shutdown sequence initiated.")
-
-    # --- 認証系データ定期クリーンアップ停止 ---
-    if _cleanup_task and not _cleanup_task.done():
-        _cleanup_task.cancel()
-        try:
-            await _cleanup_task
-        except asyncio.CancelledError:
-            pass
-        logger.info("Auth data cleanup task stopped")
 
     # --- イベントハンドラー停止 ---
     # 初期版では無効化

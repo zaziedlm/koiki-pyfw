@@ -124,12 +124,12 @@ DBで強制する初期対象:
 
 | データ | 方針 |
 | --- | --- |
-| Login attempts | 設定可能。既定30日後に物理削除 |
-| Refresh tokens | 有効期限到達後、定期cleanupで物理削除 |
-| Password reset tokens | 使用済みを含め、有効期限到達後に定期cleanupで物理削除 |
-| SAML `authn_requested` | `relay_expires_at`到達時に`expired`へ状態更新 |
-| SAML `acs_verified` | `login_ticket_expires_at`到達時に`expired`へ状態更新 |
-| SAML terminal flows | `expired`／`ticket_consumed`を設定可能な保持期間後に物理削除。既定30日 |
+| Login attempts | 業務テーブルメンテナンスで保持期間後に物理削除 |
+| Refresh tokens | 業務テーブルメンテナンスで有効期限到達後に物理削除 |
+| Password reset tokens | 業務テーブルメンテナンスで使用済みを含め有効期限到達後に物理削除 |
+| SAML `authn_requested` | 業務テーブルメンテナンスで`relay_expires_at`到達時に`expired`へ状態更新 |
+| SAML `acs_verified` | 業務テーブルメンテナンスで`login_ticket_expires_at`到達時に`expired`へ状態更新 |
+| SAML terminal flows | 業務テーブルメンテナンスで`expired`／`ticket_consumed`を業務決定の保持期間後に物理削除 |
 
 SAML `session_index`はSLOに利用するため、terminal化直後には削除しない。保持期間変更はアプリ設定で行い、schema migrationを要求しない。cleanupは冪等とし、対象件数、実行時刻、失敗を安全なログへ記録する。
 

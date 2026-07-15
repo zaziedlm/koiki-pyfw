@@ -8,9 +8,6 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     # Refresh Token有効期限（日数）
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    # 認証系の一時・履歴データ cleanup の実行間隔とログイン試行の保持日数
-    AUTH_DATA_CLEANUP_INTERVAL_SECONDS: int = 300
-    LOGIN_ATTEMPT_RETENTION_DAYS: int = 30
     SERVER_NAME: str = "KOIKI Framework"
     SERVER_HOST: AnyHttpUrl = Field(default="http://localhost:8000")
     

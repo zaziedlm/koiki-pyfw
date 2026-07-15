@@ -109,7 +109,6 @@ SAML_RELAY_STATE_SIGNING_KEY=<強力なランダム文字列>
 
 # チケットTTL（デフォルト: 120秒）
 SAML_LOGIN_TICKET_TTL_SECONDS=120
-SAML_TERMINAL_FLOW_RETENTION_DAYS=30
 
 # リダイレクト設定
 SAML_DEFAULT_REDIRECT_URI=http://localhost:3000/auth/saml/callback
@@ -409,10 +408,9 @@ Phase 2 で導入された DB ベースの認証フロー管理に関する設�
 | `DATABASE_URL` | （必須） | PostgreSQL接続先。`kkref_saml_auth_flows` テーブルを使用 |
 | `SAML_LOGIN_TICKET_TTL_SECONDS` | `120` | ログインチケットの有効期限（秒） |
 | `SAML_RELAY_STATE_TTL_SECONDS` | `600` | RelayState の有効期限（秒） |
-| `SAML_TERMINAL_FLOW_RETENTION_DAYS` | `30` | `expired`／`ticket_consumed` SAMLフローの保持日数 |
 
 - チケット交換時に `SELECT FOR UPDATE` による行ロックで、分散環境でも二重消費を防止
-- 期限切れフローは 5 分間隔のバックグラウンドタスクで自動クリーンアップ
+- `kkref_saml_auth_flows`の状態遷移・保持・削除は、業務システムのテーブルメンテナンスジョブで実行する。Webアプリは自動cleanupしない。
 - マイグレーション: `uv run --locked alembic -c components/koiki_ref_app/alembic.ini upgrade head` で `saml_auth_flow` テーブルを作成
 - ローカルマシンから実行する場合、`DATABASE_URL` の DB host は `localhost` を使う
 - Docker Compose の app コンテナ内から実行する場合、`DATABASE_URL` の DB host は `db` を使う

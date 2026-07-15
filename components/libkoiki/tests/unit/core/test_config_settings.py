@@ -8,14 +8,6 @@ def test_access_token_expire_minutes_default_is_short_lived(monkeypatch):
 
     assert settings.ACCESS_TOKEN_EXPIRE_MINUTES == 30
 
-
-def test_auth_data_cleanup_defaults_are_safe_retention_values():
-    settings = Settings(_env_file=None)
-
-    assert settings.AUTH_DATA_CLEANUP_INTERVAL_SECONDS == 300
-    assert settings.LOGIN_ATTEMPT_RETENTION_DAYS == 30
-
-
 def test_csrf_secret_is_separate_from_jwt_secret_by_default(monkeypatch):
     monkeypatch.delenv("JWT_SECRET", raising=False)
     monkeypatch.delenv("AUTH_CSRF_SECRET", raising=False)

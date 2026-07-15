@@ -97,8 +97,6 @@ docker logs osskk_keycloak
    SAML_DEFAULT_REDIRECT_URI=http://localhost:3000/auth/saml/callback
    SAML_ALLOWED_REDIRECT_URIS=http://localhost:3000/auth/saml/callback
    SAML_LOGIN_TICKET_TTL_SECONDS=120
-   # expired / ticket_consumed フローの保持日数（既定30日）
-   SAML_TERMINAL_FLOW_RETENTION_DAYS=30
    ```
 
    > 全環境変数の詳細は `saml-env-config-guide.md` を参照してください。
