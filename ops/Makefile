@@ -68,10 +68,10 @@ db-check: migration-notice ## データベース内容確認（非推奨）
 	@echo "⚠️  推奨: ./ops/scripts/run_tests.sh db-check"
 	@echo "📊 データベース内容確認..."
 	@echo "権限一覧:"
-	@docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "SELECT name, resource, action FROM permissions ORDER BY resource, action;" 2>/dev/null || true
+	@docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "SELECT name, resource, action FROM koiki_permissions ORDER BY resource, action;" 2>/dev/null || true
 	@echo ""
 	@echo "ユーザーロール:"
-	@docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "SELECT u.email, r.name FROM users u JOIN user_roles ur ON u.id = ur.user_id JOIN roles r ON r.id = ur.role_id ORDER BY u.email;" 2>/dev/null || true
+	@docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "SELECT u.email, r.name FROM koiki_users u JOIN koiki_user_roles ur ON u.id = ur.user_id JOIN koiki_roles r ON r.id = ur.role_id ORDER BY u.email;" 2>/dev/null || true
 
 manual-test: migration-notice ## 手動テスト用情報表示（非推奨）
 	@echo "⚠️  推奨: ./ops/scripts/run_tests.sh manual-test"

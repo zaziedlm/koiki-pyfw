@@ -78,6 +78,7 @@ class PasswordResetRepository:
         if token:
             token.is_used = True
             token.used_at = datetime.now(timezone.utc)
+            token.updated_at = token.used_at
             await self.session.commit()
 
     async def cleanup_expired_tokens(self, user_id: Optional[int] = None) -> int:
@@ -135,6 +136,7 @@ class PasswordResetRepository:
         for token in active_tokens:
             token.is_used = True
             token.used_at = datetime.now(timezone.utc)
+            token.updated_at = token.used_at
         
         await self.session.commit()
         return len(active_tokens)

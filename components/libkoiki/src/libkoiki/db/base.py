@@ -1,6 +1,6 @@
 # src/db/base.py
+from sqlalchemy import Column, DateTime, Integer, MetaData, func
 from sqlalchemy.orm import declarative_base, declared_attr
-from sqlalchemy import Column, Integer, DateTime, func
 from typing import Any
 import re # テーブル名変換用
 
@@ -21,7 +21,7 @@ class CustomBase:
         return name
 
     # 共通カラム (主キー、作成日時、更新日時)
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     # タイムゾーン対応のDateTime型を使用し、DBサーバーのデフォルトタイムゾーン/関数を利用
     created_at = Column(
         DateTime(timezone=True),
@@ -31,9 +31,19 @@ class CustomBase:
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
-        onupdate=func.now(), # レコード更新時にDBサーバーの現在時刻で更新
         nullable=False
     )
 
 # 1つの統合されたBaseクラスを使用
-Base = declarative_base(cls=CustomBase)
+Base = declarative_base(
+    cls=CustomBase,
+    metadata=MetaData(
+        naming_convention={
+            "pk": "pk_%(table_name)s",
+            "fk": "fk_%(table_name)s_%(column_0_N_name)s_%(referred_table_name)s",
+            "uq": "uq_%(table_name)s_%(column_0_N_name)s",
+            "ix": "ix_%(table_name)s_%(column_0_N_name)s",
+            "ck": "ck_%(table_name)s_%(constraint_name)s",
+        }
+    ),
+)

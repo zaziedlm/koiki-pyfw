@@ -34,7 +34,7 @@ class TestAuditDependencyWiring:
                 return current_user
 
         monkeypatch.setattr(dependencies_module, "UserRepository", FakeUserRepository)
-        request = SimpleNamespace(state=SimpleNamespace())
+        request = SimpleNamespace(method="GET", state=SimpleNamespace())
 
         result = await dependencies_module.get_current_active_user(
             request=request,

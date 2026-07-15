@@ -1,7 +1,4 @@
 
-import pytest
-from datetime import datetime, timezone
-
 from libkoiki.core import logging
 from libkoiki.core import logging as logging_module
 from libkoiki.models.role import RoleModel
@@ -33,30 +30,16 @@ class TestTimeCompliance:
         assert timestamp_str is not None
         assert "+09:00" in timestamp_str
 
-    def test_role_model_defaults(self):
-        """RoleModelの日付デフォルトがtimezone-awareであることを確認"""
-        col_default = RoleModel.created_at.expression.default
-        
-        # デフォルトがcallableであることを確認
-        assert col_default is not None, "created_at should have a default value"
-        assert col_default.is_callable, "created_at default should be callable"
-        
-        # デフォルト値を実行してtimezone-awareであることを確認
-        val = col_default.arg(None)
-        assert isinstance(val, datetime), "Default value should be datetime"
-        assert val.tzinfo is not None, "Datetime should be timezone-aware"
-        assert val.tzinfo == timezone.utc, "Timezone should be UTC"
+    def test_role_model_created_at_uses_database_server_default(self):
+        """RoleModelの作成時刻はDBのnow()で設定する。"""
+        column = RoleModel.created_at.expression
 
-    def test_permission_model_defaults(self):
-        """PermissionModelの日付デフォルトがtimezone-awareであることを確認"""
-        col_default = PermissionModel.created_at.expression.default
-        
-        # デフォルトがcallableであることを確認
-        assert col_default is not None, "created_at should have a default value"
-        assert col_default.is_callable, "created_at default should be callable"
-        
-        # デフォルト値を実行してtimezone-awareであることを確認
-        val = col_default.arg(None)
-        assert isinstance(val, datetime), "Default value should be datetime"
-        assert val.tzinfo is not None, "Datetime should be timezone-aware"
-        assert val.tzinfo == timezone.utc, "Timezone should be UTC"
+        assert column.default is None
+        assert column.server_default is not None
+
+    def test_permission_model_created_at_uses_database_server_default(self):
+        """PermissionModelの作成時刻はDBのnow()で設定する。"""
+        column = PermissionModel.created_at.expression
+
+        assert column.default is None
+        assert column.server_default is not None

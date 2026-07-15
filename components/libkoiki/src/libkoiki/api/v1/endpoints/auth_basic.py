@@ -95,6 +95,9 @@ async def authenticate_password_and_create_token_pair(
             user_agent=device_info,
             failure_reason="invalid_credentials",
         )
+        # HTTPException後のリクエスト終了処理でrollbackされないよう、
+        # ロックアウト判定に使う失敗履歴を先に確定させる。
+        await db.commit()
 
         # セキュリティログとメトリクスに記録
         security_logger.log_authentication_attempt(
@@ -132,6 +135,9 @@ async def authenticate_password_and_create_token_pair(
             user_agent=device_info,
             failure_reason="inactive_user",
         )
+        # HTTPException後のリクエスト終了処理でrollbackされないよう、
+        # ロックアウト判定に使う失敗履歴を先に確定させる。
+        await db.commit()
 
         security_logger.log_authentication_attempt(
             email=email,

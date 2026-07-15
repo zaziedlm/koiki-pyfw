@@ -1,7 +1,7 @@
 # src/models/login_attempt.py
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship, synonym
 from sqlalchemy.sql import func
 
@@ -11,23 +11,25 @@ from libkoiki.db.base import Base
 class LoginAttemptModel(Base):
     """ログイン試行履歴モデル"""
 
-    __tablename__ = "login_attempts"
+    __tablename__ = "koiki_login_attempts"
 
     # BaseからのIDカラムを使用（手動定義不要）
     email = Column(
-        String(255), nullable=False, index=True
+        String(255), nullable=False
     )  # ログイン試行されたメールアドレス
     user_id = Column(
-        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+        Integer,
+        ForeignKey("koiki_users.id", ondelete="SET NULL"),
+        nullable=True,
     )  # 存在する場合のユーザーID
-    ip_address = Column(String(45), nullable=False, index=True)  # IPv6対応
+    ip_address = Column(String(45), nullable=False)  # IPv6対応
     user_agent = Column(Text, nullable=True)
-    is_successful = Column(Boolean, nullable=False, index=True)
+    is_successful = Column(Boolean, nullable=False)
     failure_reason = Column(
         String(100), nullable=True
     )  # 失敗理由（invalid_password, user_not_found, account_locked等）
     attempted_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     
     # Base class の created_at contract を attempted_at への明示 alias として維持する。
@@ -38,6 +40,14 @@ class LoginAttemptModel(Base):
 
     # リレーションシップ（ユーザーが削除された場合はuser_idがNULLになる）
     user = relationship("UserModel", back_populates="login_attempts")
+
+    __table_args__ = (
+        Index("ix_koiki_login_attempts_failed_email_attempted_at_desc", email, attempted_at.desc(), postgresql_where=is_successful.is_(False), sqlite_where=is_successful.is_(False)),
+        Index("ix_koiki_login_attempts_failed_ip_address_attempted_at_desc", ip_address, attempted_at.desc(), postgresql_where=is_successful.is_(False), sqlite_where=is_successful.is_(False)),
+        Index("ix_koiki_login_attempts_success_email_attempted_at_desc", email, attempted_at.desc(), postgresql_where=is_successful.is_(True), sqlite_where=is_successful.is_(True)),
+        Index("ix_koiki_login_attempts_user_id", user_id),
+        Index("ix_koiki_login_attempts_attempted_at", attempted_at),
+    )
 
     @classmethod
     def get_lockout_window_start(cls, minutes: int = 15) -> datetime:

@@ -14,13 +14,14 @@ def create_sso_link_repository():
     """
     環境変数で SSO連携リポジトリ実装を切替する。
 
-    - `SSO_LINK_BACKEND=user_sso` (デフォルト): 標準 `user_sso` テーブル実装
+    - `SSO_LINK_BACKEND=user_sso` (デフォルト): 標準
+      `kkref_user_sso_links` テーブル実装
     - `SSO_LINK_BACKEND=user_table`: 移行先 `user` テーブル実装
     """
     backend = os.getenv("SSO_LINK_BACKEND", "user_sso").strip().lower()
 
     if backend in {"user_sso", "default", "standard"}:
-        logger.info("Using standard user_sso repository backend", backend=backend)
+        logger.info("Using standard SSO link repository backend", backend=backend)
         return UserSSORepository()
 
     if backend in {"user_table", "user"}:

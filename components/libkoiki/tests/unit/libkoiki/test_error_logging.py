@@ -349,6 +349,7 @@ class TestAdditionalErrorLogging:
                 user_service=user_service,
                 db=object(),
                 current_admin=current_admin,
+                csrf=None,
             )
 
         assert exc_info.value.status_code == 400

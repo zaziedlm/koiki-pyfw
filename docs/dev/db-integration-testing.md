@@ -15,6 +15,9 @@ export ENV_FILE=.env.ci
 
 uv run pytest \
   components/koiki_ref_app/tests/integration/app/api/test_auth_api.py \
+  components/koiki_ref_app/tests/integration/app/api/test_auth_session_api.py \
+  components/koiki_ref_app/tests/integration/app/api/test_todos_api.py \
+  components/koiki_ref_app/tests/integration/app/test_vnext_reference_db_workflows.py \
   tests/integration/services/ \
   -m db_integration
 ```
@@ -53,6 +56,7 @@ Windows PowerShell では、起動済みの PostgreSQL コンテナに対して
 - 対象 PostgreSQL コンテナを特定
 - `test_user` ロールを確認または作成
 - `test_db` データベースを確認または作成
+- `koiki_baseline_contract`データベースを確認または作成
 - `DATABASE_URL` などの環境変数を設定
 - `db_integration` マーカー付きテストを実行
 
@@ -86,6 +90,10 @@ Compose のサービス名から解決させる例:
 ## Scope
 
 - `components/koiki_ref_app/tests/integration/app/api/test_auth_api.py`
+- `components/koiki_ref_app/tests/integration/app/api/test_auth_session_api.py`
+- `components/koiki_ref_app/tests/integration/app/api/test_todos_api.py`
+- `components/koiki_ref_app/tests/integration/app/test_vnext_reference_db_workflows.py`
+- `components/koiki_ref_app/tests/integration/app/test_vnext_baseline_contract.py`
 - `tests/integration/services/test_auth_service_db.py`
 - `tests/integration/services/test_login_security_service_db.py`
 - `tests/integration/services/test_user_service_db.py`

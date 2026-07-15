@@ -16,7 +16,7 @@ from libkoiki.core.security import (
 )
 from libkoiki.core.exceptions import AuthenticationException, ValidationException
 from libkoiki.core.transaction import transactional
-from libkoiki.core.config import settings
+import libkoiki.core.config as config
 
 logger = structlog.get_logger(__name__)
 
@@ -54,7 +54,9 @@ class AuthService:
         access_token, refresh_token, expires_in = create_token_pair(user.id, device_info)
         
         # リフレッシュトークンをデータベースに保存
-        expires_at = RefreshTokenModel.create_expires_at(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_at = RefreshTokenModel.create_expires_at(
+            days=config.settings.REFRESH_TOKEN_EXPIRE_DAYS
+        )
         await self.refresh_token_repo.create_refresh_token(
             user_id=user.id,
             token=refresh_token,
@@ -137,7 +139,7 @@ class AuthService:
         
         # 新しいアクセストークンを生成
         from libkoiki.core.security import create_access_token
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token_expires = timedelta(minutes=config.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         new_access_token = create_access_token(
             subject=user.id, expires_delta=access_token_expires
         )
@@ -157,7 +159,7 @@ class AuthService:
             
             # 新しいリフレッシュトークンを保存
             expires_at = RefreshTokenModel.create_expires_at(
-                days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+                days=config.settings.REFRESH_TOKEN_EXPIRE_DAYS
             )
             await self.refresh_token_repo.create_refresh_token(
                 user_id=user.id,
@@ -172,7 +174,11 @@ class AuthService:
             rotation_enabled=enable_rotation
         )
         
-        return new_access_token, new_refresh_token, settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        return (
+            new_access_token,
+            new_refresh_token,
+            config.settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
     
     @transactional
     async def revoke_user_tokens(
