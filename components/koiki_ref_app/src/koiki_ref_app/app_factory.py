@@ -1,12 +1,10 @@
-import asyncio
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 # Redis依存の条件付きインポート
 try:
@@ -53,7 +51,8 @@ from libkoiki.core.middleware import (  # AccessLogMiddlewareはオプション
     SecurityHeadersMiddleware,
 )
 from libkoiki.core.monitoring import setup_monitoring
-from libkoiki.db.session import AsyncSessionFactory, connect_db, disconnect_db
+from libkoiki.core.rate_limiter import configure_limiter
+from libkoiki.db.session import connect_db, disconnect_db
 from libkoiki.events.handlers import (  # サンプルハンドラ
     EventHandler,
     user_created_handler,
@@ -67,37 +66,7 @@ from libkoiki.events.publisher import EventPublisher
 setup_logging()
 logger = get_logger(__name__)
 
-# SAML認証フロークリーンアップ用
-from koiki_ref_app.repositories.saml_auth_flow_repository import (
-    SamlAuthFlowRepository,  # noqa: E402
-)
 from koiki_ref_app.bootstrap import bootstrap_orm  # noqa: E402
-
-_cleanup_task: Optional[asyncio.Task] = None
-
-CLEANUP_INTERVAL_SECONDS = 300  # 5分間隔
-
-
-async def _periodic_saml_flow_cleanup() -> None:
-    """期限切れSAML認証フローを定期的にクリーンアップするバックグラウンドタスク"""
-    repo = SamlAuthFlowRepository()
-    while True:
-        try:
-            await asyncio.sleep(CLEANUP_INTERVAL_SECONDS)
-            if AsyncSessionFactory is None:
-                continue
-            async with AsyncSessionFactory() as session:
-                count = await repo.cleanup_expired_flows(session)
-                await session.commit()
-                if count > 0:
-                    logger.info("Periodic SAML flow cleanup completed", cleaned=count)
-        except asyncio.CancelledError:
-            logger.info("SAML flow cleanup task cancelled")
-            break
-        except Exception:
-            logger.exception("Error in periodic SAML flow cleanup")
-
-
 # --- Application Lifespan ---
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -178,12 +147,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "Changed rate limit strategy from 'redis' to 'fixed-window' due to Redis unavailability"
         )
 
-    limiter = Limiter(
-        key_func=get_remote_address,
+    limiter = configure_limiter(
         enabled=settings.RATE_LIMIT_ENABLED,
-        default_limits=[settings.RATE_LIMIT_DEFAULT]
-        if settings.RATE_LIMIT_ENABLED
-        else [],
+        default_limit=settings.RATE_LIMIT_DEFAULT,
         strategy=strategy,
         storage_uri=redis_storage_uri,
         storage_options=storage_options,
@@ -201,25 +167,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     logger.info("Application startup sequence completed.")
 
-    # --- SAML認証フロー定期クリーンアップ開始 ---
-    global _cleanup_task
-    _cleanup_task = asyncio.create_task(_periodic_saml_flow_cleanup())
-    logger.info(
-        "SAML flow cleanup task started",
-        interval_seconds=CLEANUP_INTERVAL_SECONDS,
-    )
-
     yield  # アプリケーション実行
     logger.info("Application shutdown sequence initiated.")
-
-    # --- SAML認証フロークリーンアップ停止 ---
-    if _cleanup_task and not _cleanup_task.done():
-        _cleanup_task.cancel()
-        try:
-            await _cleanup_task
-        except asyncio.CancelledError:
-            pass
-        logger.info("SAML flow cleanup task stopped")
 
     # --- イベントハンドラー停止 ---
     # 初期版では無効化
@@ -248,7 +197,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.APP_NAME,
         debug=settings.DEBUG,
-        version="0.7.1",
+        version="0.8.0",
         openapi_url="/openapi.json" if settings.APP_ENV != "production" else None,
         docs_url="/docs" if settings.APP_ENV != "production" else None,
         redoc_url="/redoc" if settings.APP_ENV != "production" else None,
@@ -258,7 +207,7 @@ def create_app() -> FastAPI:
     if settings.BACKEND_CORS_ORIGINS:
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+            allow_origins=settings.BACKEND_CORS_ORIGINS,
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
@@ -293,7 +242,7 @@ def create_app() -> FastAPI:
         return {
             "status": "healthy",
             "service": "koiki-framework",
-            "version": "0.7.1",
+            "version": "0.8.0",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
@@ -303,7 +252,7 @@ def create_app() -> FastAPI:
         logger.debug("Root endpoint called.")
         return {
             "service": "KOIKI Framework API",
-            "version": "0.7.1",
+            "version": "0.8.0",
             "docs": "/docs",
             "health": "/health",
         }

@@ -1,6 +1,6 @@
 ---
 name: koiki-libkoiki-feature-work
-description: Use when adding or modifying reusable framework capabilities under components/libkoiki/, including shared API patterns, starter/sample capabilities, services, repositories, schemas, configuration, security, and infrastructure behavior.
+description: Use when adding or modifying reusable framework capabilities under components/libkoiki/, including shared API patterns, starter/sample capabilities, services, repositories, schemas, configuration, security, infrastructure behavior, and browser-facing consumer contracts.
 ---
 
 # KOIKI libkoiki Feature Work
@@ -29,7 +29,7 @@ This skill aligns with future maintainer framework work. It should continue to o
 2. find the existing layer pattern closest to the request
 3. apply changes in layer order, starting from models/schemas only if needed
 4. keep interfaces consistent with existing DI and transaction patterns
-5. check whether app-facing behavior or tests must be updated
+5. check whether app-facing or browser-facing API behavior changes: schema, status/error behavior, authorization, Cookie/CSRF, public config, and required tests
 
 ## Guardrails
 
@@ -43,6 +43,7 @@ This skill aligns with future maintainer framework work. It should continue to o
 
 - affected unit tests under `components/libkoiki/tests/`
 - relevant integration coverage when behavior crosses DB, auth, or middleware boundaries
+- reference frontend consumer coverage when a browser-facing contract changes
 
 ## Read Next
 

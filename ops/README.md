@@ -9,9 +9,10 @@
 ```
 ops/
 ├── security/
-│   └── roles_permissions.py         # 権限・ロール定義
+│   ├── roles_permissions.py         # reference権限・ロール定義の互換export
+│   └── dev_users.py                 # 開発・E2E専用の固定パスワードユーザー
 ├── scripts/
-│   ├── setup_security.py            # セキュリティデータ初期化
+│   ├── setup_security.py            # 開発・E2Eユーザーseed（production拒否）
 │   ├── run_security_test.sh         # 統合テストスクリプト
 │   ├── security_test_manager.sh     # Bash版管理スクリプト
 │   ├── security_test_manager.ps1    # PowerShell版管理スクリプト
@@ -205,28 +206,34 @@ make manual-test            →  ./ops/scripts/run_tests.sh manual-test
 
 ## 📋 手動テスト手順
 
-### 0. 初期セキュリティデータ投入
+### 0. reference bootstrap seed
 
-unified `prod` profile を使っている場合は、プロジェクトルートから次を実行します。
+ロール、権限、role/permission関連、business clockの`id = 1`は、固定パスワードユーザーを作らないreference-app bootstrap seedで投入します。production相当環境では、このコマンドだけを実行します。
 
 ```powershell
 .\start-docker.ps1 unified-prod
-docker compose -f docker-compose.unified.yml --profile prod exec app-prod python ops/scripts/setup_security.py
+docker compose -f docker-compose.unified.yml --profile prod exec app-prod python -m koiki_ref_app.bootstrap.reference_seed
 ```
 
 投入内容を確認する例:
 
 ```powershell
-docker compose -f docker-compose.unified.yml --profile prod exec db psql -U koiki_user -d koiki_todo_db -c "SELECT email, username, is_active, is_superuser FROM users ORDER BY email;"
+docker compose -f docker-compose.unified.yml --profile prod exec db psql -U koiki_user -d koiki_todo_db -c "SELECT email, username, is_active, is_superuser FROM koiki_users ORDER BY email;"
 ```
 
-通常の `docker-compose.yml` 構成を使っている場合は、従来どおり次を使います。
+通常の `docker-compose.yml` 構成では次を使います。
+
+```powershell
+docker-compose exec app python -m koiki_ref_app.bootstrap.reference_seed
+```
+
+開発・E2Eで固定パスワードのテストユーザーも必要な場合だけ、`APP_ENV=development`または`testing`で次を追加実行します。productionでは拒否されます。
 
 ```powershell
 docker-compose exec app python ops/scripts/setup_security.py
 ```
 
-このスクリプトは `ops/security/roles_permissions.py` に定義されたテストユーザーを作り直します。
+テストユーザーは`ops/security/dev_users.py`に隔離され、reference bootstrap seedやアプリ起動時には読み込まれません。
 
 ### 1. ログインとトークン取得
 
@@ -239,6 +246,10 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
 # レスポンス例
 # {"access_token": "eyJ...", "token_type": "bearer"}
 ```
+
+### 認証データのテーブルメンテナンス
+
+アプリケーションは認証系テーブルのcleanupを定期実行しません。`koiki_login_attempts`、`koiki_refresh_tokens`、`koiki_password_reset_tokens`、`kkref_saml_auth_flows`の保持・削除・SAMLフロー状態遷移は、業務システムのテーブルメンテナンスジョブへ組み込んでください。対象と実行要件は[`docs/dev/auth-table-maintenance.ja.md`](../docs/dev/auth-table-maintenance.ja.md)を参照してください。
 
 ### 2. セキュリティメトリクス取得
 
@@ -270,7 +281,10 @@ curl -H "Authorization: Bearer <TESTUSER_TOKEN>" \
 docker-compose down -v
 docker-compose up -d
 
-# セキュリティデータ再セットアップ
+# referenceデータを再投入（本番相当でも可）
+docker-compose exec app python -m koiki_ref_app.bootstrap.reference_seed
+
+# 開発／E2Eテストユーザーも必要な場合だけ追加
 docker-compose exec app python ops/scripts/setup_security.py
 ```
 
@@ -280,7 +294,7 @@ unified `prod` profile の場合:
 .\start-docker.ps1 unified-prod-down
 docker compose -f docker-compose.unified.yml --profile prod down -v
 .\start-docker.ps1 unified-prod
-docker compose -f docker-compose.unified.yml --profile prod exec app-prod python ops/scripts/setup_security.py
+docker compose -f docker-compose.unified.yml --profile prod exec app-prod python -m koiki_ref_app.bootstrap.reference_seed
 ```
 
 ### 2. 権限データ確認
@@ -289,17 +303,17 @@ docker compose -f docker-compose.unified.yml --profile prod exec app-prod python
 # 通常 docker-compose.yml 構成の権限一覧確認
 docker-compose exec db psql -U koiki_user -d koiki_todo_db -c "
 SELECT p.name, p.description, p.resource, p.action 
-FROM permissions p ORDER BY p.name;
+FROM koiki_permissions p ORDER BY p.name;
 "
 
 # ユーザーロール確認
 docker-compose exec db psql -U koiki_user -d koiki_todo_db -c "
 SELECT u.email, r.name as role_name, p.name as permission_name
-FROM users u
-JOIN user_roles ur ON u.id = ur.user_id
-JOIN roles r ON r.id = ur.role_id
-JOIN role_permissions rp ON r.id = rp.role_id
-JOIN permissions p ON p.id = rp.permission_id
+FROM koiki_users u
+JOIN koiki_user_roles ur ON u.id = ur.user_id
+JOIN koiki_roles r ON r.id = ur.role_id
+JOIN koiki_role_permissions rp ON r.id = rp.role_id
+JOIN koiki_permissions p ON p.id = rp.permission_id
 ORDER BY u.email, p.name;
 "
 ```
@@ -341,9 +355,9 @@ curl http://localhost:8000/docs
 
 権限やロールを追加する場合：
 
-1. `ops/security/roles_permissions.py` を編集
-2. unified `prod` では `docker compose -f docker-compose.unified.yml --profile prod exec app-prod python ops/scripts/setup_security.py` を実行
-3. 通常 compose では `docker-compose exec app python ops/scripts/setup_security.py` を実行
+1. `components/koiki_ref_app/src/koiki_ref_app/bootstrap/reference_seed.py` を編集
+2. unified `prod` では `docker compose -f docker-compose.unified.yml --profile prod exec app-prod python -m koiki_ref_app.bootstrap.reference_seed` を実行
+3. 通常 compose では `docker-compose exec app python -m koiki_ref_app.bootstrap.reference_seed` を実行
 4. `python ops/tests/test_security_api.py` またはコンテナ内の `ops/tests/test_security_api.py` でテスト
 
 ## 📞 サポート

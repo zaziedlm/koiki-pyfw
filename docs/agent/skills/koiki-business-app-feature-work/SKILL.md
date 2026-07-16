@@ -1,6 +1,6 @@
 ---
 name: koiki-business-app-feature-work
-description: Use when implementing downstream / customer-specific business backend APIs under apps/, composing components/libkoiki and components/koiki_ref_app without editing them. For upstream reference-application behavior under components/koiki_ref_app/, use koiki-refapp-feature-work instead.
+description: Use when implementing downstream / customer-specific business backend APIs under apps/, composing components/libkoiki and components/koiki_ref_app without editing them, and assessing root frontend contract impact. For upstream reference-application behavior under components/koiki_ref_app/, use koiki-refapp-feature-work instead.
 ---
 
 # KOIKI Business App Feature Work
@@ -42,12 +42,13 @@ Typical targets:
 2. reuse `components/libkoiki/` and `components/koiki_ref_app/` capabilities before adding new code
 3. add or extend `apps/` endpoint, service, repository, schema, and model layers only as needed
 4. own router registration and ASGI composition in `apps/`, not in `components/`
-5. check whether business-specific migrations, config, or frontend contracts are affected
+5. check whether business-specific migrations, config, or frontend contracts are affected: schema, status/error behavior, authorization, Cookie/CSRF, public config, and root `frontend/` consumers
 
 ## Guardrails
 
 - do not edit `components/` to add business-app-specific APIs; keep business composition in `apps/`
 - do not make `components/` import or depend on `apps/`
+- do not treat `apps/` as a frontend placement area; root `frontend/` remains the reference frontend
 - promote a change out of `apps/` into `components/libkoiki/` or `components/koiki_ref_app/` only when it becomes clearly reusable starter/reference behavior
 - do not treat the `libkoiki` Todo sample as precedent for placement decisions
 - do not duplicate framework or reference-app behavior that already exists upstream
@@ -57,6 +58,7 @@ Typical targets:
 - business-app-focused tests first
 - `apps.asgi:app` imports and composes the reference app plus business routers
 - no direct `components/` -> `apps/` import exists
+- frontend API / mutation / error handling coverage when a root frontend consumer changes
 
 ## Read Next
 

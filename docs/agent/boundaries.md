@@ -36,6 +36,12 @@ Downstream or customer-specific APIs should start under `apps/` unless they are 
 
 The current Todo API is treated as a `libkoiki` starter/sample capability. Do not use it as precedent for putting new business-specific APIs into `components/libkoiki/`.
 
+## Frontend Contract Boundary
+
+root `frontend/` is the reference frontend and browser consumer of backend APIs. `apps/` remains the downstream business backend composition layer; do not create a frontend placement convention under `apps/`.
+
+When an API schema, status or error response, authorization rule, Cookie/CSRF behavior, or public configuration changes, identify whether root `frontend/` consumes that contract. The frontend may adapt to the contract, but it does not own backend authorization or API placement decisions.
+
 ## Decision Heuristic
 
 When deciding where a change belongs, ask:

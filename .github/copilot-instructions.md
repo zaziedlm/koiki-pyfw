@@ -31,3 +31,10 @@ Core rules:
 - follow the existing layered structure before introducing new patterns
 - validate changes at the smallest scope that proves the behavior
 - treat historical design documents as reference material, not operational truth
+
+For root `frontend/` work, use the current Vite + React SPA guidance in
+`docs/frontend-spa-implementation-guide.ja.md` and
+`docs/agent/skills/koiki-frontend-work/SKILL.md`. `apps/` remains a downstream
+business backend layer, not a frontend placement area. When a backend API
+changes, check affected request/response schemas, status/error behavior,
+authorization, Cookie/CSRF behavior, public configuration, and frontend tests.

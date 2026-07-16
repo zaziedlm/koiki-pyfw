@@ -1,4 +1,5 @@
 # src/repositories/base.py
+from datetime import datetime, timezone
 from typing import Generic, TypeVar, Type, Optional, List, Dict, Any, Sequence, Union # Union をインポート
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -124,6 +125,8 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             else:
                 logger.warning(f"Attempted to update non-existent field '{field}' for {self.model.__name__}", id=db_obj.id)
 
+        if getattr(self.model, "updated_at", None) is not None:
+            db_obj.updated_at = datetime.now(timezone.utc)
 
         self.db.add(db_obj) # セッションに変更をマーク (既存オブジェクトの場合 add は必須ではないが害はない)
         try:

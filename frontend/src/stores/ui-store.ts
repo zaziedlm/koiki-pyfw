@@ -1,6 +1,21 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { UIState, Notification } from '@/types';
+import { toast } from 'sonner';
+
+interface Notification {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
+  message?: string;
+  duration?: number;
+  timestamp: number;
+}
+
+interface UIState {
+  sidebarOpen: boolean;
+  theme: 'light' | 'dark' | 'system';
+  notifications: Notification[];
+}
 
 interface UIStore extends UIState {
   // Actions
@@ -61,6 +76,27 @@ export const useUIStore = create<UIStore>()(
         set((state) => ({
           notifications: [newNotification, ...state.notifications],
         }));
+
+        const toastOptions = {
+          id,
+          description: notification.message,
+          duration: notification.duration || 5000,
+        };
+
+        switch (notification.type) {
+          case 'success':
+            toast.success(notification.title, toastOptions);
+            break;
+          case 'error':
+            toast.error(notification.title, toastOptions);
+            break;
+          case 'warning':
+            toast.warning(notification.title, toastOptions);
+            break;
+          case 'info':
+            toast.info(notification.title, toastOptions);
+            break;
+        }
 
         // Auto-remove notification after duration
         const duration = notification.duration || 5000;

@@ -1,6 +1,6 @@
 # API Specification
 
-KOIKI-FW v0.7.0 の API ownership と実装配置は `docs/design_kkfw_0.7.0.md` を参照してください。
+KOIKI-FW v0.8.0 の API ownership と実装配置は `docs/design_kkfw_0.8.0.md` を参照してください。
 
 現行の API 実装場所:
 

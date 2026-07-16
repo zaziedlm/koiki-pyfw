@@ -66,6 +66,14 @@ Prefer a mix of:
 - focused unit coverage for local logic
 - integration coverage for request, token, permission, redirect, or session behavior
 
+## Frontend Contract Changes
+
+When a backend API is consumed by root `frontend/`, choose test coverage for both responsibilities without duplicating the same assertion.
+
+- backend tests prove schema validation, authorization, Cookie/CSRF enforcement, status/error behavior, and persistence or DI behavior
+- frontend tests prove transport handling, typed feature API behavior, cache invalidation, form or UI error handling, and representative browser flows where needed
+- contract changes such as a required field, 204 response, 409 conflict, or CSRF failure need a focused consumer-side regression test when the frontend handles them
+
 ## Guardrails
 
 Avoid:

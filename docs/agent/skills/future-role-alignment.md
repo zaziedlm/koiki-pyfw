@@ -16,6 +16,7 @@ The current skills remain the active discovery surface. Future maintainer/templa
 | `koiki-business-app-feature-work` | Downstream / customer-specific backend implementation under `apps/` | Template/consumer backend work | Added in v0.7.1. Owns downstream `apps/` composition; aligns with the future `koiki-template-backend-feature-work` candidate. |
 | `koiki-auth-security` | Auth, SSO, SAML, RBAC, security logging | Cross-cutting security skill | Retain across maintainer and template phases because security behavior spans both layers. |
 | `koiki-testing` | Test scope and validation guidance | Cross-cutting testing skill | Retain across maintainer and template phases because validation choices span both layers. |
+| `koiki-frontend-work` | Root `frontend/` Vite + React SPA implementation | Reference frontend work | Owns frontend implementation and browser API consumption, not backend API ownership or `apps/` placement. |
 
 ## Phase A Status
 
@@ -51,7 +52,7 @@ Template-oriented skill candidates:
 - `koiki-template-backend-feature-work`
   - guide downstream backend work derived from `components/koiki_ref_app`
 - `koiki-template-frontend-feature-work`
-  - guide downstream frontend work derived from root `frontend/`
+  - guide frontend adoption derived from root `frontend/` without treating `apps/` as a frontend location
 
 Cross-cutting skills to retain:
 
@@ -64,12 +65,12 @@ The DM-15 follow-up added no new skill. That decision was re-opened in v0.7.1 fo
 
 Current routing:
 
-- frontend-only changes start with `koiki-project-overview` because no frontend-specific skill exists yet
+- root frontend changes use `koiki-frontend-work`; API ownership that is still unclear starts with `koiki-project-overview`
 - downstream `apps/` API placement now uses `koiki-business-app-feature-work` (added in v0.7.1); `koiki-project-overview` still classifies ambiguous ownership first
 - reference-app backend work uses `koiki-refapp-feature-work` (renamed from `koiki-app-feature-work` in v0.7.1)
 - reusable framework or explicit starter/sample work continues to use `koiki-libkoiki-feature-work`
 
-Reconsider further splits (frontend-specific, full maintainer/template) only when prompt catalog or runtime smoke results show repeated routing misses that cannot be fixed by tightening existing descriptions and guardrails.
+The active Agent Skills alignment plan explicitly introduces `koiki-frontend-work` for root `frontend/`. Reconsider further maintainer/template splits beyond that skill only when prompt catalog or runtime smoke results show repeated routing misses that cannot be fixed by tightening existing descriptions and guardrails.
 
 ## Frontend Template Responsibility
 
@@ -79,9 +80,9 @@ Future template frontend guidance should cover:
 
 - UI starter conventions and route structure
 - API client and auth integration expectations
-- BFF / browser-flow contracts when present
+- browser session and frontend contract expectations
 - when a frontend change belongs in upstream `frontend/`
-- when project-specific frontend code should live under `apps/<project-slug>/frontend/`
+- that `apps/` remains the backend-only business composition layer
 
 It should not treat root `frontend/` as part of the reusable Python framework package.
 

@@ -1,6 +1,6 @@
 ---
 name: koiki-testing
-description: Choose and implement the right test scope for components/libkoiki/ or components/koiki_ref_app/, including unit, integration, fixture, and CI-scope decisions.
+description: Choose and implement the right test scope for backend and root frontend contract changes, including unit, integration, fixture, and CI-scope decisions.
 ---
 
 # KOIKI Testing

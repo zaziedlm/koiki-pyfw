@@ -1,31 +1,21 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Table
+from sqlalchemy import Boolean, Column, String, text
 from sqlalchemy.orm import relationship
 
 from libkoiki.db.base import Base
-
-# user_roles テーブルの関連付け（多対多）
-user_roles = Table(
-    "user_roles",
-    Base.metadata,
-    Column(
-        "user_id", Integer, ForeignKey("users.id"), primary_key=True
-    ),  # 'user' ではなく 'users' を参照
-    Column("role_id", Integer, ForeignKey("roles.id"), primary_key=True),
-)
-
+from libkoiki.models.associations import user_roles
 
 class UserModel(Base):
-    __tablename__ = "users"  # テーブル名を "user" から "users" に変更
+    __tablename__ = "koiki_users"
 
     # BaseからのIDカラムを使用（手動定義不要）
     username = Column(
-        String(50), unique=True, index=True, nullable=False
+        String(50), unique=True, nullable=False
     )  # ユーザー名追加
-    email = Column(String, unique=True, index=True)
+    email = Column(String, unique=True)
     hashed_password = Column(String)
-    full_name = Column(String, index=True)
-    is_active = Column(Boolean, default=True)
-    is_superuser = Column(Boolean, default=False)
+    full_name = Column(String)
+    is_active = Column(Boolean, default=True, server_default=text("true"), nullable=False)
+    is_superuser = Column(Boolean, default=False, server_default=text("false"), nullable=False)
 
     # todos = relationship("TodoModel", back_populates="user")
     todos = relationship(

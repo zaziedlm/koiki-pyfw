@@ -1,6 +1,6 @@
 ---
 name: koiki-business-app-feature-work
-description: Implement downstream / customer-specific business backend APIs under apps/, composing components/libkoiki and components/koiki_ref_app without editing them. For upstream reference-application behavior under components/koiki_ref_app/, use koiki-refapp-feature-work instead.
+description: Implement downstream / customer-specific business backend APIs under apps/, composing components/libkoiki and components/koiki_ref_app without editing them, and assess root frontend contract impact. For upstream reference-application behavior under components/koiki_ref_app/, use koiki-refapp-feature-work instead.
 ---
 
 # KOIKI Business App Feature Work

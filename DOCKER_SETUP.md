@@ -74,19 +74,19 @@ Copy-Item frontend\.env.production.example frontend\.env.production
 ```
 
 #### 初期セキュリティデータ投入
-`unified-prod` 起動後、権限・ロール・テストユーザーを投入する場合は backend コンテナ内で `ops/scripts/setup_security.py` を実行します。
+`unified-prod` 起動後、権限・ロール・business clockを投入する場合は、固定パスワードユーザーを作らないreference bootstrap seedを実行します。
 
 ```powershell
-docker compose -f docker-compose.unified.yml --profile prod exec app-prod python ops/scripts/setup_security.py
+docker compose -f docker-compose.unified.yml --profile prod exec app-prod python -m koiki_ref_app.bootstrap.reference_seed
 ```
 
 投入内容を確認する例:
 
 ```powershell
-docker compose -f docker-compose.unified.yml --profile prod exec db psql -U koiki_user -d koiki_todo_db -c "SELECT email, username, is_active, is_superuser FROM users ORDER BY email;"
+docker compose -f docker-compose.unified.yml --profile prod exec db psql -U koiki_user -d koiki_todo_db -c "SELECT name FROM koiki_roles ORDER BY name;"
 ```
 
-このスクリプトは `ops/security/roles_permissions.py` に定義されたテストユーザーを作り直します。
+`ops/scripts/setup_security.py`は固定パスワードの開発・E2Eユーザー専用であり、`APP_ENV=development`または`testing`以外では拒否されます。production相当環境で実行してはいけません。
 
 ### 本番相当（外部 DB/IdP）
 ```powershell
@@ -109,6 +109,10 @@ docker compose -f docker-compose.unified.yml --profile prod exec db psql -U koik
 - `frontend/.env.docker`: 通常 Docker Compose と frontend Docker build のローカル既定
 - ローカル開発のみ `frontend/.env.local`
 - 詳細な一覧は `docs/dev/env-files.md` を参照
+
+## DB再作成
+
+vNext DBは空のPostgreSQL DBへ単一baselineを適用して再現します。破壊操作前の対象確認、reference bootstrap seed、開発専用seedの境界、再作成後の検証は[DB再作成runbook](docs/dev/db-vnext-rebuild-runbook.ja.md)を参照してください。
 
 ## 不要になったファイル
 - `docker-compose.production*.yml`、`docker-compose.optimized.yml`、`docker-compose.base.yml`、`docker-compose.unified.dev.yml` は廃止済み

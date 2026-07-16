@@ -1,8 +1,9 @@
 # src/repositories/todo_repository.py
-from typing import Optional, Sequence
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional, Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import func # count用
+from sqlalchemy import func, update as sql_update # count用、楽観ロック用のアトミックUPDATE
 
 from libkoiki.models.todo import TodoModel
 from libkoiki.repositories.base import BaseRepository
@@ -49,6 +50,27 @@ class TodoRepository(BaseRepository[TodoModel, TodoCreate, TodoUpdate]):
         # if instance is None:
         #      logger.debug("Todo not found by id and owner", todo_id=todo_id, owner_id=owner_id)
         return instance
+
+    async def apply_versioned_update(
+        self, todo_id: int, owner_id: int, expected_version: int, update_data: Dict[str, Any]
+    ) -> int:
+        """`expected_version` が現在のDB上のversionと一致する場合のみ更新し、versionを+1する。
+        一致しなければ何も更新せず0を返す(他リクエストによる競合、または存在しない)。"""
+        stmt = (
+            sql_update(self.model)
+            .where(
+                self.model.id == todo_id,
+                self.model.owner_id == owner_id,
+                self.model.version == expected_version,
+            )
+            .values(
+                version=expected_version + 1,
+                updated_at=datetime.now(timezone.utc),
+                **update_data,
+            )
+        )
+        result = await self.db.execute(stmt)
+        return result.rowcount
 
     async def count_by_owner(self, owner_id: int) -> int:
         """特定の所有者のToDo総数を取得します"""

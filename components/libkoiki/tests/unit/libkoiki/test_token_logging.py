@@ -64,8 +64,7 @@ class TestTokenLoggingHardening:
         assert "refresh_token" not in first_debug_call.kwargs
         assert "invalid_refresh_token" not in str(first_debug_call)
 
-    @pytest.mark.asyncio
-    async def test_get_user_from_token_does_not_log_token_fragment(
+    def test_decode_access_token_user_id_does_not_log_token_fragment(
         self,
         security_module,
     ):
@@ -77,7 +76,7 @@ class TestTokenLoggingHardening:
             side_effect=security_module.InvalidTokenError("token format mismatch"),
         ):
             with pytest.raises(HTTPException) as exc_info:
-                await security_module.get_user_from_token("header.payload.signature")
+                security_module.decode_access_token_user_id("header.payload.signature")
 
         assert exc_info.value.status_code == 401
         warning_call = security_module.logger.warning.call_args

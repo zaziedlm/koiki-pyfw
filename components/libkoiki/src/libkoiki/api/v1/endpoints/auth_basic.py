@@ -26,25 +26,17 @@ logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 
-@router.post("/login", response_model=TokenWithRefresh)
-@limiter.limit("10/minute")
-@handle_auth_errors("login")
-async def login_for_access_token(
+async def authenticate_password_and_create_token_pair(
     request: Request,
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    *,
+    email: str,
+    password: str,
     user_service: UserServiceDep,
     auth_service: AuthServiceDep,
     login_security_service: LoginSecurityServiceDep,
     db: DBSessionDep,
-) -> TokenWithRefresh:
-    """
-    OAuth2互換のトークンエンドポイント。
-    メールアドレスとパスワードで認証し、アクセストークンとリフレッシュトークンを返します。
-
-    - **username**: ユーザーのメールアドレス
-    - **password**: ユーザーのパスワード
-    """
-    email = form_data.username
+) -> tuple[object, str, str, int]:
+    """Password login の security checks と token pair 発行を共有する。"""
     ip_address = request.client.host if request.client else "unknown"
     device_info = extract_device_info(request)
 
@@ -90,7 +82,7 @@ async def login_for_access_token(
 
     # 認証試行
     user = await user_service.authenticate_user(
-        email=email, password=form_data.password, db=db
+        email=email, password=password, db=db
     )
 
     if not user:
@@ -103,6 +95,9 @@ async def login_for_access_token(
             user_agent=device_info,
             failure_reason="invalid_credentials",
         )
+        # HTTPException後のリクエスト終了処理でrollbackされないよう、
+        # ロックアウト判定に使う失敗履歴を先に確定させる。
+        await db.commit()
 
         # セキュリティログとメトリクスに記録
         security_logger.log_authentication_attempt(
@@ -140,6 +135,9 @@ async def login_for_access_token(
             user_agent=device_info,
             failure_reason="inactive_user",
         )
+        # HTTPException後のリクエスト終了処理でrollbackされないよう、
+        # ロックアウト判定に使う失敗履歴を先に確定させる。
+        await db.commit()
 
         security_logger.log_authentication_attempt(
             email=email,
@@ -198,6 +196,37 @@ async def login_for_access_token(
     logger.info(
         "Login successful", user_id=user.id
     )
+    return user, access_token, refresh_token, expires_in
+
+
+@router.post("/login", response_model=TokenWithRefresh)
+@limiter.limit("10/minute")
+@handle_auth_errors("login")
+async def login_for_access_token(
+    request: Request,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    user_service: UserServiceDep,
+    auth_service: AuthServiceDep,
+    login_security_service: LoginSecurityServiceDep,
+    db: DBSessionDep,
+) -> TokenWithRefresh:
+    """
+    OAuth2互換のトークンエンドポイント。
+    メールアドレスとパスワードで認証し、アクセストークンとリフレッシュトークンを返します。
+
+    - **username**: ユーザーのメールアドレス
+    - **password**: ユーザーのパスワード
+    """
+    _, access_token, refresh_token, expires_in = await authenticate_password_and_create_token_pair(
+        request,
+        email=form_data.username,
+        password=form_data.password,
+        user_service=user_service,
+        auth_service=auth_service,
+        login_security_service=login_security_service,
+        db=db,
+    )
+
     return TokenWithRefresh(
         access_token=access_token,
         refresh_token=refresh_token,

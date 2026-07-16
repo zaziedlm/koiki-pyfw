@@ -1,40 +1,34 @@
 # src/models/permission.py
-from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import DateTime, String, Text
+from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from libkoiki.db.base import Base
 
 
 class PermissionModel(Base):
-    __tablename__ = "permissions"
+    __tablename__ = "koiki_permissions"
 
     # SQLAlchemy 2.0形式の型アノテーションに変更
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(
-        String(100), unique=True, index=True, nullable=False
+        String(100), unique=True, nullable=False
     )  # 権限名 (例: "read:users", "create:todos")
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # セキュリティ管理用の追加フィールド
     resource: Mapped[Optional[str]] = mapped_column(
-        String(50), nullable=True, index=True
+        String(50), nullable=True
     )  # リソース名 (例: "users", "todos", "security")
     action: Mapped[Optional[str]] = mapped_column(
-        String(50), nullable=True, index=True
+        String(50), nullable=True
     )  # アクション名 (例: "read", "write", "admin")
-
-    # タイムスタンプ
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
-    )
 
     # RoleModelとの双方向リレーションシップを設定
     roles = relationship(
-        "RoleModel", secondary="role_permissions", back_populates="permissions"
+        "RoleModel",
+        secondary="koiki_role_permissions",
+        back_populates="permissions",
     )
 
     def __repr__(self):

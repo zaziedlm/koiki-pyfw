@@ -6,7 +6,7 @@ import structlog
 from libkoiki.models.todo import TodoModel
 from libkoiki.repositories.todo_repository import TodoRepository
 from libkoiki.schemas.todo import TodoCreate, TodoUpdate
-from libkoiki.core.exceptions import ResourceNotFoundException, AuthorizationException
+from libkoiki.core.exceptions import ConflictException, ResourceNotFoundException, AuthorizationException
 from libkoiki.core.transaction import transactional # トランザクションデコレータ
 from libkoiki.core.logging import get_log_field_names
 
@@ -79,11 +79,11 @@ class TodoService:
         self, todo_id: int, todo_in: TodoUpdate, owner_id: int, db: AsyncSession
     ) -> TodoModel:
         """
-        ToDoアイテムを更新します。所有者チェックも行います。
+        ToDoアイテムを更新します。所有者チェックと楽観ロック(version)チェックを行います。
 
         Raises:
             ResourceNotFoundException: ToDoが見つからない場合。
-            AuthorizationException: 所有者でない場合。
+            ConflictException: 送信されたversionがDB上の現在のversionと一致しない場合(他リクエストによる更新)。
         """
         logger.info(
             "Service: Updating todo",
@@ -93,16 +93,32 @@ class TodoService:
         )
         self.repository.set_session(db)
 
-        # まず、更新対象のToDoが存在し、かつ所有者であることを確認
-        db_todo = await self.repository.get_by_id_and_owner(todo_id=todo_id, owner_id=owner_id)
-        if not db_todo:
-            logger.warning("Service: Todo not found or access denied for update", todo_id=todo_id, owner_id=owner_id)
-            # 存在しないか権限がないか
-            raise ResourceNotFoundException(resource_name="ToDo", resource_id=todo_id)
-            # raise AuthorizationException("You are not authorized to update this ToDo.")
+        # version を条件に含めたアトミックUPDATEを1文発行する(存在確認とロック取得は行わない)
+        update_data = todo_in.model_dump(exclude_unset=True, exclude={"version"})
+        matched = await self.repository.apply_versioned_update(
+            todo_id=todo_id,
+            owner_id=owner_id,
+            expected_version=todo_in.version,
+            update_data=update_data,
+        )
 
-        # BaseRepository の update メソッドを使用
-        updated_todo = await self.repository.update(db_obj=db_todo, obj_in=todo_in)
+        if matched == 0:
+            # 更新できなかった場合のみ、存在しないのか(404)versionが古いのか(409)を切り分ける
+            existing = await self.repository.get_by_id_and_owner(todo_id=todo_id, owner_id=owner_id)
+            if existing is None:
+                logger.warning("Service: Todo not found or access denied for update", todo_id=todo_id, owner_id=owner_id)
+                raise ResourceNotFoundException(resource_name="ToDo", resource_id=todo_id)
+
+            logger.warning(
+                "Service: Todo version conflict on update",
+                todo_id=todo_id,
+                owner_id=owner_id,
+                expected_version=todo_in.version,
+                current_version=existing.version,
+            )
+            raise ConflictException(detail="ToDo was updated by another request. Please reload and try again.")
+
+        updated_todo = await self.repository.get_by_id_and_owner(todo_id=todo_id, owner_id=owner_id)
         logger.info("Service: Todo updated successfully", todo_id=todo_id, owner_id=owner_id)
         # TODO: イベント発行 (例: todo_updated)
         return updated_todo

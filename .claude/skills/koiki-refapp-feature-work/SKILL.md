@@ -1,6 +1,6 @@
 ---
 name: koiki-refapp-feature-work
-description: Implement reference-application business backend changes under components/koiki_ref_app/, including endpoints, services, repositories, models, schemas, and project-specific integrations. For downstream customer-specific apps under apps/, use koiki-business-app-feature-work instead.
+description: Implement reference-application business backend changes under components/koiki_ref_app/, including endpoints, services, repositories, models, schemas, project-specific integrations, and affected root frontend contracts. For downstream customer-specific apps under apps/, use koiki-business-app-feature-work instead.
 ---
 
 # KOIKI Reference App Feature Work

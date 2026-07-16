@@ -3,10 +3,10 @@
 # 新しいモデルを追加したら、ここにもインポートを追加してください。
 
 from libkoiki.db.base import Base # SQLAlchemy Base をインポート
+from .associations import user_roles, role_permissions
 from .user import UserModel
 from .role import RoleModel
 from .permission import PermissionModel
-from .associations import user_roles, role_permissions
 from .todo import TodoModel # ★ ToDo モデルをインポート ★
 from .refresh_token import RefreshTokenModel # ★ リフレッシュトークンモデルをインポート ★
 from .password_reset import PasswordResetModel # ★ パスワードリセットモデルをインポート ★

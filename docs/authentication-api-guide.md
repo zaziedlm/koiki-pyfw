@@ -4,14 +4,18 @@
 
 KOIKI-FW v0.6.0における認証系APIの包括的なガイドドキュメントです。本フレームワークは、企業級アプリケーションに求められる堅牢で柔軟な認証システムを提供します。JWT（JSON Web Token）をベースとし、リフレッシュトークン、パスワードリセット、ログイン試行制限など、現代的なセキュリティ要件を満たす機能を実装しています。
 
-注記（2025-09-03 更新）:
-- 現行フロントエンド（Next.js 15）は、Next の Route Handlers を BFF として用い、httpOnly Cookie ベースの JWT と CSRF（二重送信）で FastAPI と連携しています。
-- フロント統合の詳細は「docs/frontend-application-development-guide.md」を参照してください。本書はバックエンドAPI仕様を中心に据えつつ、BFF/Cookie/CSRF 前提での補足を追記しています。
+現行フロントエンド注記（2026-07-10 更新）:
+
+- 現行の参照フロントエンドは Vite + React SPA であり、Next.js / BFF runtime は使用しません。
+- ブラウザは FastAPI の `/api/v1/auth/session/*` を `credentials: "include"` で直接呼びます。Cookie 発行・refresh・logout・CSRF 検証は backend が所有します。
+- Cookie 認証された unsafe request は CSRF header を送ります。access token / refresh token を browser storage へ保存してはいけません。
+- SPA の実装方針は `docs/frontend-spa-implementation-guide.ja.md`、移行の完了記録は `docs/dev/react-spa-migration-completion.ja.md` を参照してください。
 
 現行構成注記:
 - 本文中に v0.6 系の root `libkoiki/` や root `alembic/` の記述が残る箇所があります。
 - 現行の framework 正本は `components/libkoiki`、reference app 正本は `components/koiki_ref_app`、migration 正本は `components/koiki_ref_app/alembic` です。
 - 本書の古い path は履歴的な実装説明として読み、現行作業では `docs/agent/` と current implementation を優先してください。
+- 「データベース設計」の旧テーブル名は v0.6 の履歴記録です。現行vNextの物理名は `koiki_*`／`kkref_*`／`kkbiz_*` であり、`docs/dev/db-vnext-schema-contract.ja.md` を正とします。
 
 ## 目次
 
@@ -376,12 +380,12 @@ KOIKI-FWの認証システムは、複数のセキュリティレイヤーで保
 - **レート制限**: slowapi による固定窓アルゴリズム
 - **CORS設定**: 設定可能なオリジン制限
 - **セキュリティヘッダー**: 設定により追加可能
-- **CSRF 対策（BFF層）**: フロントの BFF（Next Route Handlers）でダブルサブミット方式（Cookie `koiki_csrf_token` とヘッダー `x-csrf-token`）。非GETを検証して FastAPI へプロキシ
+- **CSRF 対策（backend session contract）**: backend が署名付き・TTL 付き double-submit CSRF token を発行・検証する。Cookie 認証された unsafe request は `x-csrf-token` を送る。Bearer 認証の API client には適用しない
 
 #### **2. 認証レベル**
 - **JWT署名**: HMAC SHA-256アルゴリズム
 - **トークンローテーション**: セキュアなセッション管理
-- **短い有効期限**: アクセストークン60分（開発）、15分（本番推奨）
+- **短い有効期限**: access token の既定値は30分。本番用 template は15分を例示する
 
 #### **3. アプリケーションレベル**
 - **ログイン試行制限**: カスタム実装による細密制御
@@ -745,42 +749,43 @@ class DynamicTokenService(AuthService):
 
 ### フロントエンド実装例
 
-#### Next.js 15 + Route Handlers + Cookie 認証（推奨/現行）
+#### Vite + React SPA + backend session Cookie 認証（推奨/現行）
 
-現行フロントは、BFF 経由で FastAPI と連携し、JWT は httpOnly Cookie に保存されます。トークン値を JS から参照・保存しないため、XSS 耐性が高く、CSRF はダブルサブミットで防御します。
+現行フロントは FastAPI の session endpoint と直接連携します。JWT は backend が発行する httpOnly Cookie に保存され、トークン値を JS から参照・保存しません。CSRF は backend の double-submit contract で防御します。
 
 - 取得手順（要点）
-  1) `GET /api/auth/csrf` で CSRF トークンを取得（Cookie `koiki_csrf_token` と body）
-  2) `x-csrf-token` ヘッダーを付与して `POST /api/auth/login` へ資格情報を送信
-  3) BFF が FastAPI `/auth/login` をプロキシし、返却トークンを httpOnly Cookie として設定
-  4) `GET /api/auth/me` でユーザー情報を取得し、クライアントキャッシュ（React Query）へ保存
+  1) `GET /api/v1/auth/session/csrf` で CSRF token を取得する
+  2) `x-csrf-token` header を付与して `POST /api/v1/auth/session/login` へ JSON の資格情報を送信する
+  3) FastAPI が access / refresh Cookie と新しい CSRF Cookie を設定する
+  4) `GET /api/v1/auth/session/me` でユーザー情報を取得し、TanStack Query の server-state cache へ保存する
 
 - 代表コンポーネント/フック（本リポジトリ）
-  - `frontend/src/hooks/use-cookie-auth-queries.ts`
-  - `frontend/src/app/api/auth/*`（login/logout/me/refresh/csrf）
-  - `frontend/src/lib/cookie-api-client.ts`, `frontend/src/lib/csrf-utils.ts`
+  - `frontend/src/features/auth/`
+  - `frontend/src/shared/api/http-client.ts`
+  - `frontend/src/shared/api/cookie-api-client.ts`
 
 簡易呼び出し例（概念）:
 
 ```ts
-// CSRF 取得後に Cookie が設定される
-await fetch('/api/auth/csrf');
+const csrf = await fetch('/api/v1/auth/session/csrf', {
+  credentials: 'include',
+}).then((response) => response.json());
 
-// ログイン（BFF 経由、Cookie 設定はサーバ側で実施）
-await fetch('/api/auth/login', {
+// Cookie 設定と CSRF 検証は FastAPI が担う
+await fetch('/api/v1/auth/session/login', {
   method: 'POST',
   credentials: 'include',
-  headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
-  body: JSON.stringify({ email, password }),
+  headers: { 'Content-Type': 'application/json', [csrf.header_name]: csrf.csrf_token },
+  body: JSON.stringify({ login_identifier, password }),
 });
 
 // ユーザー情報
-const me = await fetch('/api/auth/me', { credentials: 'include' }).then(r => r.json());
+const me = await fetch('/api/v1/auth/session/me', { credentials: 'include' }).then(r => r.json());
 ```
 
 注: 旧来の「アクセストークン/リフレッシュトークンをフロントの localStorage に保持して axios で付与」方式は、本プロジェクトでは採用していません。以下のサンプルはバックエンドAPIを直接叩く一般例として残しています。
 
-#### **React + TypeScript**
+#### **Bearer token client（互換 API 利用者向け。SPA の標準例ではない）**
 
 ```typescript
 // types/auth.ts
@@ -1309,9 +1314,9 @@ axios.interceptors.response.use(
 
 **解決方法**:
 
-まず、フロントは可能な限り BFF（Next の Route Handlers）経由でバックエンドと通信します。これにより、フロントからは同一オリジンの `/api/**`（もしくは rewrites の `/api/backend/**`）を叩くため、CORS の影響を大幅に低減できます。
+本番は SPA と API を同一 origin に配置し、SPA から相対 URL `/api/v1` を使う構成を推奨します。この構成では通常 CORS は不要です。
 
-バックエンドを直接呼び出す場合や、BFF 経由でも別ドメインへプロキシする場合は、以下の設定を確認してください。
+ローカル開発など別 origin で Cookie session API を呼ぶ場合は、backend の許可 origin を明示し、`allow_credentials=True` と組み合わせます。`*` を許可 origin に使ってはいけません。
 ```python
 # settings.pyでCORS設定を確認
 BACKEND_CORS_ORIGINS = [
@@ -1330,7 +1335,7 @@ app.add_middleware(
 )
 ```
 
-フロント側では、Cookie 認証時は `fetch`/`axios` に `credentials: 'include'`（もしくは `withCredentials: true`）を設定してください。
+フロント側では、Cookie 認証時は `fetch` に `credentials: 'include'` を設定し、unsafe request には backend が返した CSRF header 名と token を付与してください。Cookie 属性・CORS・CSRF の source of truth は backend 設定です。
 
 #### **5. データベース接続エラー**
 

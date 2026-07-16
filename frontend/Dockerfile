@@ -1,105 +1,63 @@
-# Optimized multi-stage Dockerfile for Next.js frontend application (balanced)
+# syntax=docker/dockerfile:1.7
+# Multi-stage Dockerfile for the Vite React SPA frontend.
+
+ARG NODE_VERSION=22-slim
+ARG NGINX_VERSION=1.30.3-alpine
 
 # ---------------------
-# Builder stage
+# Base: certs and tooling
 # ---------------------
-FROM node:22-slim AS builder
-ARG FRONTEND_ENV_FILE=.env.docker
+FROM node:${NODE_VERSION} AS base
 
-# Add custom CA certificate and trust for build-time network access
 COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
 RUN apt-get update && \
-  apt-get install -y --no-install-recommends ca-certificates wget curl && \
+  apt-get install -y --no-install-recommends ca-certificates curl && \
   update-ca-certificates && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Ensure Node and system tools use the updated CA bundle
 ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
-  SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
-  NEXT_TELEMETRY_DISABLED=1
+  SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 
 WORKDIR /app
 
-# Install dependencies with cache-friendly layers
+# ---------------------
+# Dependencies
+# ---------------------
+FROM base AS deps
 COPY package*.json ./
 RUN npm ci
 
-# Copy source and build
-RUN mkdir -p /app/public
+# ---------------------
+# Build
+# ---------------------
+FROM deps AS builder
+ARG FRONTEND_ENV_FILE=.env.docker
 COPY . .
-RUN if [ "${FRONTEND_ENV_FILE}" != ".env.production" ] && [ "${FRONTEND_ENV_FILE}" != "./.env.production" ]; then \
+RUN if [ -n "${FRONTEND_ENV_FILE}" ] && [ -f "${FRONTEND_ENV_FILE}" ] && [ "${FRONTEND_ENV_FILE}" != ".env.production" ] && [ "${FRONTEND_ENV_FILE}" != "./.env.production" ]; then \
     cp "${FRONTEND_ENV_FILE}" .env.production; \
   fi
 RUN npm run build
 
 # ---------------------
-# Development stage
+# Development
 # ---------------------
-FROM node:22-slim AS dev
-
-COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends ca-certificates wget curl && \
-  update-ca-certificates && \
-  apt-get clean && rm -rf /var/lib/apt/lists/*
-
-ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
-  SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
-  NEXT_TELEMETRY_DISABLED=1
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install
-
+FROM deps AS dev
+ENV NODE_ENV=development
 COPY . .
-
 EXPOSE 3000
-
-CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]
+CMD ["npm", "run", "dev"]
 
 # ---------------------
-# Runtime stage
+# Runtime: static SPA server
 # ---------------------
-FROM node:22-slim AS runner
+FROM nginxinc/nginx-unprivileged:${NGINX_VERSION} AS runner
 
-# Add CA cert and minimal tools (wget is required by docker-compose healthcheck)
-COPY docker/certs/nscacert.pem /usr/local/share/ca-certificates/nscacert.crt
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends ca-certificates wget curl && \
-  update-ca-certificates && \
-  apt-get clean && rm -rf /var/lib/apt/lists/*
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Environment
-ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/nscacert.crt \
-  SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
-  NEXT_TELEMETRY_DISABLED=1 \
-  PORT=3000 \
-  HOSTNAME=0.0.0.0
+EXPOSE 8080
 
-WORKDIR /app
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD wget -q -O /dev/null http://127.0.0.1:8080/health || exit 1
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-  adduser --system --uid 1001 --ingroup nodejs nextjs
-
-# Install only production dependencies
-COPY --chown=nextjs:nodejs package*.json ./
-RUN npm ci --omit=dev
-
-# Copy build artifacts and needed assets from builder
-COPY --chown=nextjs:nodejs --from=builder /app/.next /app/.next
-COPY --chown=nextjs:nodejs --from=builder /app/public /app/public
-
-# Switch to non-root
-USER nextjs
-
-# Expose port
-EXPOSE 3000
-
-# Health check using Node.js built-in http module
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))" || exit 1
-
-# Start command (will be overridden by docker-compose for development)
-CMD ["npm", "start"]
+CMD ["nginx", "-g", "daemon off;"]

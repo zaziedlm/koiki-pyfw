@@ -4,8 +4,8 @@ from typing import List, Optional, Union
 
 class Settings(BaseSettings):
     # 既存の設定...
-    # JWT Access Token有効期限（開発環境：60分、本番環境：15分推奨）
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    # JWT Access Token有効期限（本番環境は 15-30 分を推奨）
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     # Refresh Token有効期限（日数）
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     SERVER_NAME: str = "KOIKI Framework"
@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     # アプリケーション名を追加
     APP_NAME: str = "KOIKI Framework"
     
-    # BACKEND_CORS_ORIGINS is a comma-separated list of origins
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    # BACKEND_CORS_ORIGINS is a comma-separated list of browser origins.
+    BACKEND_CORS_ORIGINS: List[str] = []
 
     # API設定
     API_PREFIX: str = "/api/v1"  # API URLのプレフィックスを追加
@@ -56,16 +56,39 @@ class Settings(BaseSettings):
     # JWT関連設定
     JWT_SECRET: str = "jwt_secret_development_only"
     JWT_ALGORITHM: str = "HS256"
+
+    # Browser Cookie authentication settings
+    AUTH_ACCESS_COOKIE_NAME: str = "koiki_access_token"
+    AUTH_REFRESH_COOKIE_NAME: str = "koiki_refresh_token"
+    AUTH_CSRF_COOKIE_NAME: str = "koiki_csrf_token"
+    AUTH_CSRF_HEADER_NAME: str = "x-csrf-token"
+    AUTH_CSRF_SECRET: str = "csrf_secret_development_only"
+    AUTH_COOKIE_SECURE: bool = False
+    AUTH_COOKIE_SAMESITE: str = "lax"
+    AUTH_COOKIE_DOMAIN: Optional[str] = None
+    AUTH_COOKIE_PATH: str = "/"
+    AUTH_REFRESH_COOKIE_PATH: Optional[str] = None
+    AUTH_CSRF_COOKIE_MAX_AGE_SECONDS: int = 24 * 60 * 60
     
     # レート制限設定
     RATE_LIMIT_PER_SECOND: int = 10
+
+    @field_validator("AUTH_COOKIE_SAMESITE")
+    @classmethod
+    def validate_cookie_samesite(cls, v: str) -> str:
+        normalized = v.lower()
+        if normalized not in {"lax", "strict", "none"}:
+            raise ValueError("AUTH_COOKIE_SAMESITE must be one of: lax, strict, none")
+        return normalized
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+            return [i.strip().rstrip("/") for i in v.split(",") if i.strip()]
+        elif isinstance(v, list):
+            return [i.strip().rstrip("/") for i in v if i.strip()]
+        elif isinstance(v, str):
             return v
         raise ValueError(v)
 

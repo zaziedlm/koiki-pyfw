@@ -91,6 +91,11 @@ function Set-ProductionComposeEnvReadOnly {
     $env:FRONTEND_BUILD_ENV_FILE = "unused-for-down"
 }
 
+function Set-OptimizedComposeEnv {
+    $env:ENV_FILE = ".env"
+    $env:FRONTEND_BUILD_ENV_FILE = ".env.docker"
+}
+
 function Show-Help {
     Write-Host ""
     Write-Host "Available commands:"
@@ -235,16 +240,28 @@ switch ($Command.ToLower()) {
 
         Write-Host "Frontend health:"
         try {
-            $frontendHealth = Invoke-RestMethod -Uri "http://localhost:3000/api/health" -TimeoutSec 5
-            $frontendHealth | ConvertTo-Json -Depth 3
+            $frontendHealth = Invoke-WebRequest -Uri "http://localhost:3000/health" -TimeoutSec 5
+            $frontendBody = $frontendHealth.Content.Trim()
+            if ($frontendHealth.StatusCode -eq 200 -and $frontendBody -eq "ok") {
+                Write-Host "[INFO] Frontend is healthy: $frontendBody"
+            } else {
+                Write-Host "[WARN] Frontend health endpoint returned unexpected response"
+                Write-Host "[WARN] Status: $($frontendHealth.StatusCode)"
+                Write-Host "[WARN] Body: $frontendBody"
+            }
         } catch {
             Write-Host "[WARN] Frontend not responding"
         }
 
         Write-Host "Backend health:"
         try {
-            $backendHealth = Invoke-RestMethod -Uri "http://localhost:8000/api/health" -TimeoutSec 5
-            $backendHealth | ConvertTo-Json -Depth 3
+            $backendHealth = Invoke-WebRequest -Uri "http://localhost:8000/" -TimeoutSec 5
+            if ($backendHealth.StatusCode -eq 200) {
+                Write-Host "[INFO] Backend is healthy"
+                $backendHealth.Content | ConvertFrom-Json | ConvertTo-Json -Depth 3
+            } else {
+                Write-Host "[WARN] Backend returned status $($backendHealth.StatusCode)"
+            }
         } catch {
             Write-Host "[WARN] Backend not responding"
         }
@@ -305,18 +322,18 @@ switch ($Command.ToLower()) {
     "unified-optimized" {
         Write-Host "[INFO] Starting unified stack (optimized profile)..."
         Ensure-BaseEnv
-        $env:ENV_FILE = ".env"
+        Set-OptimizedComposeEnv
         docker compose -f docker-compose.unified.yml --profile optimized up -d
     }
     "unified-optimized-build" {
         Write-Host "[INFO] Building unified stack images (optimized profile)..."
         Ensure-BaseEnv
-        $env:ENV_FILE = ".env"
+        Set-OptimizedComposeEnv
         docker compose -f docker-compose.unified.yml --profile optimized build --no-cache
     }
     "unified-optimized-down" {
         Write-Host "[INFO] Stopping unified stack (optimized profile)..."
-        Set-BaseComposeEnvReadOnly
+        Set-OptimizedComposeEnv
         docker compose -f docker-compose.unified.yml --profile optimized down
     }
     "unified-prod" {

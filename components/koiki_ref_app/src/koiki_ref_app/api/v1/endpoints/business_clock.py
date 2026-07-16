@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from koiki_ref_app.schemas.kkbiz import BusinessClockRead, BusinessClockUpdate
 from koiki_ref_app.services.kkbiz.business_clock_service import BusinessClockService
-from libkoiki.api.dependencies import DBSessionDep, SuperUserDep
+from libkoiki.api.dependencies import CookieCSRFDep, DBSessionDep, SuperUserDep
 
 logger = structlog.get_logger(__name__)
 
@@ -29,6 +29,7 @@ async def update_business_clock(
     payload: BusinessClockUpdate,
     db: DBSessionDep,
     current_user: SuperUserDep,
+    csrf: CookieCSRFDep,
     service: BusinessClockService = Depends(get_business_clock_service),
 ) -> BusinessClockRead:
     if not current_user.username:

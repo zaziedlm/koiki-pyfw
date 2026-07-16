@@ -1,6 +1,6 @@
 ---
 name: koiki-testing
-description: Use when adding, updating, or validating tests for components/libkoiki/ or components/koiki_ref_app/, including unit, integration, fixture, and CI-scope decisions.
+description: Use when adding, updating, or validating backend or root frontend contract tests, including unit, integration, fixture, and CI-scope decisions.
 ---
 
 # KOIKI Testing
@@ -11,7 +11,7 @@ Use this skill when implementing tests or deciding the correct test scope.
 
 - choose the smallest test level that proves the change
 - keep framework and application test intent separated
-- align changes with current fixture and CI behavior
+- align changes with current fixture and CI behavior, including frontend contract changes and tests when a browser consumer changes
 
 ## Future Role Alignment
 
@@ -24,6 +24,7 @@ This skill remains cross-cutting across future maintainer and template skill fam
 3. reuse existing fixtures before adding new ones
 4. cover regressions introduced by the change, not every possible path
 5. check whether CI scope already covers the new test
+6. for backend/frontend contract changes, separate backend enforcement tests from frontend transport, cache, form, or UI error tests
 
 ## Guardrails
 

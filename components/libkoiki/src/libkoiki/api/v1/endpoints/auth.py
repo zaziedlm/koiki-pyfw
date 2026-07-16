@@ -9,7 +9,7 @@
 """
 from fastapi import APIRouter
 
-from . import auth_basic, auth_password, auth_token
+from . import auth_basic, auth_password, auth_session, auth_token
 
 router = APIRouter()
 
@@ -22,3 +22,5 @@ router.include_router(auth_password.router, tags=["Authentication - Password"])
 # トークン管理機能
 router.include_router(auth_token.router, tags=["Authentication - Token"])
 
+# ブラウザ Cookie session 機能
+router.include_router(auth_session.router)

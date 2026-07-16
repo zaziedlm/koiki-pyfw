@@ -20,6 +20,7 @@ from libkoiki.services.password_reset_service import PasswordResetService # ★�
 from libkoiki.services.login_security_service import LoginSecurityService # ★ログインセキュリティサービス追加★
 from libkoiki.events.publisher import EventPublisher
 from libkoiki.core.security import get_user_from_token as get_current_user_from_token # 名前変更
+from libkoiki.core.csrf import validate_request_csrf
 from libkoiki.models.user import UserModel
 from libkoiki.models.role import RoleModel # ★RoleModelインポート★
 from libkoiki.core.config import settings
@@ -167,6 +168,8 @@ async def get_current_active_user(
     """現在認証されているアクティブなユーザーを取得"""
     if not user_id: # get_current_user_from_tokenがNoneを返す場合（エラー処理はそちらで行われる想定）
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+
+    validate_request_csrf(request)
     
     # ユーザーIDからユーザーオブジェクトを取得
     user_repo = UserRepository()
@@ -182,13 +185,21 @@ async def get_current_active_user(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
 
     request.state.current_user = current_user
-    request.state.auth_method = "bearer"
+    request.state.auth_method = getattr(request.state, "auth_method", "bearer")
     request.state.audit_user_id = current_user.id
     request.state.audit_user_email = current_user.email
     
     return current_user
 
 ActiveUserDep = Annotated[UserModel, Depends(get_current_active_user)]
+
+
+async def require_csrf_for_cookie_auth(request: Request) -> None:
+    """Cookie 認証された unsafe request に CSRF 検証を適用する。"""
+    validate_request_csrf(request)
+
+
+CookieCSRFDep = Annotated[None, Depends(require_csrf_for_cookie_auth)]
 
 # スーパーユーザーチェック
 def get_current_active_superuser(current_user: ActiveUserDep):

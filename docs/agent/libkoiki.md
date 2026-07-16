@@ -58,6 +58,7 @@ When implementing a shared framework change:
 3. extend current interfaces before adding new abstractions
 4. keep cross-cutting concerns in their existing shared modules
 5. check whether the application layer must be updated to consume the change
+6. check whether a browser-facing API contract changes for root `frontend/`
 
 ## Layer Expectations
 
@@ -81,6 +82,7 @@ Before finishing a framework change, check:
 - whether existing DI patterns still fit
 - whether current tests still reflect the intended contract
 - whether framework changes introduce assumptions specific to the current project
+- whether request/response schema, status/error behavior, auth, Cookie/CSRF, or public config changes require frontend consumer updates
 
 ## Guardrails
 

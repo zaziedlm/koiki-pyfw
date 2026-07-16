@@ -1,6 +1,7 @@
 """認証系API統合テスト"""
 import pytest
 from fastapi.testclient import TestClient
+from libkoiki.core.config import settings
 
 
 @pytest.mark.integration
@@ -100,7 +101,7 @@ class TestAuthAPI:
         assert "access_token" in data
         assert "refresh_token" in data
         assert data["token_type"] == "bearer"
-        assert data["expires_in"] == 3600
+        assert data["expires_in"] == settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
         assert len(data["access_token"]) > 0
         assert len(data["refresh_token"]) > 0
     

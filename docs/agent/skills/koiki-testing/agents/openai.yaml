@@ -1,4 +1,4 @@
 interface:
   display_name: "KOIKI Testing"
-  short_description: "Choose and implement the right test scope."
-  default_prompt: "Use $koiki-testing to choose the right KOIKI test scope and add the needed coverage."
+  short_description: "Choose test scope for backend and frontend contract changes."
+  default_prompt: "Use $koiki-testing to choose the right KOIKI backend or frontend contract test scope and add the needed coverage."
