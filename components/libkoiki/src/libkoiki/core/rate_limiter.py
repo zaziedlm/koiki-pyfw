@@ -1,17 +1,59 @@
-from fastapi import Request, Response
+from typing import Any
+
 import structlog
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+
+from libkoiki.core.config import settings
 
 # 構造化ロガー
 logger = structlog.get_logger(__name__)
 
 # クライアントIPアドレスに基づくリミッター
-# Redis統合が必要な場合は、slowapi.extension.Redis をインポートし、storage_uri を設定
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["200/minute"],  # デフォルトの制限
+    enabled=settings.RATE_LIMIT_ENABLED,
+    default_limits=[settings.RATE_LIMIT_DEFAULT] if settings.RATE_LIMIT_ENABLED else [],
+    strategy=settings.RATE_LIMIT_STRATEGY,
 )
+
+
+def configure_limiter(
+    *,
+    enabled: bool,
+    default_limit: str,
+    strategy: str,
+    storage_uri: str | None = None,
+    storage_options: dict[str, Any] | None = None,
+) -> Limiter:
+    """Configure the shared limiter used by endpoint decorators.
+
+    slowapi decorators close over the Limiter instance at import time, so the
+    application must reconfigure this shared object instead of replacing it.
+    """
+
+    route_limits = limiter._route_limits
+    dynamic_route_limits = limiter._dynamic_route_limits
+    marked_for_limiting = limiter._Limiter__marked_for_limiting
+    exempt_routes = limiter._exempt_routes
+    request_filters = limiter._request_filters
+
+    Limiter.__init__(
+        limiter,
+        key_func=get_remote_address,
+        enabled=enabled,
+        default_limits=[default_limit] if enabled else [],
+        strategy=strategy,
+        storage_uri=storage_uri,
+        storage_options=storage_options or {},
+    )
+
+    limiter._route_limits = route_limits
+    limiter._dynamic_route_limits = dynamic_route_limits
+    limiter._Limiter__marked_for_limiting = marked_for_limiting
+    limiter._exempt_routes = exempt_routes
+    limiter._request_filters = request_filters
+    return limiter
 
 # 以下のデコレータ部分を削除または修正
 # @limiter.request_filter

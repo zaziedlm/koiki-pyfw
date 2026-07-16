@@ -1,31 +1,27 @@
-from datetime import datetime, timezone
 from typing import List, Optional
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from libkoiki.db.base import Base
 
 
 class RoleModel(Base):
-    __tablename__ = "roles"
+    __tablename__ = "koiki_roles"
 
     # SQLAlchemy 2.0形式の型アノテーションに変更
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
-    )
 
     # usersリレーションシップを追加
-    users = relationship("UserModel", secondary="user_roles", back_populates="roles")
+    users = relationship(
+        "UserModel", secondary="koiki_user_roles", back_populates="roles"
+    )
 
     # permissionsリレーションシップを追加（双方向リレーションシップ）
     permissions = relationship(
         "PermissionModel",
-        secondary="role_permissions",
+        secondary="koiki_role_permissions",
         back_populates="roles",
         lazy="joined",
     )

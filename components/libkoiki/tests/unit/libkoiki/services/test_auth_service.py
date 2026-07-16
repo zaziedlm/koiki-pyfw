@@ -40,6 +40,7 @@ class TestAuthService:
         token.token_hash = "test_token_hash"
         token.expires_at = datetime.now(timezone.utc) + timedelta(days=7)
         token.is_revoked = False
+        token.is_expired = False
         token.device_info = '{"user_agent": "test", "ip_address": "127.0.0.1"}'
         token.is_valid = True
         return token
@@ -89,8 +90,10 @@ class TestAuthService:
         """リフレッシュトークンによるアクセストークン更新テスト"""
         # リフレッシュトークンリポジトリのモック
         auth_service.refresh_token_repo.set_session = MagicMock()
-        auth_service.refresh_token_repo.get_valid_token = AsyncMock(return_value=MagicMock(
+        auth_service.refresh_token_repo.get_by_token = AsyncMock(return_value=MagicMock(
             user_id=1,
+            is_revoked=False,
+            is_expired=False,
             is_valid=True,
             expires_at=datetime.now(timezone.utc) + timedelta(days=7)
         ))
@@ -112,7 +115,7 @@ class TestAuthService:
 
             # リポジトリが呼び出されたことを確認
             auth_service.refresh_token_repo.set_session.assert_called_once_with(mock_db_session)
-            auth_service.refresh_token_repo.get_valid_token.assert_called_once()
+            auth_service.refresh_token_repo.get_by_token.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_revoke_user_tokens_success(

@@ -1,5 +1,7 @@
 # Task 4-5: Stage 4 結果検証
 
+> **履歴記録（現行方針ではない）**: 本書が記録する Stage 4 の `apps/<project-slug>/frontend/` を含む想定は、その後の方針で更新済みである。現行の正本は `CONTEXT.md` と `docs/agent/` であり、`apps/` は downstream business **backend** composition layer、frontend の配置先は root `frontend/` とする。
+
 ## 目的
 
 component move 前に、`koiki_ref_app`、`frontend/`、`apps/`、copy-first 更新モデルを含むテンプレート戦略が十分固まっているかを確認する。

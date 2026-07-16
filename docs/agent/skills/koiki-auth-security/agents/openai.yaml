@@ -1,4 +1,4 @@
 interface:
   display_name: "KOIKI Auth and Security"
-  short_description: "Handle auth, RBAC, SSO, and SAML safely."
-  default_prompt: "Use $koiki-auth-security to review and implement this KOIKI auth or security-sensitive change."
+  short_description: "Handle auth, RBAC, SSO, SAML, and Cookie/CSRF browser contracts safely."
+  default_prompt: "Use $koiki-auth-security to review and implement this KOIKI auth or security-sensitive change, including any Cookie/CSRF browser contract impact."

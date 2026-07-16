@@ -39,6 +39,7 @@ def test_template_outputs_all_case_ids() -> None:
 
     assert "ambiguous-layer-routing" in case_ids
     assert "frontend-only-change" in case_ids
+    assert "frontend-affected-api-schema-change" in case_ids
 
 
 def test_generate_can_write_utf8_file(tmp_path: Path) -> None:
@@ -76,7 +77,9 @@ def test_evaluate_passes_for_valid_results(tmp_path: Path) -> None:
                     {"id": "framework-auth-change", "observed_skills": ["koiki-auth-security", "koiki-libkoiki-feature-work"]},
                     {"id": "test-scope-question", "observed_skills": ["koiki-testing"]},
                     {"id": "ci-test-coverage-scope", "observed_skills": ["koiki-testing", "koiki-project-overview"]},
-                    {"id": "frontend-only-change", "observed_skills": ["koiki-project-overview"]},
+                    {"id": "frontend-only-change", "observed_skills": ["koiki-frontend-work"]},
+                    {"id": "frontend-session-contract-change", "observed_skills": ["koiki-frontend-work", "koiki-auth-security"]},
+                    {"id": "frontend-affected-api-schema-change", "observed_skills": ["koiki-refapp-feature-work", "koiki-frontend-work", "koiki-testing"]},
                 ]
             },
             ensure_ascii=False,
@@ -119,7 +122,9 @@ def test_evaluate_fails_for_missing_expected_or_forbidden_skill(tmp_path: Path) 
                     {"id": "framework-auth-change", "observed_skills": ["koiki-auth-security", "koiki-libkoiki-feature-work"]},
                     {"id": "test-scope-question", "observed_skills": ["koiki-testing"]},
                     {"id": "ci-test-coverage-scope", "observed_skills": ["koiki-testing", "koiki-project-overview"]},
-                    {"id": "frontend-only-change", "observed_skills": ["koiki-project-overview"]},
+                    {"id": "frontend-only-change", "observed_skills": ["koiki-frontend-work"]},
+                    {"id": "frontend-session-contract-change", "observed_skills": ["koiki-frontend-work", "koiki-auth-security"]},
+                    {"id": "frontend-affected-api-schema-change", "observed_skills": ["koiki-refapp-feature-work", "koiki-frontend-work", "koiki-testing"]},
                 ]
             },
             ensure_ascii=False,

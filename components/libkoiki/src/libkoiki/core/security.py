@@ -4,7 +4,7 @@ from typing import Any, Optional, Union, Annotated # Annotated をインポー�
 import bcrypt
 import jwt
 from jwt.exceptions import InvalidTokenError
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +29,10 @@ BCRYPT_ROUNDS = 12
 
 # --- OAuth2 スキーマ ---
 # tokenUrl は認証エンドポイントの相対パス
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_PREFIX}/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_PREFIX}/auth/login",
+    auto_error=False,
+)
 
 # --- トークン生成 ---
 def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
@@ -74,50 +77,65 @@ def get_password_hash(password: str) -> str:
     hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt(rounds=BCRYPT_ROUNDS))
     return hashed.decode("utf-8")
 
-# --- トークンからユーザーを取得 (依存性注入用) ---
-async def get_user_from_token(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    # DBセッションは依存性注入で取得 (循環参照を避ける)
-    # db: Annotated[AsyncSession, Depends(get_db_session)] # main.py で get_db_session を定義
-    # -> 代わりに、dependencies.pyで get_db_session を使う
-    # -> ここでは Session を直接引数に取らないように変更
-) -> Optional[UserModel]:
-    """
-    JWTトークンを検証し、対応するユーザー情報をDBから取得します。
-    ロールと権限も Eager Loading します。
-    DBセッションは呼び出し元 (e.g., dependencies.py) で提供される必要があります。
-
-    Args:
-        token: Authorizationヘッダーから抽出されたJWTトークン。
-
-    Returns:
-        ユーザーモデルオブジェクト、または無効なトークンの場合は None。
-        実際には無効な場合は HTTPException を送出する。
-    """
+def decode_access_token_user_id(token: str) -> int:
+    """JWT access token を検証し、subject の user id を返す。"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
     try:
         payload = jwt.decode(
             token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
         )
-        token_data = TokenPayload(**payload) # ペイロードをスキーマで検証
-        # 有効期限チェック
+        token_data = TokenPayload(**payload)
         if token_data.exp is None or datetime.fromtimestamp(token_data.exp, timezone.utc) < datetime.now(timezone.utc):
              logger.warning("Token expired", user_id=token_data.sub, exp=token_data.exp)
              raise credentials_exception
-        # サブジェクト (ユーザーID) チェック
         if token_data.sub is None:
             logger.warning("Token subject (user ID) is missing")
             raise credentials_exception
-        user_id = int(token_data.sub) # IDを整数に変換
+        user_id = int(token_data.sub)
         logger.debug("Token decoded successfully", user_id=user_id)
+        return user_id
 
-    except (InvalidTokenError, ValidationError) as e:
+    except (InvalidTokenError, ValidationError, ValueError) as e:
         logger.warning("Token validation failed", error_type=get_error_type_name(e))
         raise credentials_exception
+
+
+# --- トークンからユーザーを取得 (依存性注入用) ---
+async def get_user_from_token(
+    request: Request,
+    token: Annotated[str | None, Depends(oauth2_scheme)] = None,
+) -> Optional[int]:
+    """
+    Bearer token を優先し、ない場合は access token Cookie を検証して user id を返します。
+    DB アクセスとユーザー状態確認は呼び出し元の dependency が担当します。
+
+    Args:
+        request: FastAPI request。
+        token: Authorization ヘッダーから抽出された JWT token。
+
+    Returns:
+        JWT subject の user id。無効な場合は HTTPException を送出する。
+    """
+    auth_method = "bearer"
+    token_value = token
+    if not token_value:
+        token_value = request.cookies.get(settings.AUTH_ACCESS_COOKIE_NAME)
+        auth_method = "cookie"
+
+    if not token_value:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_id = decode_access_token_user_id(token_value)
+    request.state.auth_method = auth_method
 
     # DBセッションを取得 (ここでは取得せず、依存性として渡される想定)
     # この関数を使う dependencies.py の中で db セッションを取得する

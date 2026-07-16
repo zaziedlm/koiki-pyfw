@@ -8,6 +8,7 @@ from libkoiki.services.user_service import UserService
 from libkoiki.api.dependencies import (
     UserServiceDep,
     ActiveUserDep,
+    CookieCSRFDep,
     SuperUserDep,
     DBSessionDep,
     has_permission,
@@ -88,6 +89,7 @@ async def update_user_me(
     request: Request, # limiter用
     user_in: UserUpdate,
     current_user: ActiveUserDep,
+    csrf: CookieCSRFDep,
     user_service: UserServiceDep,
     db: DBSessionDep # transactionalデコレータにはDBセッションが必要
 ) -> Any:
@@ -188,6 +190,7 @@ async def update_user_by_id(
     user_service: UserServiceDep,
     db: DBSessionDep, # transactionalデコレータが必要
     current_admin: ActiveUserDep, # 操作者情報をログ等で使用する場合
+    csrf: CookieCSRFDep,
 ) -> Any:
     """指定したIDのユーザー情報を更新します (権限が必要)。"""
     logger.info(
@@ -235,6 +238,7 @@ async def delete_user_by_id(
     request: Request, # limiter用
     user_id: int,
     current_admin: ActiveUserDep, # ActiveUserDepでも良いが、権限チェック済み
+    csrf: CookieCSRFDep,
     user_service: UserServiceDep,
     db: DBSessionDep # transactionalデコレータが必要
 ) -> Any:

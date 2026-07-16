@@ -70,7 +70,7 @@ echo "----------------------"
 echo "📋 権限一覧:"
 docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "
 SELECT name, description, resource, action 
-FROM permissions 
+FROM koiki_permissions
 ORDER BY resource, action;
 " 2>/dev/null | head -n 20
 
@@ -79,8 +79,8 @@ echo "📋 ロール一覧:"
 docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "
 SELECT r.name, r.description, 
        COUNT(rp.permission_id) as permission_count 
-FROM roles r 
-LEFT JOIN role_permissions rp ON r.id = rp.role_id 
+FROM koiki_roles r
+LEFT JOIN koiki_role_permissions rp ON r.id = rp.role_id
 GROUP BY r.id, r.name, r.description 
 ORDER BY r.name;
 " 2>/dev/null
@@ -89,9 +89,9 @@ echo ""
 echo "📋 ユーザーロール割り当て:"
 docker-compose exec -T db psql -U koiki_user -d koiki_todo_db -c "
 SELECT u.email, r.name as role_name 
-FROM users u 
-JOIN user_roles ur ON u.id = ur.user_id 
-JOIN roles r ON r.id = ur.role_id 
+FROM koiki_users u
+JOIN koiki_user_roles ur ON u.id = ur.user_id
+JOIN koiki_roles r ON r.id = ur.role_id
 ORDER BY u.email;
 " 2>/dev/null
 

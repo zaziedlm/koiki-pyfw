@@ -16,7 +16,7 @@ from libkoiki.core.security import (
 )
 from libkoiki.core.exceptions import AuthenticationException, ValidationException
 from libkoiki.core.transaction import transactional
-from libkoiki.core.config import settings
+import libkoiki.core.config as config
 
 logger = structlog.get_logger(__name__)
 
@@ -54,7 +54,9 @@ class AuthService:
         access_token, refresh_token, expires_in = create_token_pair(user.id, device_info)
         
         # リフレッシュトークンをデータベースに保存
-        expires_at = RefreshTokenModel.create_expires_at(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_at = RefreshTokenModel.create_expires_at(
+            days=config.settings.REFRESH_TOKEN_EXPIRE_DAYS
+        )
         await self.refresh_token_repo.create_refresh_token(
             user_id=user.id,
             token=refresh_token,
@@ -99,11 +101,31 @@ class AuthService:
         self.refresh_token_repo.set_session(db)
         self.user_repo.set_session(db)
         
-        # リフレッシュトークンを検証
-        refresh_token_model = await self.refresh_token_repo.get_valid_token(refresh_token)
+        # リフレッシュトークンを取得して状態ごとに検証する。
+        # revoked token は再利用検知として扱い、同一ユーザーの token を全失効する。
+        refresh_token_model = await self.refresh_token_repo.get_by_token(refresh_token)
         
         if not refresh_token_model:
             logger.warning("Refresh token not found or invalid")
+            raise AuthenticationException("Invalid or expired refresh token")
+
+        if refresh_token_model.is_revoked:
+            logger.warning(
+                "Revoked refresh token reused; revoking all user refresh tokens",
+                user_id=refresh_token_model.user_id,
+                token_id=refresh_token_model.id,
+            )
+            await self.refresh_token_repo.revoke_user_tokens(
+                user_id=refresh_token_model.user_id
+            )
+            raise AuthenticationException("Invalid or expired refresh token")
+
+        if refresh_token_model.is_expired:
+            logger.warning(
+                "Expired refresh token used",
+                user_id=refresh_token_model.user_id,
+                token_id=refresh_token_model.id,
+            )
             raise AuthenticationException("Invalid or expired refresh token")
         
         # ユーザーを取得
@@ -117,7 +139,7 @@ class AuthService:
         
         # 新しいアクセストークンを生成
         from libkoiki.core.security import create_access_token
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token_expires = timedelta(minutes=config.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         new_access_token = create_access_token(
             subject=user.id, expires_delta=access_token_expires
         )
@@ -136,7 +158,9 @@ class AuthService:
             new_refresh_token = generate_refresh_token()
             
             # 新しいリフレッシュトークンを保存
-            expires_at = RefreshTokenModel.create_expires_at(days=7)
+            expires_at = RefreshTokenModel.create_expires_at(
+                days=config.settings.REFRESH_TOKEN_EXPIRE_DAYS
+            )
             await self.refresh_token_repo.create_refresh_token(
                 user_id=user.id,
                 token=new_refresh_token,
@@ -150,7 +174,11 @@ class AuthService:
             rotation_enabled=enable_rotation
         )
         
-        return new_access_token, new_refresh_token, settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        return (
+            new_access_token,
+            new_refresh_token,
+            config.settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
     
     @transactional
     async def revoke_user_tokens(
@@ -189,6 +217,13 @@ class AuthService:
         
         logger.info("User tokens revoked", user_id=user_id, count=revoked_count)
         return revoked_count
+
+    @transactional
+    async def revoke_refresh_token(self, refresh_token: str, db: AsyncSession) -> bool:
+        """単一の refresh token を無効化する。"""
+        logger.info("Revoking refresh token")
+        self.refresh_token_repo.set_session(db)
+        return await self.refresh_token_repo.revoke_token(refresh_token)
     
     async def get_user_tokens(
         self, 

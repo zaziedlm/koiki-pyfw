@@ -39,18 +39,3 @@ export interface UserListParams {
   skip?: number;
   limit?: number;
 }
-
-export interface UserState {
-  users: UserResponse[];
-  currentUser: UserResponse | null;
-  isLoading: boolean;
-  error: string | null;
-  totalCount: number;
-}
-
-export interface UserFormData {
-  username: string;
-  email: string;
-  full_name: string;
-  is_active: boolean;
-}

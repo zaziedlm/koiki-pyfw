@@ -70,6 +70,7 @@ services:
 
 volumes:
   postgres_data:
+    name: koiki_devcontainer_postgres_data
   keycloak_data:
   uv_cache:
 

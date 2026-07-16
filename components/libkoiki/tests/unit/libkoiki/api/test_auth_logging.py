@@ -212,6 +212,7 @@ class TestAuthBasicLogging:
         security_logger = MagicMock()
         security_metrics = MagicMock()
         mock_logger = MagicMock()
+        db = SimpleNamespace(commit=AsyncMock())
 
         auth_basic_module.logger = mock_logger
         auth_basic_module.security_logger = security_logger
@@ -225,7 +226,7 @@ class TestAuthBasicLogging:
                 user_service=user_service,
                 auth_service=auth_service,
                 login_security_service=login_security_service,
-                db=object(),
+                db=db,
             )
 
         assert exc_info.value.status_code == 401
@@ -236,6 +237,7 @@ class TestAuthBasicLogging:
         security_kwargs = security_logger.log_authentication_attempt.call_args.kwargs
         assert security_kwargs["failure_reason"] == "invalid_credentials"
         assert security_kwargs["additional_data"]["auth_method"] == "password"
+        db.commit.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_login_inactive_user_emits_security_event_with_password_auth_method(
@@ -260,6 +262,7 @@ class TestAuthBasicLogging:
         security_logger = MagicMock()
         security_metrics = MagicMock()
         mock_logger = MagicMock()
+        db = SimpleNamespace(commit=AsyncMock())
 
         auth_basic_module.logger = mock_logger
         auth_basic_module.security_logger = security_logger
@@ -273,7 +276,7 @@ class TestAuthBasicLogging:
                 user_service=user_service,
                 auth_service=auth_service,
                 login_security_service=login_security_service,
-                db=object(),
+                db=db,
             )
 
         assert exc_info.value.status_code == 400
@@ -281,6 +284,7 @@ class TestAuthBasicLogging:
         assert security_kwargs["failure_reason"] == "inactive_user"
         assert security_kwargs["user_id"] == 22
         assert security_kwargs["additional_data"]["auth_method"] == "password"
+        db.commit.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_registration_and_logout_keep_email_out_of_normal_logger(

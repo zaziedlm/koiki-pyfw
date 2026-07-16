@@ -175,10 +175,36 @@ Notes:
 
 Prompt: frontend のタブ UI を調整してください。backend の変更は想定していません。
 
-Expected skills: koiki-project-overview
-Required first skill: koiki-project-overview
-Forbidden skills: koiki-refapp-feature-work, koiki-libkoiki-feature-work, koiki-auth-security, koiki-testing
-Rationale: 現行 skill 集合に frontend 専用 skill はないため、まず overview で分類する。
+Expected skills: koiki-frontend-work
+Required first skill: koiki-frontend-work
+Forbidden skills: koiki-project-overview, koiki-refapp-feature-work, koiki-libkoiki-feature-work, koiki-auth-security, koiki-testing
+Rationale: root frontend の UI-only 変更は frontend work が第一候補であり、backend Skill を起動しない。
+
+Observed skills:
+Pass/Fail:
+Notes:
+
+## frontend-session-contract-change
+
+Prompt: root frontend の Cookie session login API の response schema が変わりました。backend は変更せず、typed feature API、CSRF/credentials の利用、Query cache、回帰テストを更新してください。
+
+Expected skills: koiki-frontend-work, koiki-auth-security
+Required first skill: koiki-frontend-work
+Forbidden skills: koiki-refapp-feature-work, koiki-libkoiki-feature-work, koiki-business-app-feature-work
+Rationale: browser session contract を消費する root frontend の変更は frontend work を先頭にし、Cookie/CSRF 境界を auth security と併用する。
+
+Observed skills:
+Pass/Fail:
+Notes:
+
+## frontend-affected-api-schema-change
+
+Prompt: reference app の Project API response に必須 version field を追加し、更新競合時は 409 を返すように変更してください。root frontend の typed feature API、Query mutation/error 表示、回帰テストも同じ contract に合わせて更新してください。
+
+Expected skills: koiki-refapp-feature-work, koiki-frontend-work, koiki-testing
+Required first skill: koiki-refapp-feature-work
+Forbidden skills: koiki-libkoiki-feature-work, koiki-business-app-feature-work
+Rationale: reference app が所有する API schema の変更は refapp feature を先頭にし、consumer である root frontend と contract regression test を併用する。
 
 Observed skills:
 Pass/Fail:

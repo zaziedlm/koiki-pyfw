@@ -80,6 +80,12 @@ These concerns should remain explicit and consistent:
 
 Do not hide cross-cutting behavior inside isolated feature code when a shared layer already owns that concern.
 
+## Frontend Contract Checks
+
+`frontend/` is the reference Vite + React SPA and consumes backend APIs directly. It is not part of the Python framework layer and does not change the ownership of an API.
+
+For a backend API change that can affect browser clients, check the request and response schema, status and error behavior, authorization, Cookie/CSRF behavior, public configuration, and required frontend cache or test updates. Use the current frontend implementation and `docs/frontend-spa-implementation-guide.ja.md` as the frontend source of truth.
+
 ## Architecture Guardrails
 
 Avoid:

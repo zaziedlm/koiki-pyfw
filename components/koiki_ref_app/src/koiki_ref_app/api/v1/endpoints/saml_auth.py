@@ -12,7 +12,7 @@ from typing import Annotated
 
 import structlog
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 
@@ -30,13 +30,16 @@ from libkoiki.api.dependencies import (
     DBSessionDep,
     UserServiceDep,
 )
+from libkoiki.core.auth_cookies import set_auth_cookies
 from libkoiki.core.auth_decorators import handle_auth_errors
+from libkoiki.core.csrf import issue_csrf_token, require_valid_csrf_token
 from libkoiki.core.logging import get_error_type_name
 from libkoiki.core.rate_limiter import limiter
 from libkoiki.core.security import extract_device_info
 from libkoiki.core.security_logger import security_logger
 from libkoiki.core.security_metrics import security_metrics
 from libkoiki.core.transaction import transactional
+from libkoiki.schemas.auth_session import SessionAuthResponse
 from libkoiki.schemas.token import TokenWithRefresh
 
 logger = structlog.get_logger(__name__)
@@ -58,6 +61,20 @@ def get_saml_service(
 
 
 SAMLServiceDep = Annotated[SAMLService, Depends(get_saml_service)]
+
+
+def _user_payload(user: object) -> dict:
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "is_active": user.is_active,
+        "is_superuser": user.is_superuser,
+        "created_at": user.created_at.isoformat(),
+        "updated_at": user.updated_at.isoformat(),
+        "roles": [],
+    }
 
 
 @router.get("/saml/authorization", response_model=SAMLAuthorizationInitResponse)
@@ -180,25 +197,14 @@ async def saml_metadata(
     )
 
 
-@router.post("/saml/login", response_model=TokenWithRefresh)
-@limiter.limit("10/minute")
-@transactional
-@handle_auth_errors("saml_login")
-async def saml_login(
+async def exchange_saml_login_ticket_and_create_token_pair(
     request: Request,
+    *,
     login_request: SAMLLoginTicketRequest,
     saml_service: SAMLServiceDep,
     db: DBSessionDep,
-) -> TokenWithRefresh:
-    """SAML ログインエンドポイント
-
-    ACSで発行されたログインチケットを受け取り、内部認証トークンに交換する。
-
-    処理フロー:
-    1. ログインチケットの署名と有効期限を検証
-    2. 対象ユーザーの取得・状態確認
-    3. 内部認証トークンペアの発行
-    """
+) -> tuple[object, str, str, int]:
+    """SAML login ticket exchange と内部 token pair 発行を共有する。"""
     ip_address = request.client.host if request.client else "unknown"
     device_info = extract_device_info(request)
 
@@ -235,11 +241,7 @@ async def saml_login(
             user_id=user.id,
         )
 
-        return TokenWithRefresh(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            expires_in=expires_in,
-        )
+        return user, access_token, refresh_token, expires_in
 
     except HTTPException as e:
         # セキュリティログに失敗を記録
@@ -290,6 +292,65 @@ async def saml_login(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="SAML login failed due to internal error",
         )
+
+
+@router.post("/saml/login", response_model=TokenWithRefresh)
+@limiter.limit("10/minute")
+@transactional
+@handle_auth_errors("saml_login")
+async def saml_login(
+    request: Request,
+    login_request: SAMLLoginTicketRequest,
+    saml_service: SAMLServiceDep,
+    db: DBSessionDep,
+) -> TokenWithRefresh:
+    """SAML ログインチケットを内部認証トークンに交換する既存 token endpoint。"""
+    _, access_token, refresh_token, expires_in = (
+        await exchange_saml_login_ticket_and_create_token_pair(
+            request,
+            login_request=login_request,
+            saml_service=saml_service,
+            db=db,
+        )
+    )
+
+    return TokenWithRefresh(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expires_in=expires_in,
+    )
+
+
+@router.post("/session/saml/login", response_model=SessionAuthResponse)
+@limiter.limit("10/minute")
+@transactional
+@handle_auth_errors("session_saml_login")
+async def session_saml_login(
+    request: Request,
+    login_request: SAMLLoginTicketRequest,
+    saml_service: SAMLServiceDep,
+    db: DBSessionDep,
+) -> JSONResponse:
+    """SAML login ticket を交換し、token value を body に返さず auth Cookie を発行する。"""
+    require_valid_csrf_token(request)
+
+    user, access_token, refresh_token, _ = await exchange_saml_login_ticket_and_create_token_pair(
+        request,
+        login_request=login_request,
+        saml_service=saml_service,
+        db=db,
+    )
+
+    response = JSONResponse(
+        {
+            "message": "SAML login successful",
+            "user": _user_payload(user),
+            "location": "/dashboard",
+        }
+    )
+    set_auth_cookies(response, access_token=access_token, refresh_token=refresh_token)
+    issue_csrf_token(response)
+    return response
 
 
 @router.get("/saml/user-info", response_model=SAMLUserInfoResponse)
@@ -366,7 +427,8 @@ async def saml_logout(
     return RedirectResponse(url=logout_url, status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.api_route("/saml/sls", methods=["GET", "POST"], response_class=RedirectResponse)
+@router.get("/saml/sls", response_class=RedirectResponse)
+@router.post("/saml/sls", response_class=RedirectResponse)
 @limiter.limit("60/minute")
 @transactional
 @handle_auth_errors("saml_sls")

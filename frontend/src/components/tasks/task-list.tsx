@@ -1,6 +1,5 @@
-'use client';
-
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +23,8 @@ import {
   Circle,
   Clock
 } from 'lucide-react';
-import { useCookieTodos, useCookieUpdateTodo } from '@/hooks/use-cookie-todo-queries';
+import { cookieTodoKeys, useCookieTodos, useCookieUpdateTodo } from '@/features/tasks/queries';
+import { isApiError } from '@/shared/api';
 import { TodoResponse, TodoFilter } from '@/types';
 import { useUIStore } from '@/stores';
 import { formatDistanceToNow } from 'date-fns';
@@ -47,6 +47,7 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
   const updateTaskMutation = useCookieUpdateTodo();
 
   const addNotification = useUIStore((state) => state.addNotification);
+  const queryClient = useQueryClient();
 
   // Filter todos based on current filter
   const filteredTodos = todos?.filter((todo: TodoResponse) => {
@@ -64,7 +65,7 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
     try {
       await updateTaskMutation.mutateAsync({
         id: todo.id,
-        data: { is_completed: !todo.is_completed }
+        data: { is_completed: !todo.is_completed, version: todo.version }
       });
 
       addNotification({
@@ -72,7 +73,17 @@ export function TaskList({ filter = {}, onFilterChange }: TaskListProps) {
         title: todo.is_completed ? 'Task marked as incomplete' : 'Task completed',
         message: `"${todo.title}" has been updated`,
       });
-    } catch {
+    } catch (error: unknown) {
+      if (isApiError(error) && error.status === 409) {
+        queryClient.invalidateQueries({ queryKey: cookieTodoKeys.lists() });
+        addNotification({
+          type: 'error',
+          title: 'Task was updated elsewhere',
+          message: 'This task was changed by another request. Please review the latest version and try again.',
+        });
+        return;
+      }
+
       addNotification({
         type: 'error',
         title: 'Failed to update task',

@@ -1,6 +1,6 @@
 ---
 name: koiki-refapp-feature-work
-description: Use when implementing reference-application business functionality under components/koiki_ref_app/, including domain endpoints, services, repositories, models, schemas, and application-specific integrations built on components/libkoiki. For downstream customer-specific apps under apps/, use koiki-business-app-feature-work instead.
+description: Use when implementing reference-application business functionality under components/koiki_ref_app/, including domain endpoints, services, repositories, models, schemas, application-specific integrations built on components/libkoiki, and affected root frontend contracts. For downstream customer-specific apps under apps/, use koiki-business-app-feature-work instead.
 ---
 
 # KOIKI Reference App Feature Work
@@ -31,7 +31,7 @@ This skill aligns with future template backend work. It should remain focused on
 2. reuse `components/libkoiki/` capabilities before adding new application code
 3. add or extend endpoint, service, repository, and schema layers only as needed
 4. keep application code thin where framework behavior already exists
-5. check whether migrations, config, or frontend contracts are affected
+5. check whether migrations, config, or frontend contracts are affected: schema, status/error behavior, authorization, Cookie/CSRF, public config, and root `frontend/` consumers
 
 ## Guardrails
 
@@ -46,6 +46,7 @@ This skill aligns with future template backend work. It should remain focused on
 - app-focused tests first
 - endpoint behavior for changed routes
 - integration points with `components/libkoiki/` when the feature composes shared services
+- frontend API / browser-flow coverage when the reference frontend consumes the changed contract
 
 ## Read Next
 

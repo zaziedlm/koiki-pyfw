@@ -63,7 +63,7 @@ class SSOSettings(BaseSettings):
     """認可リクエストでデフォルト使用するredirect_uri"""
 
     SSO_ALLOWED_REDIRECT_URIS: Optional[str] = None
-    """許可されたredirect_uriのリスト (カンマ区切り)"""
+    """許可されたredirect_uriのリスト (カンマ区切り)。未設定時はデフォルトURIのみ許可"""
     
     # === セキュリティ設定 ===
     SSO_AUDIENCE_VALIDATION: bool = True
@@ -167,7 +167,8 @@ class SSOSettings(BaseSettings):
         """指定されたredirect_uriが許可リストに含まれるか検証"""
         allowed = self.get_allowed_redirect_uris()
         if not allowed:
-            return True
+            default_redirect_uri = self.get_default_redirect_uri()
+            return bool(default_redirect_uri and redirect_uri == default_redirect_uri)
 
         # ワイルドカード("*")にも対応した許可判定
         for pattern in allowed:
@@ -217,4 +218,3 @@ def get_sso_settings() -> SSOSettings:
         SSOSettings インスタンス
     """
     return sso_settings
-

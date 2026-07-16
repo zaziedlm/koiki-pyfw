@@ -48,6 +48,7 @@ Use these routes when the task is already clear.
 - framework capability or shared backend concern -> `libkoiki.md`
 - business feature or project-specific backend behavior -> `app.md`
 - auth, RBAC, token, SSO, or SAML change -> `auth-security.md`
+- root `frontend/` work -> `koiki-frontend-work`; backend changes affecting browser consumers also read `docs/frontend-spa-implementation-guide.ja.md`
 - uncertain placement -> `boundaries.md`
 - uncertain test scope -> `testing.md`
 

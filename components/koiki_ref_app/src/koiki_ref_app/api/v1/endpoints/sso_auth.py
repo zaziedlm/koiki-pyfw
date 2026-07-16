@@ -10,6 +10,7 @@ from typing import Annotated, Optional
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import JSONResponse
 
 from koiki_ref_app.core.sso_config import SSOSettings, get_sso_settings
 from koiki_ref_app.schemas.sso import (
@@ -23,13 +24,16 @@ from libkoiki.api.dependencies import (
     DBSessionDep,
     UserServiceDep,
 )
+from libkoiki.core.auth_cookies import set_auth_cookies
 from libkoiki.core.auth_decorators import handle_auth_errors
+from libkoiki.core.csrf import issue_csrf_token, require_valid_csrf_token
 from libkoiki.core.logging import get_error_type_name
 from libkoiki.core.rate_limiter import limiter
 from libkoiki.core.security import extract_device_info
 from libkoiki.core.security_logger import security_logger
 from libkoiki.core.security_metrics import security_metrics
 from libkoiki.core.transaction import transactional
+from libkoiki.schemas.auth_session import SessionAuthResponse
 from libkoiki.schemas.token import TokenWithRefresh
 
 logger = structlog.get_logger(__name__)
@@ -54,6 +58,20 @@ def get_sso_service(
 
 
 SSOServiceDep = Annotated[SSOService, Depends(get_sso_service)]
+
+
+def _user_payload(user: object) -> dict:
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "is_active": user.is_active,
+        "is_superuser": user.is_superuser,
+        "created_at": user.created_at.isoformat(),
+        "updated_at": user.updated_at.isoformat(),
+        "roles": [],
+    }
 
 
 @router.get("/sso/authorization", response_model=SSOAuthorizationInitResponse)
@@ -88,38 +106,14 @@ async def sso_authorization_init(
     )
 
 
-@router.post("/sso/login", response_model=TokenWithRefresh)
-@limiter.limit("10/minute")
-@handle_auth_errors("sso_login")
-@transactional
-async def sso_login(
+async def authenticate_sso_and_create_token_pair(
     request: Request,
+    *,
     sso_request: SSOLoginRequest,
     sso_service: SSOServiceDep,
     db: DBSessionDep,
-) -> TokenWithRefresh:
-    """
-    SSO ログインエンドポイント
-
-    Authorization Code Flow (PKCE) で取得したコードをサーバー側でトークンに交換し、
-    IDトークンを検証した上で内部認証システムのトークンペアを返します。
-
-    処理フロー:
-    1. state / nonce の整合性検証
-    2. Authorization Code をトークンエンドポイントで交換
-    3. 返却された ID トークンの署名・クレーム検証
-    4. SSO ユーザー情報の抽出とローカルユーザーとの連携
-    5. 内部認証トークンペアの発行
-
-    Args:
-        sso_request: SSO ログインリクエスト（authorization_code等を含む）
-
-    Returns:
-        内部認証トークンペア（アクセストークン、リフレッシュトークン）
-
-    Raises:
-        HTTPException: 認証失敗、トークン不正、ユーザー作成失敗等
-    """
+) -> tuple[object, str, str, int]:
+    """SSO exchange と内部 token pair 発行を token/session endpoint で共有する。"""
     ip_address = request.client.host if request.client else "unknown"
     device_info = extract_device_info(request)
 
@@ -194,11 +188,7 @@ async def sso_login(
             user_id=user.id,
         )
 
-        return TokenWithRefresh(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            expires_in=expires_in,
-        )
+        return user, access_token, refresh_token, expires_in
 
     except HTTPException as e:
         # セキュリティログに失敗を記録
@@ -249,6 +239,68 @@ async def sso_login(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="SSO login failed due to internal error",
         )
+
+
+@router.post("/sso/login", response_model=TokenWithRefresh)
+@limiter.limit("10/minute")
+@handle_auth_errors("sso_login")
+@transactional
+async def sso_login(
+    request: Request,
+    sso_request: SSOLoginRequest,
+    sso_service: SSOServiceDep,
+    db: DBSessionDep,
+) -> TokenWithRefresh:
+    """
+    SSO ログインエンドポイント
+
+    Authorization Code Flow (PKCE) で取得したコードをサーバー側でトークンに交換し、
+    IDトークンを検証した上で内部認証システムのトークンペアを返します。
+    """
+    _, access_token, refresh_token, expires_in = await authenticate_sso_and_create_token_pair(
+        request,
+        sso_request=sso_request,
+        sso_service=sso_service,
+        db=db,
+    )
+
+    return TokenWithRefresh(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expires_in=expires_in,
+    )
+
+
+@router.post("/session/sso/login", response_model=SessionAuthResponse)
+@limiter.limit("10/minute")
+@handle_auth_errors("session_sso_login")
+@transactional
+async def session_sso_login(
+    request: Request,
+    sso_request: SSOLoginRequest,
+    sso_service: SSOServiceDep,
+    db: DBSessionDep,
+) -> JSONResponse:
+    """SSO exchange を成立させ、token value を body に返さず auth Cookie を発行する。"""
+    require_valid_csrf_token(request)
+
+    user, access_token, refresh_token, _ = await authenticate_sso_and_create_token_pair(
+        request,
+        sso_request=sso_request,
+        sso_service=sso_service,
+        db=db,
+    )
+
+    response = JSONResponse(
+        {
+            "message": "SSO login successful",
+            "user": _user_payload(user),
+            "location": "/dashboard",
+        }
+    )
+    set_auth_cookies(response, access_token=access_token, refresh_token=refresh_token)
+    issue_csrf_token(response)
+    return response
 
 
 @router.get("/sso/user-info", response_model=SSOUserInfoResponse)

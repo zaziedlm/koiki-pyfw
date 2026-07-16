@@ -28,6 +28,7 @@ They validate:
 - OpenAI metadata includes the expected interface fields
 - the default prompt references the correct `$skill-name`
 - each Claude wrapper points to the canonical skill path
+- Codex `AGENTS.md` and GitHub Copilot instructions preserve the canonical API ownership and root frontend boundaries
 - the prompt case catalog remains well formed and covers every skill
 
 Run:
@@ -54,6 +55,8 @@ The repository keeps the prompt catalog for these checks at:
 
 Use the prompt text in that catalog as the regression suite for manual or external-harness runs.
 For each case, record `observed_skills` in the order the runtime selected them.
+
+For a reproducible execution procedure for fresh Codex, Claude Code, and GitHub Copilot sessions, use [Agent Skill Runtime Smoke 実行指示書](../../dev/agent-skill-runtime-smoke-instructions.ja.md). Keep its expected-routing checklist operator-only during the run.
 
 Generate a manual checklist:
 
@@ -100,7 +103,9 @@ The prompt catalog already includes the minimum representative cases:
 - app-specific SSO/SAML changes
 - framework-level security changes
 - test-scope and CI-scope decisions
-- frontend-only work that should fall back to overview first
+- root frontend-only work that selects `koiki-frontend-work`
+- frontend Cookie session / API contract work that also selects `koiki-auth-security`
+- backend API schema work with root frontend impact, which selects the owning backend Skill together with `koiki-frontend-work` and `koiki-testing`
 
 ## Result Recording Policy
 
@@ -124,7 +129,7 @@ Update the prompt catalog when:
 
 - a new skill is added
 - a skill scope changes materially
-- adapters or metadata change in a way that could affect discovery
+- Claude wrapper, Codex entry guidance, Copilot instruction, or metadata changes in a way that could affect discovery
 - a real routing mistake is found and needs regression coverage
 
 ## Limits

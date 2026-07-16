@@ -55,6 +55,9 @@ def test_api_ownership_terms_are_present_in_routing_skills() -> None:
     overview = (CANONICAL_ROOT / "koiki-project-overview" / "SKILL.md").read_text(encoding="utf-8")
     refapp = (CANONICAL_ROOT / "koiki-refapp-feature-work" / "SKILL.md").read_text(encoding="utf-8")
     libkoiki = (CANONICAL_ROOT / "koiki-libkoiki-feature-work" / "SKILL.md").read_text(encoding="utf-8")
+    business = (CANONICAL_ROOT / "koiki-business-app-feature-work" / "SKILL.md").read_text(encoding="utf-8")
+    auth_security = (CANONICAL_ROOT / "koiki-auth-security" / "SKILL.md").read_text(encoding="utf-8")
+    testing = (CANONICAL_ROOT / "koiki-testing" / "SKILL.md").read_text(encoding="utf-8")
 
     assert "`apps/`" in overview
     assert "Todo API" in overview
@@ -63,6 +66,28 @@ def test_api_ownership_terms_are_present_in_routing_skills() -> None:
     assert "starter/reference behavior" in refapp
     assert "starter/sample capability" in libkoiki
     assert "new business-specific APIs" in libkoiki
+    assert "frontend contracts" in business
+    assert "frontend contracts" in refapp
+    assert "browser-facing API behavior" in libkoiki
+    assert "Cookie session and CSRF contracts" in auth_security
+    assert "frontend contract changes" in testing
+
+
+def test_frontend_skill_is_exposed_through_all_agent_surfaces() -> None:
+    frontend = (CANONICAL_ROOT / "koiki-frontend-work" / "SKILL.md").read_text(encoding="utf-8")
+    frontend_metadata = yaml.safe_load(
+        (CANONICAL_ROOT / "koiki-frontend-work" / "agents" / "openai.yaml").read_text(encoding="utf-8")
+    )["interface"]
+    claude_wrapper = (CLAUDE_ROOT / "koiki-frontend-work" / "SKILL.md").read_text(encoding="utf-8")
+    agents = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    copilot = (REPO_ROOT / ".github" / "copilot-instructions.md").read_text(encoding="utf-8")
+    frontend_instruction = (GITHUB_INSTRUCTIONS_ROOT / "frontend.instructions.md").read_text(encoding="utf-8")
+
+    assert "Vite + React SPA" in frontend
+    assert "$koiki-frontend-work" in frontend_metadata["default_prompt"]
+    assert "@docs/agent/skills/koiki-frontend-work/SKILL.md" in claude_wrapper
+    for content in [agents, copilot, frontend_instruction]:
+        assert "koiki-frontend-work" in content
 
 
 def test_openai_metadata_tracks_api_ownership_routing_terms() -> None:
@@ -109,6 +134,9 @@ def test_github_and_shared_agent_docs_track_api_ownership_policy() -> None:
     architecture = (GITHUB_INSTRUCTIONS_ROOT / "architecture.instructions.md").read_text(encoding="utf-8")
     app_instruction = (GITHUB_INSTRUCTIONS_ROOT / "app.instructions.md").read_text(encoding="utf-8")
     libkoiki_instruction = (GITHUB_INSTRUCTIONS_ROOT / "libkoiki.instructions.md").read_text(encoding="utf-8")
+    frontend_instruction = (GITHUB_INSTRUCTIONS_ROOT / "frontend.instructions.md").read_text(encoding="utf-8")
+    agents = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    boundaries = (REPO_ROOT / "docs" / "agent" / "boundaries.md").read_text(encoding="utf-8")
     app_doc = (REPO_ROOT / "docs" / "agent" / "app.md").read_text(encoding="utf-8")
     libkoiki_doc = (REPO_ROOT / "docs" / "agent" / "libkoiki.md").read_text(encoding="utf-8")
 
@@ -121,3 +149,11 @@ def test_github_and_shared_agent_docs_track_api_ownership_policy() -> None:
 
     assert "downstream customer-specific API" in app_instruction
     assert "Downstream or customer-specific APIs should start under `apps/`" in app_doc
+
+    for content in [copilot, frontend_instruction, agents, boundaries, app_doc]:
+        assert "frontend" in content
+        assert "apps/" in content
+
+    assert "Cookie/CSRF" in frontend_instruction
+    assert "backend-only" in frontend_instruction
+    assert "Frontend Contract Boundary" in boundaries

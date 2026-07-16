@@ -16,18 +16,25 @@ from koiki_ref_app.services.sso_service import SSOService
 from libkoiki.core.exceptions import ValidationException
 
 
+def _sso_settings(**overrides) -> SSOSettings:
+    values = {
+        "SSO_CLIENT_ID": "client-id",
+        "SSO_CLIENT_SECRET": "client-secret",
+        "SSO_ISSUER_URL": "https://issuer.example.com",
+        "SSO_JWKS_URI": "https://issuer.example.com/.well-known/jwks.json",
+        "SSO_TOKEN_ENDPOINT": "https://issuer.example.com/oauth/token",
+        "SSO_AUTHORIZATION_ENDPOINT": "https://issuer.example.com/oauth/authorize",
+        "SSO_STATE_SIGNING_KEY": "state-secret",
+        "SSO_ALLOWED_ALGORITHMS": "RS256",
+        "SSO_STATE_TTL_SECONDS": 600,
+    }
+    values.update(overrides)
+    return SSOSettings(_env_file=None, **values)
+
+
 @pytest.fixture
 def sso_settings() -> SSOSettings:
-    return SSOSettings(
-        SSO_CLIENT_ID="client-id",
-        SSO_CLIENT_SECRET="client-secret",
-        SSO_ISSUER_URL="https://issuer.example.com",
-        SSO_JWKS_URI="https://issuer.example.com/.well-known/jwks.json",
-        SSO_TOKEN_ENDPOINT="https://issuer.example.com/oauth/token",
-        SSO_AUTHORIZATION_ENDPOINT="https://issuer.example.com/oauth/authorize",
-        SSO_STATE_SIGNING_KEY="state-secret",
-        SSO_ALLOWED_ALGORITHMS="RS256",
-        SSO_STATE_TTL_SECONDS=600,
+    return _sso_settings(
         SSO_DEFAULT_REDIRECT_URI="https://app.example.com/sso/callback",
         SSO_ALLOWED_REDIRECT_URIS="https://app.example.com/sso/callback",
     )
@@ -75,6 +82,40 @@ def test_verify_at_hash_rs256() -> None:
 
 def test_verify_at_hash_unsupported_alg() -> None:
     assert SSOService._verify_at_hash("token", "hash", "RS123") is False
+
+
+def test_redirect_uri_allowlist_defaults_to_default_uri_only() -> None:
+    settings = _sso_settings(
+        SSO_DEFAULT_REDIRECT_URI="https://app.example.com/sso/callback",
+        SSO_ALLOWED_REDIRECT_URIS=None,
+    )
+
+    assert settings.is_redirect_uri_allowed("https://app.example.com/sso/callback") is True
+    assert settings.is_redirect_uri_allowed("https://evil.example.com/callback") is False
+
+
+def test_redirect_uri_without_allowlist_or_default_is_rejected() -> None:
+    settings = _sso_settings(
+        SSO_DEFAULT_REDIRECT_URI=None,
+        SSO_ALLOWED_REDIRECT_URIS=None,
+    )
+
+    assert settings.get_default_redirect_uri() is None
+    assert settings.is_redirect_uri_allowed("https://app.example.com/sso/callback") is False
+
+
+def test_redirect_uri_allowlist_still_supports_exact_and_wildcard_patterns() -> None:
+    settings = _sso_settings(
+        SSO_DEFAULT_REDIRECT_URI=None,
+        SSO_ALLOWED_REDIRECT_URIS=(
+            "https://app.example.com/sso/callback,"
+            "https://preview.example.com/*"
+        ),
+    )
+
+    assert settings.is_redirect_uri_allowed("https://app.example.com/sso/callback") is True
+    assert settings.is_redirect_uri_allowed("https://preview.example.com/sso/callback") is True
+    assert settings.is_redirect_uri_allowed("https://evil.example.com/callback") is False
 
 
 @patch("koiki_ref_app.services.sso_service.logger")

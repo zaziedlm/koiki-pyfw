@@ -19,7 +19,7 @@
     {
       "label": "Start Frontend",
       "type": "shell",
-      "command": "npm run dev -- --hostname 0.0.0.0 --port 3000",
+      "command": "npm run dev",
       "options": {
         "cwd": "${workspaceFolder}/frontend"
       },

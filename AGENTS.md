@@ -20,12 +20,16 @@ Read these when relevant:
 - `docs/agent/auth-security.md`
 - `docs/agent/libkoiki.md`
 - `docs/agent/app.md`
+- `docs/frontend-spa-implementation-guide.ja.md` for root `frontend/` work or backend API changes that affect browser clients
+- `docs/agent/skills/koiki-frontend-work/SKILL.md` for root `frontend/` implementation work
 
 ## Core Rules
 
 - Keep reusable framework behavior in `components/libkoiki/`.
 - Keep reference application and business-specific behavior in `components/koiki_ref_app/`.
 - Treat root `app/` as a compatibility wrapper unless explicitly maintaining legacy imports.
+- Treat `apps/` as the downstream business backend layer; keep the reference frontend under root `frontend/`.
+- When an API schema, status/error behavior, auth, Cookie/CSRF, or configuration changes, check the affected frontend contract as well as backend ownership.
 - Prefer current implementation over historical design notes when they conflict.
 - Follow the existing layered structure unless there is a strong reason not to.
 - Validate changes at the smallest scope that proves the behavior.

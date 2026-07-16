@@ -20,20 +20,29 @@ or CI-safe files.
 
 | File | Tracked | Role | Create from / Used by | Status |
 |---|---:|---|---|---|
-| `frontend/.env.local` | no | Local Next.js development settings | Copy from `frontend/.env.local.example` | Active local file |
+| `frontend/.env.local` | no | Local Vite SPA build-time settings | Copy from `frontend/.env.local.example` | Active local file |
 | `frontend/.env.local.example` | yes | Local frontend development template | Source for `frontend/.env.local` | Active template |
-| `frontend/.env.docker` | yes | Local Docker frontend build/runtime defaults | Used by `docker-compose.yml` and as the default frontend Docker build env | Active local-Docker template |
-| `frontend/.env.production` | no | Frontend production runtime/build settings | Copy from `frontend/.env.production.example`; used by unified production profiles via `FRONTEND_ENV_FILE` and `FRONTEND_BUILD_ENV_FILE` | Active local file |
+| `frontend/.env.docker` | yes | Local Docker SPA build defaults | Used as the default frontend Docker build env | Active local-Docker template |
+| `frontend/.env.production` | no | Frontend production build settings | Copy from `frontend/.env.production.example`; select it with `FRONTEND_BUILD_ENV_FILE` | Active local file |
 | `frontend/.env.production.example` | yes | Frontend production/AWS-oriented template | Source for `frontend/.env.production` | Active template |
 
 ## Important Notes
 
 - Backend Docker image builds do not require `.env.production`; runtime Compose profiles do.
-- Frontend `NEXT_PUBLIC_*` values can be baked into the Next.js build output. Use
-  `FRONTEND_BUILD_ENV_FILE=.env.production` when building production frontend images
-  from `frontend/.env.production`.
+- Vite exposes only `VITE_*` variables to browser code and embeds their values at build time.
+  A running static SPA container does not read or rewrite those values. Use
+  `FRONTEND_BUILD_ENV_FILE=.env.production` when building a production frontend image.
+- Keep browser-visible API URL and callback-path values in frontend `VITE_*` variables.
+  Keep Cookie names, Cookie attributes, CORS, CSRF, and security headers in backend settings.
 - In AWS/ECS, prefer task definition environment variables and secrets over copying
   `.env.production` into the image or committing real values.
+- `UVICORN_WORKERS` defaults to `1` in the unified Compose stack. This matches
+  the ECS operating model of one web-server process per container; scale API
+  capacity with ECS service task count. A value greater than `1` is an explicit
+  exception and requires validation of CPU, memory, DB-pool capacity, and any
+  background or singleton work. For local Compose, set it in the shell that
+  starts Compose (for example, `$env:UVICORN_WORKERS = "4"` in PowerShell).
+  For ECS, set it only as an explicit task-definition environment variable.
 - `ENV_FILE` is primarily a Docker Compose/script selector. The Pydantic settings
   classes still default to `.env`, while CI passes critical values such as
   `DATABASE_URL` directly through process environment variables.

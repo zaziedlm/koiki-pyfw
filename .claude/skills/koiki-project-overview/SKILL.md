@@ -1,6 +1,6 @@
 ---
 name: koiki-project-overview
-description: Classify a KOIKI task and choose the correct repository layer, including API ownership and downstream apps/ placement, when the edit location is not yet clear.
+description: Classify a KOIKI task and choose the correct repository layer, including API ownership, downstream apps/ placement, and root frontend contract impact, when the edit location is not yet clear.
 ---
 
 # KOIKI Project Overview

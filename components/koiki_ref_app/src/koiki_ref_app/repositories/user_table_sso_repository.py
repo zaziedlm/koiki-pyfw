@@ -56,7 +56,7 @@ class UserTableSSOLink(SSOLinkRecord):
 
 class UserTableSSORepository:
     """
-    `user_sso` の代わりに `user` テーブルの列を使う実装。
+    `kkref_user_sso_links` の代わりに外部の `user` テーブル列を使う実装。
 
     - `id` は `user_id` を代用
     - `last_sso_login` は `updated_at` を代用

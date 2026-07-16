@@ -20,12 +20,16 @@ Use these skills when the task already matches a known work type and you want co
   - handle auth, RBAC, SSO, SAML, and security-sensitive changes
 - `koiki-testing`
   - choose and implement the right test scope
+- `koiki-frontend-work`
+  - implement and validate root `frontend/` Vite + React SPA work
 
 ## Notes
 
 - Shared cross-cutting guidance remains in `docs/agent/`.
 - API ownership follows `docs/agent/boundaries.md`: reusable framework behavior belongs in `components/libkoiki/`, reference-app behavior belongs in `components/koiki_ref_app/`, and downstream customer-specific APIs start under `apps/`.
 - The current Todo API is a `libkoiki` framework sample / starter capability, not precedent for placing new business APIs in `components/libkoiki/`.
+- root `frontend/` is the reference frontend. `apps/` is a downstream business backend layer, not a frontend placement convention.
+- backend API changes that affect browser consumers must check the frontend contract: schema, status/error behavior, authorization, Cookie/CSRF, public configuration, and test impact.
 - Skill-specific metadata lives in each skill's `agents/openai.yaml`.
 - Claude Code discovery wrappers live under `.claude/skills/`.
 - `docs/agent/skills/` remains the canonical source for skill content.
