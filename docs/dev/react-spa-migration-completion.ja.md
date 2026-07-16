@@ -29,10 +29,9 @@
 | 認証 API と browser session contract | `docs/authentication-api-guide.md` |
 | frontend / backend の環境ファイル | `docs/dev/env-files.md` |
 | 実装・検証コマンド | `frontend/README.md` |
-| SPA refresh の実施結果 | `docs/dev/frontend-refactor-refresh-tasks/task-4-1.md` |
 | CI 採用方針と production 配備ゲート | `docs/dev/react-spa-adoption-release-gates.ja.md` |
 
-Next.js BFF 時代の guide と audit は `docs/archive/frontend-nextjs-bff/` に履歴資料として保存する。
+Next.js BFF 時代の guide と audit は、完全に廃止され参照者がいなくなったため、v0.8 で `docs/archive/frontend-nextjs-bff/` ごと削除済み。
 
 ## 代表的な検証済み事項
 

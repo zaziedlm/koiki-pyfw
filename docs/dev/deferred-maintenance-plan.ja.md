@@ -6,7 +6,7 @@
 
 本書は、`uv` 移行前後から先送りされてきた warning、設定、DB/Alembic、IDE 実行導線、security follow-up を横断的に整理し、対応方針を明文化する。
 
-既存の `docs/dev/v0.7-stage2-uv-follow-up-plan.ja.md` は、依存管理を Poetry から `uv` へ切り替える follow-up を主対象とする。
+既存の `docs/archive/v0.7-stage2-uv-follow-up-plan.ja.md` は、依存管理を Poetry から `uv` へ切り替える follow-up を主対象とする。
 本書は、その後に残った保守性・将来互換性・実行導線の課題を対象とする。
 
 ## 2. 今回確認した現状
@@ -129,7 +129,7 @@ IDE での検出範囲と CI の検出範囲がずれるため、後続で `.vsc
 
 ### P5: Security follow-up
 
-`docs/dev/v0.7-stage2-uv-follow-up-plan.ja.md` に記録済みの security follow-up は、依存管理移行とは別に残っている。
+`docs/archive/v0.7-stage2-uv-follow-up-plan.ja.md` に記録済みの security follow-up は、依存管理移行とは別に残っている。
 
 対象:
 

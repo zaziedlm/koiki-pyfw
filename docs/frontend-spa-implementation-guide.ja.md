@@ -187,11 +187,9 @@ Codex sandbox では `npm test` / `npm run build` が Vite/esbuild の `spawn EP
 
 ## CI
 
-frontend CI は現時点では有効化していない。
+frontend CI は `.github/workflows/frontend-ci.yml` として `dev/v0.8` への push / PR 時に有効化済み（PR #131〜#132 経由）。
 
-`dev/v0.8` で React SPA 版を正式対象にするときに、`.github/workflows/frontend-ci.dev-v0.8.yml.disabled` の内容を既存 `.github/workflows/ci.yml` へ移す。
-
-有効化時の expected checks:
+expected checks:
 
 - `npm ci`
 - `npm run check-types`
@@ -199,18 +197,12 @@ frontend CI は現時点では有効化していない。
 - `npm test`
 - `npm run build`
 
-`.yml.disabled` は GitHub Actions の workflow 対象外なので、現時点では Actions を発火しない。
-
 ## Stale Docs
-
-旧 Next.js 15 + BFF 前提の guide と audit は `docs/archive/frontend-nextjs-bff/` に保存している。現行 Vite + React SPA の実装手順としては使わない。
 
 認証 API の backend contract を確認する場合は `docs/authentication-api-guide.md` を参照してよいが、frontend 実装例のうち Next Route Handlers / BFF / axios / localStorage 前提の記述は現行 frontend の実装方針ではない。
 
 ## Follow-up Candidates
 
-- dev/v0.8 作成時に frontend CI を既存 `ci.yml` へ統合する。
 - Playwright による login -> task CRUD -> logout E2E を追加する。
 - `react-refresh/only-export-components` warning を消すため、UI helper export を別ファイルへ分離する。
-- 旧 Next.js guide と audit は `docs/archive/frontend-nextjs-bff/` に保存済み。内容を現行実装の判断根拠としては使わない。
 - `dashboard-layout.tsx` の navigation と `login-form.tsx` の `/auth/forgot-password` は、ダッシュボードUIレイアウトの参考配置例として残している。対応する route は未実装(意図的な保留)。実装するか、UIから外すかは今後のタスクで判断する。
