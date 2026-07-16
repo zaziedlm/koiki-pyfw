@@ -2,9 +2,9 @@
 
 これは、Python (FastAPI) を用いたエンタープライズ向けWebアプリケーション構築のための、堅牢な基盤フレームワーク「KOIKI-FW」をベースにしたプロジェクトテンプレートです。
 
-現在は `v0.7.0` として、バックエンドを `components/libkoiki` と `components/koiki_ref_app` を中心とした構成へ整理しています。
+現在は `v0.8.0` として、バックエンドを `components/libkoiki` と `components/koiki_ref_app` を中心とした構成へ整理しています。
 
-詳細は `docs/design_kkfw_0.7.0.md` と `docs/dev/` 配下の保守タスク記録を参照してください。
+詳細は `docs/design_kkfw_0.8.0.md` と `docs/dev/` 配下の保守タスク記録を参照してください。
 
 ## 特徴
 
@@ -13,7 +13,8 @@
 *   **非同期処理**: 高パフォーマンスな非同期処理。
 *   **型安全性**: Pydantic と型ヒントによる開発効率と安全性の向上。
 *   **テスト容易性**: 依存性注入による容易なテスト実装。
-*   **v0.7.0 構成整理**: reusable framework (`components/libkoiki`) と reference application (`components/koiki_ref_app`) の責務を明確化。
+*   **レイヤー構成**: reusable framework (`components/libkoiki`) と reference application (`components/koiki_ref_app`) の責務を明確化。
+*   **v0.8.0 フロントエンド刷新**: Vite + React SPA と Cookie セッション認証（CSRF/CSP強化）へ全面移行。
 *   **認証・セキュリティ基盤**: JWT認証, リフレッシュトークン, パスワードリセット, ログイン試行制限, RBAC, レートリミット等。
 *   **監視・ロギング**: 構造化ログ, 監査ログ, Prometheus連携。
 *   **継続的インテグレーション**: GitHub Actionsによる自動テスト、コード品質チェックの導入。
@@ -96,14 +97,17 @@ uv run pytest --cov=koiki_ref_app --cov=libkoiki --cov-report=term-missing \
 
 ### 継続的インテグレーション (CI)
 
-GitHub Actionsによる自動テストパイプラインが設定されており、以下のブランチへのプッシュ時に自動実行されます：
+GitHub Actionsによる自動テストパイプライン（backend: CI Pipeline）が設定されており、以下のブランチへのプッシュ時に自動実行されます：
 - `main`
 - `dev/v0.7`
+- `dev/v0.8`
 - `support/0.6`
 - `topic/*`
 - `feature/*`
 
 プルリクエスト時にも自動的にテストが実行され、コードの品質が検証されます。
+
+frontend（Vite + React SPA）向けの Frontend CI は `dev/v0.8` への push / PR 時のみ実行されます。
 
 ## ディレクトリ構造
 
@@ -119,7 +123,7 @@ GitHub Actionsによる自動テストパイプラインが設定されており
 │       ├── src/koiki_ref_app/        # 参照アプリ兼 backend starter
 │       ├── alembic/                  # 参照アプリ所有マイグレーション
 │       └── tests/                    # ref app 所有テスト
-├── frontend/                         # root 配置の starter frontend
+├── frontend/                         # root 配置の Vite + React SPA reference frontend
 ├── tests/                            # root 共有テスト / e2e / agent guidance
 ├── .env.example             # 環境変数サンプル
 ├── .github/                 # GitHub Actions設定
@@ -133,7 +137,7 @@ GitHub Actionsによる自動テストパイプラインが設定されており
 - root `app/` は互換導線を維持するための wrapper です。新規実装は追加しません。
 - `apps/` は downstream の案件固有コードのための予約領域です。
 
-詳細な構成と機能説明は `docs/design_kkfw_0.7.0.md` を参照してください。
+詳細な構成と機能説明は `docs/design_kkfw_0.8.0.md` を参照してください。
 
 ## 🔒 Fork・利用に関するご案内
 
