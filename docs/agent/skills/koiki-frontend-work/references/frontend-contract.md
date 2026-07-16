@@ -42,4 +42,3 @@ For an API consumed by the frontend, check:
 
 - `docs/frontend-spa-implementation-guide.ja.md`
 - `docs/authentication-api-guide.md`
-- `docs/dev/agent-skills-framework-app-alignment-tasks/task-0-2-contract-impact-map.ja.md`
