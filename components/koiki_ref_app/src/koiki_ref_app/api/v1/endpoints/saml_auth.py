@@ -427,7 +427,8 @@ async def saml_logout(
     return RedirectResponse(url=logout_url, status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.api_route("/saml/sls", methods=["GET", "POST"], response_class=RedirectResponse)
+@router.get("/saml/sls", response_class=RedirectResponse)
+@router.post("/saml/sls", response_class=RedirectResponse)
 @limiter.limit("60/minute")
 @transactional
 @handle_auth_errors("saml_sls")
