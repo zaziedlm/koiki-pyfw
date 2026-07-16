@@ -61,7 +61,7 @@ Task 0-2 で確認した結果、React Router v8 への移行は保留する。v
 
 ## 目標アーキテクチャ
 
-詳細な配置方針と責務境界は `docs/dev/frontend-target-architecture.ja.md` を参照する。
+詳細な配置方針と責務境界は `docs/archive/frontend-target-architecture.ja.md`（履歴資料。現行の配置方針は `docs/frontend-spa-implementation-guide.ja.md` を参照）を参照する。
 
 ### 配置方針
 
