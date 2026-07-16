@@ -1,6 +1,3 @@
-# Disabled until the React SPA refresh is merged into dev/v0.8.
-# To enable, rename this file to a .yml file under .github/workflows/.
-
 name: Frontend CI
 
 on:
