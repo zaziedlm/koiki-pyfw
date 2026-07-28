@@ -28,6 +28,9 @@ ENV/
 # Python version management
 .python-version
 
+# Node (root: openspec CLI only)
+/node_modules/
+
 # Build & distribution
 dist/
 build/
