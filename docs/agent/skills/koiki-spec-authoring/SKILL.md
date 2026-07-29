@@ -81,7 +81,7 @@ These break the artifact without producing a validation error.
 
 - do not write English SHALL prose (`The system SHALL ...`); this repository uses the 【SHALL】 label form
 - do not add `## Purpose` to a delta spec when the capability spec already exists — it is ignored
-- do not create a requirement just to satisfy validation; set `skip_specs: true` in the change's `.openspec.yaml` when no spec-level behavior changes
+- do not create a requirement just to satisfy validation. This repository's `spec-driven` schema has no capability-less path: `tasks` requires `specs`, and `specs` requires at least one capability. When a change looks non-business (cross-cutting, technical-only), look for the business domain it actually serves — audit, observability, and operational-monitoring concerns are legitimate capabilities in a regulated business, not just "infra" — and scope the Requirement narrowly to what the change implements. Do not invent a capability-skip mechanism; none exists in the installed `openspec` CLI
 - do not put 配下の実装Spec単位一覧 in the 機能Spec; SPEC-MAP.md owns it
 - do not put インデックス方針, 実装方式, or 技術選定の理由 in a spec file; they belong in `design.md`
 - do not leave a 制約条件 without a measurable scenario — if the measurement condition cannot be stated, the constraint belongs in `design.md`
