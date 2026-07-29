@@ -24,6 +24,10 @@ Use these skills when the task already matches a known work type and you want co
   - choose and implement the right test scope
 - `koiki-frontend-work`
   - implement and validate root `frontend/` Vite + React SPA work
+- `koiki-spec-map-maintenance`
+  - register and update Spec identity, dependencies, and lifecycle state in a `.aidx/loop-design/` `SPEC-MAP.md` ledger
+- `koiki-feedback-loop-recording`
+  - record AI input/output, human judgment, and the Harvest-candidate flag in a Spec unit's `feedback-loop.md`
 
 ## Notes
 

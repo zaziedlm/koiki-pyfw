@@ -102,6 +102,27 @@ Loop #1 を書いた時点で Loop #2 が空なのは当然であり、上記の
 `SPEC-MAP.md` から相対リンクは張りません。change-name（文字列）をキーとして
 一覧管理し、参照が必要な場合はリポジトリ内検索で特定します（D-02 A-2③）。
 
+## OpenSpec（OPSX）コマンドとの対応タイミング
+
+`openspec new` / `opsx:*` コマンド群は `.aidx/loop-design/` の存在を一切意識しません。
+両者は独立した仕組みであるため、**OPSXの各ステップが完了した直後に、
+人またはエージェントが明示的に `.aidx/loop-design/` を更新する**必要があります。
+自動では連動しません。
+
+| OPSXステップ | 確定する成果物 | D-02ループ | `.aidx/loop-design/` で行うこと |
+| --- | --- | --- | --- |
+| `opsx:new` | change ディレクトリ作成 | ①要件定義 開始 | 案件が未着手なら `<案件名>/` を新規作成し、`SPEC-MAP.md`（第1〜2節）を配置する。既存案件なら何もしない |
+| `opsx:propose` / `opsx:ff`（proposal.md・デルタSpec確定） | 機能Spec／デルタSpec | ①要件定義 | `SPEC-MAP.md` 第3節・第4節に行を追加する（Spec番号は仮採番）。`<Spec単位>/feedback-loop.md` を新規作成し①要件定義欄を記入する |
+| `opsx:continue` / `opsx:update`（design.md確定） | 設計判断 | ②設計 | `feedback-loop.md` ②設計欄を記入する |
+| `opsx:apply`（tasks実装） | 実装コード | ③実装（＋④テスト） | `feedback-loop.md` ③実装欄、テストを書いた時点で④テスト欄を記入する |
+| `opsx:verify` | 検証結果 | ⑤評価・改善の起点 | `feedback-loop.md` ④受入条件充足状況・⑤評価・改善欄を記入する |
+| `opsx:sync` / `opsx:archive` | specs反映・archive | ループ完了 | `feedback-loop.md` のループ完了記録（次ループのパターン・Harvest候補フラグ）を記入する。`SPEC-MAP.md` 第4節の状態を完了に更新し完了日を記入、第7節 進捗サマリを再集計する |
+
+この対応は `docs/agent/skills/koiki-spec-map-maintenance/SKILL.md` と
+`docs/agent/skills/koiki-feedback-loop-recording/SKILL.md` の呼び出しタイミングの根拠です。
+どちらのSkillも、対応するOPSXステップが実際に完了した後にのみ呼び出し、
+計画段階やまだ発生していない事実で欄を埋めません。
+
 ## 関連ドキュメント
 
 | 文書 | 参照する内容 |
