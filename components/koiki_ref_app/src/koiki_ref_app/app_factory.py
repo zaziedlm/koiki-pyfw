@@ -241,8 +241,8 @@ def create_app() -> FastAPI:
         logger.debug("Health check endpoint called.")
         return {
             "status": "healthy",
-            "service": "koiki-framework",
-            "version": "0.8.0",
+            "service": settings.APP_NAME,
+            "version": request.app.version,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
@@ -251,8 +251,8 @@ def create_app() -> FastAPI:
         """API情報とドキュメントリンク"""
         logger.debug("Root endpoint called.")
         return {
-            "service": "KOIKI Framework API",
-            "version": "0.8.0",
+            "service": settings.APP_NAME,
+            "version": request.app.version,
             "docs": "/docs",
             "health": "/health",
         }
