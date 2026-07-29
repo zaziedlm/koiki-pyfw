@@ -38,3 +38,16 @@ For root `frontend/` work, use the current Vite + React SPA guidance in
 business backend layer, not a frontend placement area. When a backend API
 changes, check affected request/response schemas, status/error behavior,
 authorization, Cookie/CSRF behavior, public configuration, and frontend tests.
+
+## OpenSpec work
+
+For work involving `openspec/` or `.aidx/loop-design/`, follow:
+
+- `docs/agent/skills/koiki-spec-authoring/SKILL.md`
+- `openspec/config.yaml`
+- `openspec/AGENTS.md`
+
+KOIKI-specific specification rules take precedence over generic OpenSpec
+content conventions. Use Japanese `【SHALL】` / `【SHALL NOT】` requirement
+notation, and keep SPEC-MAP and loop-management records under
+`.aidx/loop-design/`.
