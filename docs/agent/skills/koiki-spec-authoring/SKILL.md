@@ -106,3 +106,5 @@ openspec validate --all --strict           # 提出前
 - `.aidx/SPEC-CHEATSHEET.md` — 1枚版
 - `docs/agent/boundaries.md` — レイヤ配置の判断
 - `openspec/config.yaml` — このリポジトリの spec 記述ルール
+- `../koiki-spec-map-maintenance/SKILL.md` — この Spec の一覧・依存関係を `SPEC-MAP.md` に反映する
+- `../koiki-feedback-loop-recording/SKILL.md` — このループの判断・学びを `feedback-loop.md` に記録する
