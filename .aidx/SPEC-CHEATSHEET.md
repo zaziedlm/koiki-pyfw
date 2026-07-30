@@ -1,6 +1,6 @@
 # Spec記述チートシート
 
-*AI駆動開発フレームワーク D-03 準拠 ／ OpenSpec v1.6.0（OPSX）*
+*AI駆動開発フレームワーク D-03 準拠 ／ OpenSpec v1.7.0（OPSX）*
 **日常はこの1枚だけ。迷ったら D-03 付録A。**
 
 ---
@@ -135,7 +135,7 @@ npx openspec update
 
 ## ⑦ ターミナルで使う `npx openspec`
 
-このリポジトリは `package.json` でOpenSpec v1.6.0を固定しています。開発者ごとのグローバル版差異を避けるため、**CLIは `npx openspec` に統一**します。
+このリポジトリは `package.json` でOpenSpec v1.7.0を固定しています。開発者ごとのグローバル版差異を避けるため、**CLIは `npx openspec` に統一**します。
 
 ```bash
 npx openspec --version                       # リポジトリ固定版を確認

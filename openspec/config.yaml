@@ -34,11 +34,15 @@ context: |
   種別ごとに立てるべきRequirementの骨格は
   docs/agent/skills/koiki-spec-authoring/references/requirement-patterns.md を参照する。
 
+  【skip_specs不使用】
+  本リポジトリはSpec必須方針を継続する。openspec/changes/<change-name>/.openspec.yaml に
+  skip_specs: true を設定しない。ドキュメントのみ・ツールのみの変更でもデルタSpecを作成する。
+
 rules:
   specs:
     # 記法（最優先。OpenSpec標準Skillsの英語SHALL散文を上書きする）
     - 規範文は箇条書きの行頭に【SHALL】または【SHALL NOT】を置いた日本語で記述する
-    - ラベルを太字にしない。**SHALL**: の形式はパーサがメタデータ行として除外するため使用禁止
+    - "ラベルを太字にしない。**SHALL**: の形式はパーサがメタデータ行として除外するため使用禁止"
     - 規範文は1行に1文とする。Requirement本文で使う記述強度は必須と禁止の2つのみとする
     - 推奨・非推奨・任意の記述はRequirement本文に含めず、design.mdまたは機能Specの補足に書く
     - Scenario見出しは必ず4つのハッシュ（#### Scenario:）で始める
