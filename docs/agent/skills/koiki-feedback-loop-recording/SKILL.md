@@ -42,8 +42,18 @@ The full mapping, including the `SPEC-MAP.md` side that `koiki-spec-map-maintena
 3. For ②設計, also record any AIレビューでの指摘 (抜け漏れ, 曖昧表現, Requirement/Scenario count mismatches).
 4. For ④テスト, record whether every Scenario has a corresponding test case — a count match/mismatch, not a vague "tests pass."
 5. Only after ③実装 and ④テスト have actually happened, fill ⑤評価・改善 (Specの改善点／Skillsの過不足／Specと実装の乖離).
-6. Close the loop by filling ループ完了記録: 次ループのパターン (A：改善／B：依存展開／C：次機能／D：終結), the reason, うまくいったこと, 課題, 改善提案, and the Harvest候補フラグ with its reasoning. Do not set the flag without naming the specific reusable pattern. When the pattern is D（終結）, also fill 終結理由（D-1／D-2／D-3のいずれか）とクローズ処理の実施記録, and finalize the Harvest候補フラグ and 標準化責任者へのフィードバック日 at this point — there is no next loop to defer them to.
+6. Close the loop by filling ループ完了記録: 次ループのパターン (A：改善／B：依存展開／C：次機能／D：終結), the reason, うまくいったこと, 課題, 改善提案, and the Harvest候補フラグ with its reasoning. Do not set the flag without naming the specific reusable pattern. When the pattern is D（終結）, also fill 終結理由（D-1／D-2／D-3のいずれか — see below）とクローズ処理の実施記録, and finalize the Harvest候補フラグ and 標準化責任者へのフィードバック日 at this point — there is no next loop to defer them to.
 7. Append the entry; report which Loop # and which steps were filled, and what evidence backed each.
+
+## D（終結）の終結理由
+
+D判定時は、次の3区分のうち実際に該当する1つを終結理由として記録する（D-02 3-1）。区分名だけで判断せず、クローズ時に記録すべき内容が実際に用意できる区分を選ぶ。
+
+| 区分 | 内容 | クローズ時に記録すること |
+| --- | --- | --- |
+| D-1　計画的完結 | 検証・PoC等、設計時点から1周で完結する前提だったループ | 当初の検証目的と、それが達成されたかの判断 |
+| D-2　スコープ完了 | 案件スコープ内の全Spec単位が完了した（案件最後のループ） | 全Spec単位の完了確認（`SPEC-MAP.md` との照合結果） |
+| D-3　中断・凍結 | 優先度変更・要件取り下げ・前提崩れにより後続を実施しない | 中断の理由と、再開時に引き継ぐべき前提・未確定事項 |
 
 ## Guardrails
 
@@ -53,7 +63,7 @@ The full mapping, including the `SPEC-MAP.md` side that `koiki-spec-map-maintena
 - Do not rewrite or delete a previous `## Loop #N` section to match a later decision. Append a new loop instead.
 - Do not fill ⑤評価・改善 or ループ完了記録 before ③実装/④テスト have actually happened for that loop.
 - Do not invent a 標準化責任者へのフィードバック日 unless that feedback was actually given.
-- Do not guess a D-1／D-2／D-3 終結理由 code from the pattern's name alone — confirm which one applies against D-02 3-1, and record only the クローズ処理 that was actually performed (e.g. an actual archive), not a planned one.
+- Do not guess a D-1／D-2／D-3 終結理由 code from the pattern's name alone — check it against the definitions in "D（終結）の終結理由" above, and record only the クローズ処理 that was actually performed (e.g. an actual archive), not a planned one.
 - Do not duplicate ledger-level facts (状態, 完了日, 進捗サマリ) here — those belong in `SPEC-MAP.md`; use `koiki-spec-map-maintenance` to update them once this loop's outcome is known.
 
 ## Read Next
