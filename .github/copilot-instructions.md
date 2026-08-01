@@ -45,7 +45,6 @@ For work involving `openspec/` or `.aidx/loop-design/`, follow:
 
 - `docs/agent/skills/koiki-spec-authoring/SKILL.md`
 - `openspec/config.yaml`
-- `openspec/AGENTS.md`
 
 KOIKI-specific specification rules take precedence over generic OpenSpec
 content conventions. Use Japanese `【SHALL】` / `【SHALL NOT】` requirement

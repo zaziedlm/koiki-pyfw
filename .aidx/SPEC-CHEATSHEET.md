@@ -259,4 +259,4 @@ Proposalの試行錯誤中に台帳を細かく更新せず、planning artifacts
 | 実装Spec種別ごとのRequirement骨格 | `docs/agent/skills/koiki-spec-authoring/references/requirement-patterns.md` |
 | このリポジトリのレイヤ配置ルール | `docs/agent/boundaries.md` |
 | OpenSpecのプロジェクト設定 | `openspec/config.yaml` |
-| OpenSpecの生成済みworkflow案内 | `openspec/AGENTS.md`（`npx openspec update` で生成。手編集しない） |
+| OpenSpecのワークフロー案内 | `.claude/skills/openspec-*/SKILL.md`（`npx openspec update` で生成。手編集しない） |
