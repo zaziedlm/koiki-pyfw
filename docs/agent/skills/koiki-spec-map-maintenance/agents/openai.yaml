@@ -1,0 +1,4 @@
+interface:
+  display_name: "KOIKI SPEC-MAP Maintenance"
+  short_description: "Register and update Spec identity, dependencies, and lifecycle state in a .aidx/loop-design SPEC-MAP.md ledger."
+  default_prompt: "Use $koiki-spec-map-maintenance to update this .aidx/loop-design/<案件名>/SPEC-MAP.md ledger now that the relevant opsx step has completed, touching only the sections that step actually affects."

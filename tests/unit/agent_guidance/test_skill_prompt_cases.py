@@ -10,6 +10,18 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 PROMPT_CASES_PATH = Path(__file__).with_name("prompt_cases.yaml")
 CANONICAL_ROOT = REPO_ROOT / "docs" / "agent" / "skills"
 
+# This catalog exercises layer/task *routing* prompts only: which skill should
+# fire first for an ambiguous or multi-layer request. The skills below are not
+# routing skills — they govern content/notation within an artifact once its
+# location is already known — so they carry no prompt cases here. Their own
+# catalog contract (frontmatter, agents/openai.yaml) is covered by
+# test_skill_catalog.py instead.
+NON_ROUTING_SKILLS = {
+    "koiki-spec-authoring",
+    "koiki-spec-map-maintenance",
+    "koiki-feedback-loop-recording",
+}
+
 
 def _load_prompt_cases() -> dict:
     return yaml.safe_load(PROMPT_CASES_PATH.read_text(encoding="utf-8"))
@@ -19,8 +31,11 @@ def test_prompt_case_catalog_matches_skill_directories() -> None:
     payload = _load_prompt_cases()
     declared_skills = set(payload["skills"])
     canonical_skills = {path.name for path in CANONICAL_ROOT.iterdir() if path.is_dir()}
+    routing_skills = canonical_skills - NON_ROUTING_SKILLS
 
-    assert declared_skills == canonical_skills
+    assert declared_skills == routing_skills
+    assert declared_skills.isdisjoint(NON_ROUTING_SKILLS)
+    assert NON_ROUTING_SKILLS.issubset(canonical_skills), "exclusion list references a skill that no longer exists"
 
 
 def test_prompt_cases_are_well_formed() -> None:

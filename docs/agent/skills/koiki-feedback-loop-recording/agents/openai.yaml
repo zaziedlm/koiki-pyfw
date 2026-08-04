@@ -1,0 +1,4 @@
+interface:
+  display_name: "KOIKI Feedback Loop Recording"
+  short_description: "Record AI input/output, human judgment, deviations, and the Harvest-candidate flag as a Loop #N entry in a Spec unit's feedback-loop.md."
+  default_prompt: "Use $koiki-feedback-loop-recording to append the outcome of the opsx step that just completed to the Spec unit's feedback-loop.md, based only on evidence you actually observed."
