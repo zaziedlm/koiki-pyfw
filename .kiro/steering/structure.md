@@ -1,183 +1,189 @@
-# ディレクトリ構造とコード配置
+# Project Structure
 
-## このステアリングファイルについて
+## Core Principle
 
-このファイルはKiroでの作業時に、コードをどこに配置すべきかを素早く判断するための簡潔なガイドです。
+**Layered separation**: Framework layer (`components/libkoiki/`) provides reusable capabilities; application layer (`components/koiki_ref_app/`) builds business logic on top.
 
-**詳細なルールは `docs/agent/boundaries.md` と `docs/agent/architecture.md` を参照してください。**
-
----
-
-## ディレクトリ構造
+## Top-Level Directories
 
 ```
 koiki-v07/
-├── components/
-│   ├── libkoiki/                    # 再利用可能なフレームワーク
-│   │   ├── src/libkoiki/
-│   │   │   ├── api/v1/              # フレームワークAPI
-│   │   │   ├── core/                # 設定、認証、ミドルウェア
-│   │   │   ├── models/              # 共通モデル
-│   │   │   ├── repositories/        # 共通リポジトリ
-│   │   │   ├── schemas/             # 共通スキーマ
-│   │   │   └── services/            # 共通サービス
-│   │   └── tests/                   # フレームワークテスト
-│   │
-│   └── koiki_ref_app/               # リファレンスアプリケーション
-│       ├── src/koiki_ref_app/
-│       │   ├── api/v1/              # アプリケーションAPI
-│       │   ├── asgi.py              # ASGIエントリーポイント
-│       │   ├── models/              # アプリ固有モデル
-│       │   ├── repositories/        # アプリ固有リポジトリ
-│       │   ├── schemas/             # アプリ固有スキーマ
-│       │   └── services/            # アプリ固有サービス
-│       ├── alembic/                 # マイグレーション
-│       └── tests/                   # アプリケーションテスト
-│
-├── app/                             # 互換性ラッパー（レガシー）
-│   └── main.py                      # 旧エントリーポイント
-│
-├── frontend/                        # Next.js フロントエンド
-│   ├── src/
-│   │   ├── app/                     # App Router
-│   │   ├── components/              # Reactコンポーネント
-│   │   ├── hooks/                   # カスタムフック
-│   │   ├── lib/                     # ユーティリティ
-│   │   └── types/                   # TypeScript型定義
-│   └── public/                      # 静的ファイル
-│
-├── tests/                           # ルート統合テスト
-├── docs/                            # ドキュメント
-│   └── agent/                       # エージェント向けガイダンス
-├── ops/                             # 運用ヘルパー
-└── docker/                          # Docker関連ファイル
+├── components/              # Core implementation workspace
+│   ├── libkoiki/           # Reusable framework layer
+│   └── koiki_ref_app/      # Reference application layer
+├── app/                    # Compatibility wrapper (legacy imports only, no new code)
+├── apps/                   # Downstream business applications (reserved)
+├── frontend/               # Reference Vite + React SPA
+├── tests/                  # Root-level shared, e2e, and agent guidance tests
+├── docs/                   # Design documentation and agent guidance
+├── openspec/               # OpenSpec capability specs and change proposals
+├── .aidx/                  # AI-driven development operations (spec ledger, feedback loops)
+├── .kiro/                  # Kiro IDE configuration (steering, skills, hooks)
+├── ops/                    # Operations scripts, security testing
+├── docker/                 # Docker configurations (Keycloak realm exports)
+└── pyproject.toml          # Workspace root package definition
 ```
 
----
+## Backend Structure
 
-## コード配置の判断フロー
-
-### 1. バックエンドコードの配置
+### `components/libkoiki/` (Framework Layer)
 
 ```
-質問: このコードは他のアプリケーションでも使えるか？
-  │
-  ├─ YES → components/libkoiki/
-  │         例: 認証、設定、共通ミドルウェア、汎用API
-  │
-  └─ NO  → components/koiki_ref_app/
-            例: ビジネスロジック、SSO統合、参照ドメイン
+libkoiki/
+├── src/libkoiki/
+│   ├── api/v1/             # Framework API routes (auth, users, roles, permissions, todos)
+│   ├── core/               # Config, security, logging, dependencies, middleware
+│   ├── models/             # SQLAlchemy models (User, Role, Permission, etc.)
+│   ├── repositories/       # Data access layer (async repositories)
+│   ├── schemas/            # Pydantic schemas (request/response DTOs)
+│   ├── services/           # Business logic layer (auth, user, role, permission services)
+│   ├── auth/               # Authentication implementations (JWT, SSO/OIDC, SAML)
+│   └── utils/              # Shared utilities
+├── tests/                  # Framework-owned tests
+└── pyproject.toml          # Framework package definition
 ```
 
-### 2. 階層別の配置
+**Owns**: Reusable auth mechanisms, RBAC infrastructure, base API patterns, shared models/schemas/services, framework extension points.
 
-| 階層 | libkoiki | koiki_ref_app |
-|------|----------|---------------|
-| **API層** | `src/libkoiki/api/v1/` | `src/koiki_ref_app/api/v1/` |
-| **Service層** | `src/libkoiki/services/` | `src/koiki_ref_app/services/` |
-| **Repository層** | `src/libkoiki/repositories/` | `src/koiki_ref_app/repositories/` |
-| **Model層** | `src/libkoiki/models/` | `src/koiki_ref_app/models/` |
-| **Schema層** | `src/libkoiki/schemas/` | `src/koiki_ref_app/schemas/` |
-| **Core/Infrastructure** | `src/libkoiki/core/` | - |
-
-### 3. テストの配置
+### `components/koiki_ref_app/` (Application Layer)
 
 ```
-テスト対象に合わせて配置:
-- フレームワーク機能 → components/libkoiki/tests/
-- アプリケーション機能 → components/koiki_ref_app/tests/
-- 統合テスト → tests/
+koiki_ref_app/
+├── src/koiki_ref_app/
+│   ├── api/v1/             # Application-specific API routes
+│   ├── models/             # Application-specific models
+│   ├── repositories/       # Application-specific repositories
+│   ├── schemas/            # Application-specific schemas
+│   ├── services/           # Application-specific business logic
+│   ├── asgi.py             # ASGI application entrypoint
+│   └── app_factory.py      # Application factory and composition
+├── alembic/                # Database migrations (application-owned)
+│   ├── versions/           # Migration scripts
+│   └── env.py              # Alembic environment config
+├── tests/                  # Application-owned tests
+└── pyproject.toml          # Application package definition
 ```
 
----
+**Owns**: Business workflows, application composition, SSO/SAML wiring for this project, domain-specific features, migration management.
 
-## 具体例
+### `app/` (Compatibility Wrapper)
 
-### ✅ 正しい配置例
+Minimal wrapper maintaining `app.main:app` import path for legacy compatibility. **Do not add new implementation here.**
 
-**フレームワーク機能（libkoiki）:**
-```python
-# components/libkoiki/src/libkoiki/core/auth.py
-# JWT認証の共通実装
+## Frontend Structure
 
-# components/libkoiki/src/libkoiki/services/user_service.py
-# 汎用的なユーザー管理サービス
+```
+frontend/
+├── src/
+│   ├── components/         # React components (ui/, features/, layout/)
+│   ├── features/           # Feature-specific logic (auth/, todos/, profile/)
+│   ├── lib/                # Utilities, API client, types
+│   ├── hooks/              # Custom React hooks
+│   ├── stores/             # Zustand stores
+│   └── main.tsx            # Application entry point
+├── public/                 # Static assets
+├── tests/                  # Frontend tests
+└── package.json            # Frontend dependencies
 ```
 
-**アプリケーション機能（koiki_ref_app）:**
-```python
-# components/koiki_ref_app/src/koiki_ref_app/services/sso_service.py
-# SSO統合のビジネスロジック
+## Testing Structure
 
-# components/koiki_ref_app/src/koiki_ref_app/api/v1/endpoints/todos.py
-# Todo機能のエンドポイント（参照実装）
+```
+tests/                      # Root-level tests
+├── unit/
+│   └── agent_guidance/     # Agent guidance validation tests
+├── integration/
+│   └── services/           # Cross-layer integration tests
+└── conftest.py             # Shared test fixtures
+
+components/libkoiki/tests/  # Framework layer tests
+components/koiki_ref_app/tests/  # Application layer tests
 ```
 
-### ❌ 避けるべき配置
+**Test placement rule**: Place tests near the responsibility they validate. Framework tests in `libkoiki/tests/`, application tests in `koiki_ref_app/tests/`, cross-layer tests in root `tests/`.
 
-```python
-# ❌ ビジネスロジックをlibkoikiに配置
-# components/libkoiki/src/libkoiki/services/company_specific_workflow.py
+## Documentation Structure
 
-# ❌ 汎用機能をkoiki_ref_appで再実装
-# components/koiki_ref_app/src/koiki_ref_app/core/duplicate_auth.py
-
-# ❌ 新規コードをapp/に配置
-# app/new_feature.py
+```
+docs/
+├── agent/                  # Agent operational guidance (read first)
+│   ├── boundaries.md       # Layer separation rules
+│   ├── architecture.md     # Layered architecture patterns
+│   ├── environment.md      # Development environment setup
+│   ├── testing.md          # Testing strategy
+│   └── auth-security.md    # Authentication/security guidance
+├── design_kkfw_0.8.0.md    # Current version design overview
+├── dev/                    # Development task records
+└── frontend-spa-implementation-guide.ja.md  # Frontend contract guide
 ```
 
----
+## OpenSpec Structure
 
-## 重要な原則
-
-### 1. 依存の方向
 ```
-上位層 → 下位層（OK）
-下位層 → 上位層（NG）
-
-例:
-API → Service → Repository → Model（OK）
-Model → Service（NG）
+openspec/
+├── specs/                  # Capability specifications (source of truth for intended behavior)
+├── changes/                # Change proposals and work-in-progress specs
+└── package.json            # OpenSpec CLI tooling
 ```
 
-### 2. コンポーネント間の依存
+## AI Development Framework
+
 ```
-koiki_ref_app → libkoiki（OK）
-libkoiki → koiki_ref_app（NG）
+.aidx/
+├── loop-design/            # Spec ledger and feedback loops
+│   ├── SPEC-MAP.md         # High-level spec dependency map
+│   └── [capability]/       # Per-capability feedback loop records
+└── SPEC-CHEATSHEET.md      # Quick reference for spec operations
+
+.kiro/
+├── steering/               # Always-included agent context (this file, product.md, tech.md)
+├── skills/                 # Task-specific agent skills
+└── hooks/                  # Agent automation hooks
 ```
 
-### 3. app/の扱い
+## Layer Communication Rules
+
+### Dependency Flow (One Direction)
+
 ```
-app/ は互換性ラッパーのみ
-新規コードは components/ 配下に配置
+API Layer → Service Layer → Repository Layer → Model Layer
+     ↓            ↓                ↓              ↓
+All layers can use: Core/Infrastructure (config, auth, logging, etc.)
 ```
 
----
+**Never reverse this flow.** Lower layers must not depend on higher layers.
 
-## 迷ったときの判断基準
+### Cross-Layer Boundaries
 
-1. **「他のアプリでも使えるか？」** を自問する
-2. 不明な場合は **koiki_ref_app に配置** してから検討
-3. 既存の類似コードの配置を参考にする
-4. **現在の実装が最優先**（ドキュメントより実装を信頼）
+- **libkoiki → koiki_ref_app**: Application imports and extends framework. Framework must not import application code.
+- **Frontend → Backend**: Frontend consumes backend APIs. Backend does not depend on frontend code.
+- **Test → Implementation**: Tests import implementation code. Implementation must not import tests.
 
----
+## File Placement Decision Tree
 
-## Skills との協調
+1. **Is it reusable across multiple applications?**
+   - Yes → `components/libkoiki/`
+   - No → Continue to 2
 
-コード配置の判断には以下のSkillsが役立ちます：
+2. **Is it business-specific to this reference application?**
+   - Yes → `components/koiki_ref_app/`
+   - No → Continue to 3
 
-- **koiki-project-overview**: タスク分類とレイヤー選択
-- **koiki-libkoiki-feature-work**: フレームワーク層（components/libkoiki/）での作業
-- **koiki-refapp-feature-work**: リファレンスアプリ層（components/koiki_ref_app/）での作業
-- **koiki-business-app-feature-work**: ダウンストリーム業務アプリ層（apps/）での作業
+3. **Is it downstream customer/tenant-specific?**
+   - Yes → `apps/[customer]/`
+   - No → Reconsider if it belongs in libkoiki
 
----
+4. **Is it frontend code?**
+   - Yes → `frontend/`
 
-## 参照先
+5. **Is it documentation?**
+   - Yes → `docs/` (architecture, design) or `.aidx/` (spec ledger)
 
-詳細なルールは以下を参照してください：
+## Anti-Patterns to Avoid
 
-- **docs/agent/boundaries.md**: コンポーネント境界の詳細ルール
-- **docs/agent/architecture.md**: アーキテクチャの詳細
-- **AGENTS.md**: エージェント向けエントリーポイント
+- Adding business logic to `components/libkoiki/` for convenience
+- Adding new code to `app/` (compatibility wrapper only)
+- Creating parallel structure instead of extending existing patterns
+- Bypassing service layer for non-trivial business logic
+- Duplicating framework behavior in application layer
+- Introducing new directory conventions without strong justification
