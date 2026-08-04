@@ -1,0 +1,73 @@
+# OpenSpec プロジェクト設定
+#
+# schema : 使用するスキーマ。カスタムスキーマを導入する場合はここを差し替える
+# context: すべての成果物生成時にAIへ渡されるプロジェクト共通コンテキスト
+# rules  : 成果物ごとの記述ルール。OpenSpec標準Skillsの指示を上書きする
+#
+# 記述規約の正本は docs/agent/skills/koiki-spec-authoring/SKILL.md
+# 本ファイルは、その規約をAIへ機械的に効かせるための設定である
+
+schema: spec-driven
+
+context: |
+  【レイヤ構成】
+  - components/libkoiki/     再利用可能なバックエンドフレームワーク層
+  - components/koiki_ref_app/ 参照アプリケーション層
+  - apps/                    下流・顧客固有のバックエンド層
+  - frontend/                参照フロントエンド（Vite + React SPA）
+  - app/                     レガシー互換ラッパ
+  配置の判断は docs/agent/boundaries.md に従う。判断に迷う場合は下流側（apps/）に置く。
+
+  【SpecとSourceofTruthの関係】
+  openspec/specs/ は「満たすべき状態」の正本であり、実装は「現在の状態」の正本である。
+  両者の乖離は、Spec未反映かデグレのいずれかのシグナルであり、
+  openspec/changes/ を起票する契機とする。どちらかを黙って書き換えてはならない。
+
+  【Spec階層】
+  - 機能Spec（openspec/specs/<capability>/）業務ドメイン単位。capability全体に効く業務ルールの正本
+  - 実装Spec単位（openspec/changes/<change-name>/）個別の振る舞い。必ず1つの機能Specに属する
+  実装Spec単位の一覧・番台・依存関係・進捗は .aidx/loop-design/<案件名>/SPEC-MAP.md が管理する。
+  機能Specには配下の実装Spec単位一覧を書かない。
+
+  【実装Spec種別】
+  共通機能／API連携／データ・DB／外部サービス連携／セキュリティ横断／画面・UI の6種。
+  種別ごとに立てるべきRequirementの骨格は
+  docs/agent/skills/koiki-spec-authoring/references/requirement-patterns.md を参照する。
+
+  【skip_specs不使用】
+  本リポジトリはSpec必須方針を継続する。openspec/changes/<change-name>/.openspec.yaml に
+  skip_specs: true を設定しない。ドキュメントのみ・ツールのみの変更でもデルタSpecを作成する。
+
+rules:
+  specs:
+    # 記法（最優先。OpenSpec標準Skillsの英語SHALL散文を上書きする）
+    - 規範文は箇条書きの行頭に【SHALL】または【SHALL NOT】を置いた日本語で記述する
+    - "ラベルを太字にしない。**SHALL**: の形式はパーサがメタデータ行として除外するため使用禁止"
+    - 規範文は1行に1文とする。Requirement本文で使う記述強度は必須と禁止の2つのみとする
+    - 推奨・非推奨・任意の記述はRequirement本文に含めず、design.mdまたは機能Specの補足に書く
+    - Scenario見出しは必ず4つのハッシュ（#### Scenario:）で始める
+    - Scenario の WHEN / THEN にラベルを付けない
+
+    # 構造
+    - 受入条件を独立セクションとして書かない。Scenarioがそのまま受入条件である
+    - 各Requirementに正常系・異常系・境界値のScenarioを揃える
+    - デルタSpecの内容は必ず ADDED / MODIFIED / REMOVED / RENAMED Requirements 配下に置く
+    - Requirement本文は500文字以内に収める。定義表が大きくなる場合は意味単位でRequirementを分割する
+    - 定義表は4列・5行程度を目安とし、超える場合はRequirementを分割する
+
+    # 内容
+    - 曖昧表現（適切に・なるべく・必要に応じて・〜できる・〜を考慮する）を使わず、数値と条件で記述する
+    - 制約条件には計測条件を明示する。計測条件を明示できない制約はdesign.mdに回す
+    - 本Specの対象外とする事項は「〜は本Specの対象外とし、〜に委ねる」と明示する。推測で補完しない
+    - 業務ドメイン用語は機能Specの業務処理概要で定義してから使う
+    - 画面制御（非表示・活性制御・遷移制限）を認可の実施手段として記述しない
+
+  design:
+    - components/libkoiki と components/koiki_ref_app と apps のどちらに置くかの判断根拠を必ず記す
+    - Specに書けなかった事項（計測条件が未確定な制約・実装方式・技術選定）をここに集約する
+    - 未確定の判断は「未確定」と明示し、いつ・何をもって決めるかを書く
+    - インデックス方針・キャッシュ無効化の実装手段・コンポーネント分割はここに書く
+
+  tasks:
+    - テスト項目はデルタSpecのScenarioと1対1で対応させる
+    - Scenario総数とテストケース数が一致することを確認する項目を含める

@@ -1,0 +1,4 @@
+interface:
+  display_name: "KOIKI Spec Authoring"
+  short_description: "Write OpenSpec capability specs, proposals, and delta specs in this repository's Japanese 【SHALL】 notation."
+  default_prompt: "Use $koiki-spec-authoring to write or revise this OpenSpec artifact in the repository's 【SHALL】 notation and validate it before handing over."
