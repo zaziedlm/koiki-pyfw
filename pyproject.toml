@@ -51,7 +51,7 @@ dependencies = [
     
     # HTTP & Communication
     "httpx>=0.28.1,<0.29.0",                # Updated HTTP client
-    "python-multipart>=0.0.20,<0.1.0",      # Minor version locked
+    "python-multipart>=0.0.32,<0.1.0",      # Minor version locked
     
     # Logging & Monitoring
     "structlog>=25.4.0,<25.5.0",            # Updated structured logging
@@ -81,7 +81,7 @@ dev = [
     "PyYAML>=6.0,<7.0",
     
     # Security & Quality Assurance (pydantic 2.7+ compatible)
-    "pip-audit>=2.9.0,<3.0.0",           # Dependency audit (pydantic independent)
+    "pip-audit>=2.10.1,<3.0.0",           # Dependency audit (pydantic independent)
     "bandit>=1.8.0,<1.9.0",              # Security linter (pydantic independent)
 ]
 test = [
@@ -92,7 +92,7 @@ test = [
 ]
 security = [
     # Enterprise Security Tooling (pydantic 2.7+ compatible)
-    "pip-audit>=2.9.0,<3.0.0",           # OSV database audit (pydantic independent)
+    "pip-audit>=2.10.1,<3.0.0",           # OSV database audit (pydantic independent)
     "bandit>=1.8.0,<1.9.0",              # Static security analysis (pydantic independent)
     # Note: safety excluded due to pydantic <2.0 dependency conflict
     # Alternative: Use pip-audit which covers similar vulnerability detection
