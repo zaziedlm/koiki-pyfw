@@ -25,20 +25,11 @@ AsyncMock、非推奨API、テスト用HMACキー長などの警告は既存と�
 
 ## 3. 採用版の判断
 
-以下は先行調査で確認した対策基準であり、実装着手時に一次情報を再照合する。最新リリース番号を推測して確定しない。
+2026-10-26の再照合で、Python **3.13.18**、certifi **2026.10.23**、pip **26.2.2**、uv **0.13.5**を採用版に確定した。Debian bookwormを継続し、CAは **20250419~deb12u2**、libbrotli1は **1.0.9-2+deb12u1**（各々同系列の後続修正版を許容）を基準とする。Python向けBrotliは追加しない。
 
-| 対象 | 現状 | 採用方針／未確定事項 |
-| --- | --- | --- |
-| Python | Docker・CI・Dev Container は3.13.13 | 3.13系継続。3.13.17は同梱pip対策の候補であり、ssl拒否リストの収録証明とは別。CVE修正収録済みの配布版・ベンダー情報・イメージ提供を確認して確定 |
-| certifi | ロック2026.4.22 | 2026.10.19以上。rootとlibkoiki単独配布の双方で旧版への解決を防ぐ下限を検討 |
-| pip | ロック26.1.1 | 26.2.2以上。pip-audit→pip-apiの依存、仮想環境、Python本体／ensurepipの内蔵コピーを別に確認 |
-| uv | Docker指定0.11.7 | 0.13.4以上。Docker・CI・Dev Container・更新作業に使う実体を揃える |
-| OS CA | 更新処理あり、反映状態不明 | OSの対策情報・CA内容・独自追加CAを確認。HTTPXのSSL_CERT_FILE指定とpip内蔵CAを別に確認 |
-| Brotli | Pythonパッケージ未導入 | 不要なBrotliパッケージを追加しない。curlなどが参照するOSライブラリと到達経路を確認し、OS修正版を採用 |
+公式根拠、配布ハッシュ、現行wheel互換性と適用先は [採用版の再照合結果](version-selection.md) を正本とする。
 
-Brotli上流修正版の先行調査基準は1.0.10／1.1.1／1.2.1。Debian bookwormのバックポート基準は1.0.9-2+deb12u1であり、数字の単純比較だけで判定しない。実際のOS系列に対応するベンダー勧告を記録する。PythonのBrotli導入が新たに見つかった場合は Brotli 1.2.1以上／brotlicffi 1.2.1.0以上を候補に一次情報と照合する。
-
-CPythonのssl対策が利用する配布物で未提供の場合は、CA／取得ツール対策を先行し、ssl対策を残件として明示する。全体完了にはしない。保守主体が不明な独自CPythonパッチは採用しない。
+Python 3.13.18にはCVE-2026-115557の収録証拠があるが、確認時点では `python:3.13.18-slim-bookworm` は404、Actionsのmanifestも未掲載。T1.1は配布待ち、T1.2／T1.3は完了とする。取得ツール・CA準備のT2を先行し、T3の実環境更新はT1.4の配布物確認後に行う。3.13.17をssl対策済みとして代替しない。
 
 ## 4. 段階と変更単位
 
@@ -107,4 +98,4 @@ DDL往復テストは、新規作成した `koiki_baseline_contract` DBだけを
 - Brotli: https://github.com/google/brotli/releases/tag/v1.2.1
 - Debian: https://security-tracker.debian.org/tracker/CVE-2026-111497
 
-採用版確定時に確認日・リリース番号・収録証拠・対象イメージを追記する。上記URLへのリンクは今回の最新情報再調査を実施したことを意味しない。
+採用版確定時に確認日・リリース番号・収録証拠・対象イメージを追記する。今回の再照合結果・確認日・配布物の制約はversion-selection.mdを参照する。
