@@ -4,6 +4,7 @@
 
 ブランチ: `security/backend-python-emsign-brotli`。方針・手順・タスクの文書化と採用版の公式情報再照合まで実施。Python、依存定義、ロック、Docker、CIの更新は未着手。
 
+- [更新前OSS監査結果と残件](../security/audits/2026-10-26-preupdate/README.md)
 - [変更理由・対象](../../openspec/changes/backend-python-security-update/proposal.md)
 - [対応方針・採用版判断・進め方・更新前検証結果・戻し方](../../openspec/changes/backend-python-security-update/design.md)
 - [採用版・公式根拠・配布待ちの記録](../../openspec/changes/backend-python-security-update/version-selection.md)

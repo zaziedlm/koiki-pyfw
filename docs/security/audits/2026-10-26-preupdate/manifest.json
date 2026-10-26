@@ -1,0 +1,86 @@
+{
+  "audited_commit": "9d8a173c4c5b56cfb1eb55c6cf56e0eff40d7d2e",
+  "branch": "security/backend-python-emsign-brotli",
+  "recorded_at": "2026-10-26T03:02:44.007915+00:00",
+  "timezone_for_report": "Asia/Tokyo",
+  "tools": {
+    "python": "3.13.13",
+    "pip-audit": "2.10.0",
+    "bandit": "1.8.6",
+    "node": "v24.19.0",
+    "npm": "11.9.0",
+    "trivy": "0.76.1",
+    "trivy_archive_sha256": "c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0"
+  },
+  "source_files": {
+    "uv.lock": "c2000858abf0f326c8273c86862a0bba108731585285a2dec2d46c4fb89fd582",
+    "pyproject.toml": "81a8f5e7aa0c62818158eca3a3a82735e0a597a70d49f7fde39e1c61aa29f9fc",
+    "components/libkoiki/pyproject.toml": "a98790edebeb6c769826e9769ed6c75a9ca0be3a316de9b1d22ab08098579232",
+    "components/koiki_ref_app/pyproject.toml": "4ea37f86feb2ea4f26316f3de4b1e4a9884d38c9cd0a66f4c53cf810cb3b63c9",
+    "package.json": "4f0f247f6c84fb28c7fd450c293c902585ebc3e5b56e2c4ff96b5634d7258b6c",
+    "package-lock.json": "c319a6ca94360bb57fe149dec5dbda23e9ebe40ffa9f84d53502faa1d6a03870",
+    "frontend/package.json": "4f69baa65090a436ff6c5a75e9fd3c14d2bdc4fdee4fa7641ad6c77a37121b83",
+    "frontend/package-lock.json": "bc0ded6ee40c7b71902dfda129de28f2e97711f25bea31d2021b7bdcba55ff47",
+    "Dockerfile": "410583edeb82a81d09a40151ebaf9924fea01f5f41d91367aff9cdbe35c165aa",
+    "Dockerfile.unified": "d51851fe8296cde02c8aee51b143ef7635bda15d284c10f05a69d54e46e79563",
+    "frontend/Dockerfile": "fb9462c5866c7ab8773356ed21d1cde127e91de154e3b058beefce1a66803b12",
+    "frontend/Dockerfile.unified": "9e80209a24c183868cde088549bc0cf1a7218a50654120e35cf411ca6753011d",
+    ".devcontainer/Dockerfile.devcontainer": "996fdee5c994dc0a1cc81c88194877d5f7182dd2efc11185e7e832222cf2f6fb"
+  },
+  "reports": {
+    "python-environment.json.gz": {
+      "sha256_uncompressed": "691f8f4d7638d9b29e57398d0b6f14a32ddca85d7f49440e59003a6435669fe7",
+      "sha256_compressed": "36c09c0988a07378de5cba422573967555f9189090a2b0e06e699422dc4c2c83"
+    },
+    "python-lock.json.gz": {
+      "sha256_uncompressed": "2a21d836e5c213ceca093baadb5adc5855ebd26b7a200ec4fb9c816801fc9d02",
+      "sha256_compressed": "59396220c1802e6b5c2ea7e2dd47f1b6dc5f77868bcfbe647afabac1724fc298"
+    },
+    "bandit.json.gz": {
+      "sha256_uncompressed": "1fa286b765a4b78c5c9a07a3e108cf73321e5bd48916555d9a31a4985e5b146f",
+      "sha256_compressed": "214005accf21212e22966d440401fbe3eb2438c9b653bdb873ecf6668774e966"
+    },
+    "npm-root.json.gz": {
+      "sha256_uncompressed": "ff3e6b4e0023e974b0feffb0f4b695669c7617c2e53fec3c68f37d6b91ade4d1",
+      "sha256_compressed": "1fbdeeb037554ac0dfa698f28ca1f8d166d9155019aabc515e87d2831dbe0bbc"
+    },
+    "npm-frontend.json.gz": {
+      "sha256_uncompressed": "5f419562d0fa0292df15559e0caf0e1b5de783cf89c4433ae0831b7f89005a32",
+      "sha256_compressed": "014a2c1e99f62112cd8258b5710de29e5c9490c4052536a324525f58af950db8"
+    },
+    "image-python-base.json.gz": {
+      "sha256_uncompressed": "280531ed448501de47270db536de47f609f886fed476aaad6a7786f3da74f9c4",
+      "sha256_compressed": "c2a85048ea824bbbacaa3adbe89c7110d1ac80bc4f248f82c15c705f2a60f4d4"
+    },
+    "image-node-base.json.gz": {
+      "sha256_uncompressed": "81cbb3187ad643f4b95cbeb70a94d24f37ff7a8693881299f75c04acdb848ed4",
+      "sha256_compressed": "79e3c79fde0202d001cca919a0eb442f0638fa8c90850bdfc732bc5a040fd03b"
+    },
+    "image-nginx.json.gz": {
+      "sha256_uncompressed": "d74a1d9453fe538df908a25ae4fec03b7d300bd78b8427aa0673fd83aadb6895",
+      "sha256_compressed": "9c786b04d0e5dfe87863dc37f4807f4d0f3738626b4eb74ddd1d00cbccfb66fd"
+    },
+    "image-postgres.json.gz": {
+      "sha256_uncompressed": "6e5bbf6e42aa9e0ce4c5f6546b9d9f9eaa00fd3b41cd13eab753125929636662",
+      "sha256_compressed": "26a718bdf54e7dd05df04cd17a51b0327383c41d41fcfb46319903a4b7a9e90c"
+    }
+  },
+  "scanner_exit_codes": {
+    "python-environment": 1,
+    "python-lock": 1,
+    "bandit": 0,
+    "npm-root": 1,
+    "npm-frontend": 1,
+    "image-python-base": 0,
+    "image-node-base": 0,
+    "image-nginx": 0,
+    "image-postgres": 0,
+    "image-keycloak": 1
+  },
+  "trivy_db": {
+    "Version": 2,
+    "NextUpdate": "2026-10-27T01:20:01.380937429Z",
+    "UpdatedAt": "2026-10-26T01:20:01.38093772Z",
+    "DownloadedAt": "2026-10-26T02:58:13.570578585Z"
+  }
+}

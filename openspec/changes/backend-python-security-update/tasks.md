@@ -8,6 +8,14 @@
 - [x] B1 現行版・ロック一致・検証条件を記録（design.md 第2節）。
 - [x] B2 基準テスト328成功・1スキップを確認。専用DBとテスト用キーを使用。
 
+## 0a. 更新前OSS監査
+
+- [x] A0.1 依存・ロックを変更せず、Python既存環境とロック全体、Bandit、root／frontend npmの結果を取得する。
+- [x] A0.2 既存PostgreSQLと公開Python／Node／Nginxベース素材をTrivyで検査し、digest・DB日時・生JSON・ツール版・終了コードを保存する。
+- [x] A0.3 指摘の重複、runtime／dev、検査失敗と未検査範囲を区別し、後続U01～U08を記録する。正本は `docs/security/audits/2026-10-26-preupdate/README.md`。
+- [ ] A0.4 Keycloakのレイヤー取得エラーを解消して再検査し、完成アプリ／Dev Containerの監査と配備CPUの確認を行う。
+- [ ] A0.5 U01～U08の利用条件・修正版・制約変更を精査し、今回修正／別タスク／未提供／非該当を根拠付きで確定する。
+
 ## 1. 採用版の確定
 
 - [ ] T1.1 公式情報を再照合し、Python 3.13のssl修正収録済み配布版・イメージ・wheel提供を確定する。【一部完了・配布待ち】3.13.18の収録とwheel互換性は確認済み。Docker／Actions配布物は未提供。
