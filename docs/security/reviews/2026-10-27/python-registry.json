@@ -1,0 +1,56 @@
+{
+  "tag": "python:3.13.18-slim-bookworm",
+  "status": 200,
+  "index_digest": "sha256:770c65dea7da9d5eeddb968968bd514ee9fdd9bb8988e03b4463eb11ad72d3ca",
+  "manifests": [
+    {
+      "digest": "sha256:89c04d97d1f3f0a04ea357a27d000ba4efb18536d2d68a54611f76d5c1b5fe99",
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      }
+    },
+    {
+      "digest": "sha256:def60e0e1da807601c540e5bfeeb7486dff830cb5bbbae9d894022e4ef7220b6",
+      "platform": {
+        "architecture": "unknown",
+        "os": "unknown"
+      }
+    },
+    {
+      "digest": "sha256:fb12d5e51ef10ac4bc3c0b669166bbc16487cd918543ca7e6e0a899e22c550ae",
+      "platform": {
+        "architecture": "arm64",
+        "os": "linux",
+        "variant": "v8"
+      }
+    },
+    {
+      "digest": "sha256:14d01bf7717b1613751491b39c08d3e699edd410e46dd4f20aeb76cc1445c4a7",
+      "platform": {
+        "architecture": "unknown",
+        "os": "unknown"
+      }
+    },
+    {
+      "digest": "sha256:5167b06979e575d9161496db4975034cae61249dd919d2909ede3d5db1b6d8d8",
+      "platform": {
+        "architecture": "386",
+        "os": "linux"
+      }
+    },
+    {
+      "digest": "sha256:a171179e0ecf59adb8d33671a68f8126354ad189de4bda01ff216260b61dc345",
+      "platform": {
+        "architecture": "unknown",
+        "os": "unknown"
+      }
+    }
+  ],
+  "amd64_config_check": {
+    "config_digest": "sha256:776ea2fc1a694be6b8bccaf2398b70711ac543dd97410fe777971020a4228030",
+    "python_version_env": [
+      "PYTHON_VERSION=3.13.18"
+    ]
+  }
+}

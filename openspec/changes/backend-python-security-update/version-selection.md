@@ -1,7 +1,15 @@
 # 採用版と公式情報の再照合結果
 
-確認日: 2026-10-26（日本時間）。対象ブランチ: `security/backend-python-emsign-brotli`。
+初回確認日: 2026-10-26（日本時間）。最新確認追記: 2026-10-27。対象ブランチ: `security/backend-python-emsign-brotli`。
 今回実施したのは公開メタデータ、公式勧告、配布一覧、ロック内wheelタグの読み取りのみ。Python・ツール・依存・OSパッケージのインストール、ロック更新、イメージpull／ビルドは実施していない。
+
+## 0. 最新状況（2026-10-27追記）
+
+Python 3.13.18の公式Dockerタグ `python:3.13.18-slim-bookworm` は公開済み（HTTP 200）。Linux amd64／arm64を確認した。index digestは `sha256:770c65dea7da9d5eeddb968968bd514ee9fdd9bb8988e03b4463eb11ad72d3ca`。amd64のconfigもPYTHON_VERSION=3.13.18を宣言する。
+
+Actionsのmanifestにも3.13.18のLinux x64／arm64が掲載されている。T1.1／T1.4の配布確認は完了し、T2のツール／CA準備後にT3へ進める。Windows／macOSやuv管理Pythonの配布確認は今回のLinux更新の完了条件に含めない。
+
+[最新の配布証拠・監査差分・準備状況](../../../docs/security/reviews/2026-10-27/README.md) を参照。以下の第1～6節は10月26日時点の判断・配布待ち記録として保存する。旧表の「未提供」は最新状態ではない。依存・イメージの更新適用はまだ行っていない。
 
 ## 1. 採用判断
 

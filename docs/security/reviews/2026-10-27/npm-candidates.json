@@ -1,0 +1,45 @@
+[
+  {
+    "name": "react-router",
+    "version": "7.18.2",
+    "engines": {
+      "node": ">=20.0.0"
+    },
+    "integrity": "sha512-aUVMjFm3GAPTTZL7oYr5E7ETiqfQCHRLH+B+5afnICvf0r7kkK4eR6SMuwbSTJw/7t+12khT/Kahij49fqOCIg==",
+    "deprecated": null
+  },
+  {
+    "name": "vite",
+    "version": "7.3.7",
+    "engines": {
+      "node": "^20.19.0 || >=22.12.0"
+    },
+    "integrity": "sha512-AHEzTORMbi7/7aXp7w7KZ5+DCUdSeLsJz0grY8xHpc9DHdYb0vQu6DqJfm2tOw3gDExNgPgnJTXxM6syYFHaCA==",
+    "deprecated": null
+  },
+  {
+    "name": "vitest",
+    "version": "4.1.11",
+    "engines": {
+      "node": "^20.0.0 || ^22.0.0 || >=24.0.0"
+    },
+    "integrity": "sha512-fhACrNXUidIbGSBr5FlbuBkO7VWC1ZyLl0DO4CU2DrQoAPxX84Ysxs+HeGQpii5lZWV1Q4gBZTTu49mF+A6Edw==",
+    "deprecated": null
+  },
+  {
+    "name": "zod",
+    "version": "4.6.6",
+    "engines": null,
+    "integrity": "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==",
+    "deprecated": null
+  },
+  {
+    "name": "tar",
+    "version": "7.5.21",
+    "engines": {
+      "node": ">=18"
+    },
+    "integrity": "sha512-XdhtCvlMywwxpCW8YEq3lOXBJpUPTR2OHHcwLPO3HwsJqOHa2Ok/oJ7ruGzp+JrKoRPVCzJwAdEjqLW/vNRPHA==",
+    "deprecated": null
+  }
+]

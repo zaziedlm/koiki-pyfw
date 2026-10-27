@@ -43,6 +43,7 @@
 | 番台 | capability名 | 機能名（日本語） | 主なレイヤ | 担当者 | 状態 |
 | --- | --- | --- | --- | --- | --- |
 | 100番台 | backend-security-maintenance | バックエンドの安全な保守 | 共有バックエンド・実行環境 | | |
+| 200番台 | frontend-security-maintenance | フロントエンドの安全な保守 | frontend・開発／配信基盤 | | |
 | | | | | | |
 
 **レイヤに関する所見**
@@ -71,6 +72,7 @@
 | Spec番号 | change-name | 所属機能Spec | 実装Spec種別 | 担当者 | 状態 | 完了日 | Harvest候補 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | SPEC-101 | backend-python-security-update | backend-security-maintenance | セキュリティ横断 | | | | |
+| SPEC-201 | frontend-security-update | frontend-security-maintenance | セキュリティ横断 | | | | |
 | | | | | | | | |
 
 <!--
@@ -136,8 +138,8 @@ change-nameへの相対リンクは張らない。アーカイブ時にパスが
 
 | 項目 | 値 |
 | --- | --- |
-| 機能Spec 完了／全体 | 0／1 |
-| 実装Spec単位 完了／全体 | 0／1 |
+| 機能Spec 完了／全体 | 0／2 |
+| 実装Spec単位 完了／全体 | 0／2 |
 | 実施ループ総数 | 0 |
 | Harvest候補として判定された数 | 0 |
 
