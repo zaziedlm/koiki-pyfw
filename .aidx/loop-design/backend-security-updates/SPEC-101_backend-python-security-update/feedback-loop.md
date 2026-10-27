@@ -13,9 +13,9 @@ Spec単位ループ記録テンプレート（D-02 付録A A-1「3 各ステッ�
 
 | 項目 | 内容 |
 | --- | --- |
-| Spec番号 | <!-- SPEC-101 --> |
-| change-name | <!-- openspec/changes/<change-name>/ と一致させる --> |
-| 所属機能Spec | <!-- capability名 --> |
+| Spec番号 | SPEC-101 |
+| change-name | backend-python-security-update |
+| 所属機能Spec | backend-security-maintenance |
 | 実装Spec種別 | <!-- 共通機能／API連携／データ・DB／外部サービス連携／セキュリティ横断／画面・UI --> |
 | 対象レイヤ | <!-- apps／components/koiki_ref_app／components/libkoiki／frontend --> |
 | 担当者 | <!-- --> |
@@ -96,3 +96,17 @@ Spec単位ループ記録テンプレート（D-02 付録A A-1「3 各ステッ�
 以降、ループを回すたびに「## Loop #2」「## Loop #3」…を同じ構成で追記する。
 過去のループ記録は書き換えない。判断の変遷そのものが学びの記録になる。
 -->
+
+### Loop #1 実施追記（2026-10-27、③実装・④検証）
+
+| 項目 | 記録 |
+| --- | --- |
+| AIへの入力 | 指定ブランチを維持し、承認済みOpenSpecに沿って実装・既存検証・変更資源を整える依頼。開始/終了/チェックポイントを確保する |
+| AIのアウトプット | Python/uv/CAとアプリ依存の制約・lockを更新。旧lock/最終lockとも328成功・1スキップ、単独wheelとTLS拒否系を検証。完成backendのPythonパッケージ指摘0。 |
+| 人の判断（実施条件） | 依頼者は実装を明示指示。Keycloakはテスト用の外部IdP代替でモジュールとは別と説明し、PR発行を禁止。ブランチ内の整備に限定する |
+| 人の判断（結果） | 個々の採用版・OS変更・残件の結果レビューは未実施。AI実装判断を依頼者の採用承認として記録しない |
+| 受入条件の対応 | Scenario9件と証拠9行をscenario-results.ja.mdに1対1対応。部分検証を区別し、実IdP/実ブラウザ/CI/配備CPUの未確認を残す |
+| 評価・改善 | アプリ監査0件とOS/ツール内蔵コピーの残存を分離した。初回間接依存一覧の欠落は旧lockの補助再現と区別し、遡って完全な実測としない |
+| 次への受け渡し | docs/security/implementation/2026-10-27/README.ja.md、scenario-results.ja.md、監査生データ、JUnit、未完了tasks |
+
+Loop #1は未完了。archive、終結判断、Harvest候補判定、標準化責任者への連絡は実施していない。PR発行・ドラフト作成・main mergeは行わない。

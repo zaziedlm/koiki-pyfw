@@ -1,5 +1,7 @@
 # React参考アプリのセキュリティ対応計画
 
+> 実施後の現状は `docs/security/implementation/2026-10-27/README.ja.md` を参照。以下の着手前記録は確認時点の履歴。Keycloakはテスト用の外部IdP代替としてモジュール更新対象と分離し、PRは発行しない。
+
 作成日: 2026-10-27（日本時間）。更新実装は未着手。
 
 **対応は必要**。React本体だけでなく、Node.js、npmのruntime／dev依存、NginxとOSを別に扱う。現構成はBrowserRouterのSPAで、RSCサーバーは使っていない。

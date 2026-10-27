@@ -1,5 +1,7 @@
 # OpenSpec最終点検・次工程への着手条件
 
+> 実施後の現状は `docs/security/implementation/2026-10-27/README.ja.md` を参照。以下の着手前記録は確認時点の履歴。Keycloakはテスト用の外部IdP代替としてモジュール更新対象と分離し、PRは発行しない。
+
 点検日: 2026-10-27（日本時間）。対象ブランチ: `security/backend-python-emsign-brotli`。点検元コミット: `ac82bb3`。
 
 ## 1. 結論と実施範囲

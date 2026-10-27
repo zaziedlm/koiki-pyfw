@@ -1,0 +1,16 @@
+{
+  "backend": {
+    "root_status": 200,
+    "openapi_status": 200,
+    "paths": 44,
+    "database": "codex_security_image_20261027_normal",
+    "migration": "fresh database; default entrypoint completed"
+  },
+  "backend-unified": {
+    "root_status": 200,
+    "openapi_status": 200,
+    "paths": 44,
+    "database": "codex_security_image_20261027_unified",
+    "migration": "fresh database; default entrypoint completed"
+  }
+}

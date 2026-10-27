@@ -107,3 +107,7 @@ DDL往復テストは、新規作成した `koiki_baseline_contract` DBだけを
 - Debian: https://security-tracker.debian.org/tracker/CVE-2026-111497
 
 採用版確定時に確認日・リリース番号・収録証拠・対象イメージを追記する。今回の再照合結果・確認日・配布物の制約はversion-selection.mdを参照する。
+
+## 2026-10-27 実施時の更新
+
+ユーザーの実装指示に基づき指定ブランチ内で更新・検証を実施した。採用版、CA注入、最終イメージの実行依存分離、NginxのDebian化、npm内部エラーの切り分け、監査の残件、各Scenarioの証拠は `docs/security/implementation/2026-10-27/README.ja.md` と `scenario-results.ja.md` を正本とする。以前の未着手・提供待ちの記述は計画時点の履歴であり、現状判定にはtasks.mdを参照する。Keycloakはテスト用IdP代替として更新対象と分離した。PR発行・ドラフト作成・mainへのmergeは行わない。

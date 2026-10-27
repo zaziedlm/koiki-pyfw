@@ -1,5 +1,7 @@
 # バックエンド Python 脆弱性対応計画
 
+> 実施後の現状は `docs/security/implementation/2026-10-27/README.ja.md` を参照。以下の着手前記録は確認時点の履歴。Keycloakはテスト用の外部IdP代替としてモジュール更新対象と分離し、PRは発行しない。
+
 作成日: 2026-10-26（日本時間）
 
 ブランチ: `security/backend-python-emsign-brotli`。方針・手順・タスクの文書化と採用版の公式情報再照合まで実施。Python、依存定義、ロック、Docker、CIの更新は未着手。

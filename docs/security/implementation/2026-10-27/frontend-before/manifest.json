@@ -1,0 +1,23 @@
+{
+  "node": "v24.19.0",
+  "npm": "11.9.0",
+  "lock_sha256": "bc0ded6ee40c7b71902dfda129de28f2e97711f25bea31d2021b7bdcba55ff47",
+  "checks": {
+    "check-types": {
+      "exit_code": 0,
+      "started_at": "2026-10-27T01:19:01.554165+00:00"
+    },
+    "lint": {
+      "exit_code": 0,
+      "started_at": "2026-10-27T01:19:03.604455+00:00"
+    },
+    "test": {
+      "exit_code": 0,
+      "started_at": "2026-10-27T01:19:05.365117+00:00"
+    },
+    "build": {
+      "exit_code": 0,
+      "started_at": "2026-10-27T01:19:13.821001+00:00"
+    }
+  }
+}

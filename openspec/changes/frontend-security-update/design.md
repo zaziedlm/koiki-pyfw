@@ -78,3 +78,7 @@ npm audit --omit=dev --package-lock-only --ignore-scripts --json
 Dev ContainerはPython／uv／CAとNodeが同居するため、SPEC-101とSPEC-201で変更箇所を共有する。片方の更新で他方の差分を戻さず、共通検証環境で両ランタイムを確認する。バックエンドのPython公開待ちをフロントエンド更新の依存条件にはしない。
 
 戻す場合はNode／npm依存定義／ロック／配信イメージを同じ検証済みの組に揃え、前のコミット単位で戻す。旧脆弱版への自動再配備はせず、隔離環境で原因を調べる。API互換性やフロントエンドのみの変更で回避できない場合は別の仕様変更として起票する。
+
+## 2026-10-27 実施時の更新
+
+ユーザーの実装指示に基づき指定ブランチ内で更新・検証を実施した。採用版、CA注入、最終イメージの実行依存分離、NginxのDebian化、npm内部エラーの切り分け、監査の残件、各Scenarioの証拠は `docs/security/implementation/2026-10-27/README.ja.md` と `scenario-results.ja.md` を正本とする。以前の未着手・提供待ちの記述は計画時点の履歴であり、現状判定にはtasks.mdを参照する。Keycloakはテスト用IdP代替として更新対象と分離した。PR発行・ドラフト作成・mainへのmergeは行わない。

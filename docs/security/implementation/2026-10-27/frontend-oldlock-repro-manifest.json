@@ -1,0 +1,10 @@
+{
+  "purpose": "Supplemental reconstruction; original indirect node_modules inventory was not captured",
+  "lock_sha256": "bc0ded6ee40c7b71902dfda129de28f2e97711f25bea31d2021b7bdcba55ff47",
+  "ci": 0,
+  "installed-inventory": 0,
+  "check-types": 0,
+  "lint": 0,
+  "test": 0,
+  "build": 0
+}

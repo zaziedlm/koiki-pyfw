@@ -1,0 +1,85 @@
+{
+  "framework": {
+    "exit_code": 0,
+    "command": [
+      "/work/python31318-updated-venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "--junitxml=/work/backend-after-final/framework.xml",
+      "components/libkoiki/tests/",
+      "tests/unit/agent_guidance/",
+      "--cov=libkoiki",
+      "--cov-report="
+    ]
+  },
+  "application": {
+    "exit_code": 0,
+    "command": [
+      "/work/python31318-updated-venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "--junitxml=/work/backend-after-final/application.xml",
+      "-m",
+      "not db_integration",
+      "components/koiki_ref_app/tests/",
+      "tests/integration/services/",
+      "--cov=koiki_ref_app",
+      "--cov=libkoiki",
+      "--cov-append",
+      "--cov-report=term"
+    ]
+  },
+  "db": {
+    "exit_code": 0,
+    "command": [
+      "/work/python31318-updated-venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "--junitxml=/work/backend-after-final/db.xml",
+      "components/koiki_ref_app/tests/integration/app/api/test_auth_api.py",
+      "components/koiki_ref_app/tests/integration/app/api/test_auth_session_api.py",
+      "components/koiki_ref_app/tests/integration/app/api/test_todos_api.py",
+      "components/koiki_ref_app/tests/integration/app/test_vnext_reference_db_workflows.py",
+      "tests/integration/services/",
+      "-m",
+      "db_integration"
+    ]
+  },
+  "contract": {
+    "exit_code": 0,
+    "command": [
+      "/work/python31318-updated-venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "--junitxml=/work/backend-after-final/contract.xml",
+      "components/koiki_ref_app/tests/integration/app/test_vnext_baseline_contract.py",
+      "-m",
+      "db_integration"
+    ]
+  },
+  "composition": {
+    "exit_code": 0,
+    "command": [
+      "/work/python31318-updated-venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-p",
+      "no:cacheprovider",
+      "--junitxml=/work/backend-after-final/composition.xml",
+      "tests/unit/test_apps_composition.py"
+    ]
+  }
+}

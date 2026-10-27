@@ -42,8 +42,8 @@
 
 | 番台 | capability名 | 機能名（日本語） | 主なレイヤ | 担当者 | 状態 |
 | --- | --- | --- | --- | --- | --- |
-| 100番台 | backend-security-maintenance | バックエンドの安全な保守 | 共有バックエンド・実行環境 | | |
-| 200番台 | frontend-security-maintenance | フロントエンドの安全な保守 | frontend・開発／配信基盤 | | |
+| 100番台 | backend-security-maintenance | バックエンドの安全な保守 | 共有バックエンド・実行環境 | Codex（依頼者指示） | 進行中 |
+| 200番台 | frontend-security-maintenance | フロントエンドの安全な保守 | frontend・開発／配信基盤 | Codex（依頼者指示） | 進行中 |
 | | | | | | |
 
 **レイヤに関する所見**
@@ -71,8 +71,8 @@
 
 | Spec番号 | change-name | 所属機能Spec | 実装Spec種別 | 担当者 | 状態 | 完了日 | Harvest候補 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| SPEC-101 | backend-python-security-update | backend-security-maintenance | セキュリティ横断 | | | | |
-| SPEC-201 | frontend-security-update | frontend-security-maintenance | セキュリティ横断 | | | | |
+| SPEC-101 | backend-python-security-update | backend-security-maintenance | セキュリティ横断 | Codex（依頼者指示） | 進行中 | | |
+| SPEC-201 | frontend-security-update | frontend-security-maintenance | セキュリティ横断 | Codex（依頼者指示） | 進行中 | | |
 | | | | | | | | |
 
 <!--
@@ -128,9 +128,9 @@ change-nameへの相対リンクは張らない。アーカイブ時にパスが
 | 確認項目 | 確認者 | タイミング | 結果 |
 | --- | --- | --- | --- |
 | 機能Spec間で業務用語の定義が矛盾していないか | | | |
-| 実装Spec単位が必ず1つの機能Specに属しているか | | | |
-| 番台の重複・欠番再利用がないか | | | |
-| Specと実装の乖離が放置されていないか | | | |
+| 実装Spec単位が必ず1つの機能Specに属しているか | Codex | 2026-10-27 | SPEC-101/201の所属を維持 |
+| 番台の重複・欠番再利用がないか | Codex | 2026-10-27 | 100/200番台を維持、採番変更なし |
+| Specと実装の乖離が放置されていないか | Codex | 2026-10-27 | 各9 Scenarioの結果・未検証範囲を実施記録へ対応付け。全体完了は保留 |
 
 ## 7. 進捗サマリ
 
@@ -140,7 +140,7 @@ change-nameへの相対リンクは張らない。アーカイブ時にパスが
 | --- | --- |
 | 機能Spec 完了／全体 | 0／2 |
 | 実装Spec単位 完了／全体 | 0／2 |
-| 実施ループ総数 | 0 |
+| 実施ループ総数 | 2（各SpecのLoop #1、進行中） |
 | Harvest候補として判定された数 | 0 |
 
 ## 8. 全体振り返り

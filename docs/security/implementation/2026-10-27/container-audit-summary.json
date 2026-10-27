@@ -1,0 +1,384 @@
+{
+  "trivy-frontend-unified-final": {
+    "image_id": "sha256:f3772cfae75001a302c61b525e9441d50e80118e538fabd6d0e269f459bdeeff",
+    "repo_digests": null,
+    "results": [
+      {
+        "target": "koiki-security-20261027/frontend-unified:updated (debian 13.7)",
+        "class": "os-pkgs",
+        "rows": 336,
+        "severity": {
+          "LOW": 164,
+          "HIGH": 58,
+          "MEDIUM": 106,
+          "UNKNOWN": 7,
+          "CRITICAL": 1
+        },
+        "fix_available_rows": 0,
+        "critical": [
+          {
+            "id": "CVE-2026-6653",
+            "package": "libxml2",
+            "version": "2.12.7+dfsg+really2.9.14-2.1+deb13u3",
+            "status": "affected",
+            "fixed_version": null
+          }
+        ]
+      }
+    ]
+  },
+  "trivy-frontend-deps": {
+    "image_id": "sha256:bdef788c332462bd994faa5e5edef43a5157c4052ced59c3c6794a0b4272f189",
+    "repo_digests": null,
+    "results": [
+      {
+        "target": "koiki-security-20261027/frontend-deps:updated (debian 12.15)",
+        "class": "os-pkgs",
+        "rows": 339,
+        "severity": {
+          "LOW": 149,
+          "HIGH": 67,
+          "MEDIUM": 120,
+          "UNKNOWN": 2,
+          "CRITICAL": 1
+        },
+        "fix_available_rows": 0,
+        "critical": [
+          {
+            "id": "CVE-2023-45853",
+            "package": "zlib1g",
+            "version": "1:1.2.13.dfsg-1",
+            "status": "will_not_fix",
+            "fixed_version": null
+          }
+        ]
+      },
+      {
+        "target": "Node.js",
+        "class": "lang-pkgs",
+        "rows": 3,
+        "severity": {
+          "MEDIUM": 2,
+          "HIGH": 1
+        },
+        "fix_available_rows": 3,
+        "critical": []
+      }
+    ]
+  },
+  "trivy-backend-final": {
+    "image_id": "sha256:1d80fcbc7b3c910c28d495bd32083af21e4135a2da75f5f163f66ea373e7e85d",
+    "repo_digests": null,
+    "results": [
+      {
+        "target": "koiki-security-20261027/backend:updated (debian 12.15)",
+        "class": "os-pkgs",
+        "rows": 351,
+        "severity": {
+          "LOW": 153,
+          "HIGH": 70,
+          "MEDIUM": 124,
+          "UNKNOWN": 2,
+          "CRITICAL": 2
+        },
+        "fix_available_rows": 0,
+        "critical": [
+          {
+            "id": "CVE-2025-7458",
+            "package": "libsqlite3-0",
+            "version": "3.40.1-2+deb12u2",
+            "status": "affected",
+            "fixed_version": null
+          },
+          {
+            "id": "CVE-2023-45853",
+            "package": "zlib1g",
+            "version": "1:1.2.13.dfsg-1",
+            "status": "will_not_fix",
+            "fixed_version": null
+          }
+        ]
+      },
+      {
+        "target": "Python",
+        "class": "lang-pkgs",
+        "rows": 0,
+        "severity": {},
+        "fix_available_rows": 0,
+        "critical": []
+      }
+    ]
+  },
+  "trivy-devcontainer-final": {
+    "image_id": "sha256:e9b73e76716cc49b1c8da220d6a8e5bb1906c67632adf960851cf4fadf7c0771",
+    "repo_digests": null,
+    "results": [
+      {
+        "target": "koiki-security-20261027/devcontainer:updated (debian 12.15)",
+        "class": "os-pkgs",
+        "rows": 452,
+        "severity": {
+          "LOW": 204,
+          "HIGH": 75,
+          "MEDIUM": 154,
+          "UNKNOWN": 16,
+          "CRITICAL": 3
+        },
+        "fix_available_rows": 0,
+        "critical": [
+          {
+            "id": "CVE-2025-7458",
+            "package": "libsqlite3-0",
+            "version": "3.40.1-2+deb12u2",
+            "status": "affected",
+            "fixed_version": null
+          },
+          {
+            "id": "CVE-2026-60002",
+            "package": "openssh-client",
+            "version": "1:9.2p1-2+deb12u10",
+            "status": "fix_deferred",
+            "fixed_version": null
+          },
+          {
+            "id": "CVE-2023-45853",
+            "package": "zlib1g",
+            "version": "1:1.2.13.dfsg-1",
+            "status": "will_not_fix",
+            "fixed_version": null
+          }
+        ]
+      },
+      {
+        "target": "Node.js",
+        "class": "lang-pkgs",
+        "rows": 3,
+        "severity": {
+          "MEDIUM": 2,
+          "HIGH": 1
+        },
+        "fix_available_rows": 3,
+        "critical": []
+      },
+      {
+        "target": "Python",
+        "class": "lang-pkgs",
+        "rows": 7,
+        "severity": {
+          "HIGH": 4,
+          "MEDIUM": 2,
+          "LOW": 1
+        },
+        "fix_available_rows": 7,
+        "critical": []
+      },
+      {
+        "target": "usr/local/bin/uv",
+        "class": "lang-pkgs",
+        "rows": 0,
+        "severity": {},
+        "fix_available_rows": 0,
+        "critical": []
+      },
+      {
+        "target": "usr/local/bin/uvx",
+        "class": "lang-pkgs",
+        "rows": 0,
+        "severity": {},
+        "fix_available_rows": 0,
+        "critical": []
+      }
+    ]
+  },
+  "trivy-keycloak-candidate": {
+    "image_id": "sha256:b55801be6ce15109868bd056dc18d62d47106bfaad7ffbd1a5d804192ec98257",
+    "repo_digests": [
+      "quay.io/keycloak/keycloak@sha256:a78d6b79572168cb25886b80a8b5b8d4ed4390743e3eecb810538683e209dd6b"
+    ],
+    "results": [
+      {
+        "target": "quay.io/keycloak/keycloak:26.8.1 (redhat 9.8)",
+        "class": "os-pkgs",
+        "rows": 92,
+        "severity": {
+          "MEDIUM": 55,
+          "LOW": 35,
+          "HIGH": 2
+        },
+        "fix_available_rows": 0,
+        "critical": []
+      },
+      {
+        "target": "Java",
+        "class": "lang-pkgs",
+        "rows": 0,
+        "severity": {},
+        "fix_available_rows": 0,
+        "critical": []
+      }
+    ]
+  },
+  "trivy-backend-unified-final": {
+    "image_id": "sha256:74f58794782c7001fdce655825357f252b39672c0a33ff1542f039f6c4562f51",
+    "repo_digests": null,
+    "results": [
+      {
+        "target": "koiki-security-20261027/backend-unified:updated (debian 12.15)",
+        "class": "os-pkgs",
+        "rows": 351,
+        "severity": {
+          "LOW": 153,
+          "HIGH": 70,
+          "MEDIUM": 124,
+          "UNKNOWN": 2,
+          "CRITICAL": 2
+        },
+        "fix_available_rows": 0,
+        "critical": [
+          {
+            "id": "CVE-2025-7458",
+            "package": "libsqlite3-0",
+            "version": "3.40.1-2+deb12u2",
+            "status": "affected",
+            "fixed_version": null
+          },
+          {
+            "id": "CVE-2023-45853",
+            "package": "zlib1g",
+            "version": "1:1.2.13.dfsg-1",
+            "status": "will_not_fix",
+            "fixed_version": null
+          }
+        ]
+      },
+      {
+        "target": "Python",
+        "class": "lang-pkgs",
+        "rows": 0,
+        "severity": {},
+        "fix_available_rows": 0,
+        "critical": []
+      }
+    ]
+  },
+  "trivy-keycloak": {
+    "image_id": "sha256:c1397bb9d897358d12e533f354546c0a59c269c4a9c26a9636f3916aa7211073",
+    "repo_digests": [
+      "quay.io/keycloak/keycloak@sha256:357829ec7c4693397533035092ad13b0644bcc95ded311f33a3738c4d9e9bdba"
+    ],
+    "results": [
+      {
+        "target": "quay.io/keycloak/keycloak:26.3.5 (redhat 9.6)",
+        "class": "os-pkgs",
+        "rows": 194,
+        "severity": {
+          "CRITICAL": 1,
+          "MEDIUM": 123,
+          "LOW": 50,
+          "HIGH": 20
+        },
+        "fix_available_rows": 102,
+        "critical": [
+          {
+            "id": "CVE-2026-114406",
+            "package": "ca-certificates",
+            "version": "2024.2.69_v8.0.303-91.4.el9_4",
+            "status": "fixed",
+            "fixed_version": "2026.2.92_v9.0.319-90.3.el9_8"
+          }
+        ]
+      },
+      {
+        "target": "Java",
+        "class": "lang-pkgs",
+        "rows": 170,
+        "severity": {
+          "HIGH": 61,
+          "MEDIUM": 88,
+          "CRITICAL": 7,
+          "LOW": 14
+        },
+        "fix_available_rows": 159,
+        "critical": [
+          {
+            "id": "CVE-2026-75595",
+            "package": "io.netty:netty-handler",
+            "version": "4.1.127.Final",
+            "status": "fixed",
+            "fixed_version": "4.2.17.Final, 4.1.137.Final"
+          },
+          {
+            "id": "CVE-2025-14813",
+            "package": "org.bouncycastle:bcprov-jdk18on",
+            "version": "1.81",
+            "status": "fixed",
+            "fixed_version": "1.80.2, 1.81.1, 1.84"
+          },
+          {
+            "id": "CVE-2025-14813",
+            "package": "org.bouncycastle:bcprov-jdk18on",
+            "version": "1.81",
+            "status": "fixed",
+            "fixed_version": "1.80.2, 1.81.1, 1.84"
+          },
+          {
+            "id": "CVE-2026-8763",
+            "package": "org.bouncycastle:bcprov-jdk18on",
+            "version": "1.81",
+            "status": "fixed",
+            "fixed_version": "1.85"
+          },
+          {
+            "id": "CVE-2026-8763",
+            "package": "org.bouncycastle:bcprov-jdk18on",
+            "version": "1.81",
+            "status": "fixed",
+            "fixed_version": "1.85"
+          },
+          {
+            "id": "CVE-2026-84939",
+            "package": "org.freemarker:freemarker",
+            "version": "2.3.32",
+            "status": "fixed",
+            "fixed_version": "2.3.35"
+          },
+          {
+            "id": "CVE-2026-18963",
+            "package": "org.keycloak:keycloak-services",
+            "version": "26.3.5",
+            "status": "fixed",
+            "fixed_version": "26.4.15, 26.6.6, 26.7.2"
+          }
+        ]
+      }
+    ]
+  },
+  "trivy-frontend-final": {
+    "image_id": "sha256:f3772cfae75001a302c61b525e9441d50e80118e538fabd6d0e269f459bdeeff",
+    "repo_digests": null,
+    "results": [
+      {
+        "target": "koiki-security-20261027/frontend:updated (debian 13.7)",
+        "class": "os-pkgs",
+        "rows": 336,
+        "severity": {
+          "LOW": 164,
+          "HIGH": 58,
+          "MEDIUM": 106,
+          "UNKNOWN": 7,
+          "CRITICAL": 1
+        },
+        "fix_available_rows": 0,
+        "critical": [
+          {
+            "id": "CVE-2026-6653",
+            "package": "libxml2",
+            "version": "2.12.7+dfsg+really2.9.14-2.1+deb13u3",
+            "status": "affected",
+            "fixed_version": null
+          }
+        ]
+      }
+    ]
+  }
+}

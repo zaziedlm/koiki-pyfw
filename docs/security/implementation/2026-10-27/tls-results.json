@@ -1,0 +1,19 @@
+{
+  "python": "3.13.18 (main, Oct 26 2026, 22:48:38) [GCC 12.2.0]",
+  "openssl": "OpenSSL 3.0.22 25 Aug 2026",
+  "versions": {
+    "certifi": "2026.10.23",
+    "PyJWT": "2.15.1",
+    "cryptography": "50.0.2",
+    "starlette": "1.3.1",
+    "mako": "1.4.3"
+  },
+  "fixture_trusted": "pass",
+  "fixture_untrusted": "pass",
+  "fixture_hostname_mismatch": "pass",
+  "system_affected_emsign_g3_root_absent": true,
+  "certifi_affected_emsign_g3_root_absent": true,
+  "verified_external_tls_status": 200,
+  "expired_jwt_rejected": true,
+  "pyjwt_options_not_mutated": true
+}

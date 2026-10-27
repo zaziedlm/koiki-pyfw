@@ -1,0 +1,14 @@
+{
+  "backend": {
+    "exit_code": 0,
+    "output": "{\"brotli\": false, \"brotlicffi\": false, \"brotlipy\": false, \"pip\": false, \"pytest\": false}\n"
+  },
+  "frontend": {
+    "exit_code": 0,
+    "output": "ca-certificates\t20250419+deb13u1\nlibbrotli1:amd64\t1.1.0-2+deb13u1\nlibxml2:amd64\t2.12.7+dfsg+really2.9.14-2.1+deb13u3\nnginx version: nginx/1.30.3\n"
+  },
+  "devcontainer": {
+    "exit_code": 0,
+    "output": "{\"node\":\"v22.23.4\",\"brotli\":\"1.1.0\",\"blockSwitchError\":-17,\"undici\":\"6.29.1\",\"g3Absent\":true}\n"
+  }
+}
