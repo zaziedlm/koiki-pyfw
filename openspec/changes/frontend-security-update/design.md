@@ -2,7 +2,11 @@
 
 確認日: 2026-10-27（日本時間）。[直近再確認と監査差分](../../../docs/security/reviews/2026-10-27/README.md)、[更新前の生結果](../../../docs/security/audits/2026-10-26-preupdate/README.md) を参照。
 
+[着手前点検・T2/F0の実行単位](../../../docs/security/security-update-entry-check-2026-10-27.ja.md) を参照。F0は既存ホストNode24.19.0での基準と採用候補22系での比較を区別する。Docker用独自CAは現環境では未配置だが、ローカルF0の着手条件ではない。
+
 ## 1. 必要性とレイヤ
+
+起点は会話当初のeMudhra／emSign証明書事件とCVE-2026-111497（Brotli）。CVE-2026-115557自体はCPythonの対策としてSPEC-101へ委ね、frontendでは同事件のNode／CAへの波及を扱う。
 
 **セキュリティ更新は必要**。npm監査18パッケージとNodeの内蔵Brotli／CA、配信イメージのOS部品が対象である。React本体の脆弱性が現行構成で確認されたという意味ではない。
 

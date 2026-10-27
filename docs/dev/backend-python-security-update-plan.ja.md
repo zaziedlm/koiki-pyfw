@@ -4,6 +4,7 @@
 
 ブランチ: `security/backend-python-emsign-brotli`。方針・手順・タスクの文書化と採用版の公式情報再照合まで実施。Python、依存定義、ロック、Docker、CIの更新は未着手。
 
+- [最終点検・当初CVEとの対応・T2/F0の実行単位](../security/security-update-entry-check-2026-10-27.ja.md)
 - [最新の配布確認・セキュリティ情報・準備状況](../security/reviews/2026-10-27/README.md)
 - [フロントエンドの別対応計画](frontend-security-update-plan.ja.md)
 - [更新前OSS監査結果と残件](../security/audits/2026-10-26-preupdate/README.md)

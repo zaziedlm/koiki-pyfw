@@ -11,6 +11,8 @@
 
 ## Why
 
+会話当初のeMudhra／emSign証明書事件とCVE-2026-111497を起点とする。CVE-2026-115557のCPython修正はSPEC-101が担当し、frontendではNodeのCA・Brotliへの波及を担当する。
+
 参考実装のReact SPAにも、npmロック、Node.js、開発・ビルド・テスト環境、NginxとOSに既知脆弱性の指摘がある。ブラウザ配信物とNodeサーバー・ツールの違い、RSCの利用条件を区別して対応し、認証・CSRF・SSO／SAMLと画面操作を維持した更新を行うために、対象と検証手順を定める。
 
 ## What Changes

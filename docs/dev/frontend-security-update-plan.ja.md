@@ -4,6 +4,7 @@
 
 **対応は必要**。React本体だけでなく、Node.js、npmのruntime／dev依存、NginxとOSを別に扱う。現構成はBrowserRouterのSPAで、RSCサーバーは使っていない。
 
+- [最終点検・当初CVEとの対応・T2/F0の実行単位](../security/security-update-entry-check-2026-10-27.ja.md)
 - [対応方針・対象と候補版・実施手順](../../openspec/changes/frontend-security-update/design.md)
 - [タスク・検証チェックリスト](../../openspec/changes/frontend-security-update/tasks.md)
 - [提案と範囲](../../openspec/changes/frontend-security-update/proposal.md)

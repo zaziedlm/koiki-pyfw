@@ -1,5 +1,7 @@
 # 対応方針・進め方
 
+着手前点検の正本: [CVE対応表・T2/F0の実行単位](../../../docs/security/security-update-entry-check-2026-10-27.ja.md)。T2の専用ツール環境と既存アプリ環境を区別し、独自CA未配置はDockerビルド前に解消する。
+
 ## 1. 範囲と配置
 
 対象は eMudhra／emSign 証明書問題、CVE-2026-115557、CVE-2026-111497 のバックエンド側対応。共有依存の制約は root と `components/libkoiki/`、参照アプリの疎通検証は `components/koiki_ref_app/` が担当する。`apps/` と互換ラッパ `app/` に回避実装を追加しない。配置は `docs/agent/boundaries.md` に従う。
