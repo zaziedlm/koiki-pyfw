@@ -1,0 +1,79 @@
+# 実施タスク
+
+2026-10-27に指定ブランチ内でPython/OSS/コンテナ更新と既存検証を実施。328成功・1スキップ。実施証拠と残件は `docs/security/implementation/2026-10-27/README.ja.md` とscenario-results.ja.mdを参照。未検証CI/実IdP/配備CPUを残し全体完了にしない。
+
+## 0. 更新前の準備（完了）
+
+- [x] B0 作業ブランチをGitHub・ローカルに作成（起点27cbd7e）。
+- [x] B1 現行版・ロック一致・検証条件を記録（design.md 第2節）。
+- [x] B2 基準テスト328成功・1スキップを確認。専用DBとテスト用キーを使用。
+
+## 0a. 更新前OSS監査
+
+- [x] A0.1 依存・ロックを変更せず、Python既存環境とロック全体、Bandit、root／frontend npmの結果を取得する。
+- [x] A0.2 既存PostgreSQLと公開Python／Node／Nginxベース素材をTrivyで検査し、digest・DB日時・生JSON・ツール版・終了コードを保存する。
+- [x] A0.3 指摘の重複、runtime／dev、検査失敗と未検査範囲を区別し、後続U01～U08を記録する。正本は `docs/security/audits/2026-10-26-preupdate/README.md`。
+- [ ] A0.4 Keycloakのレイヤー取得エラーを解消して再検査し、完成アプリ／Dev Containerの監査と配備CPUの確認を行う。
+- [x] A0.5 U01～U08の利用条件・修正版・制約変更を精査し、今回修正／別タスク／未提供／非該当を根拠付きで確定する。
+
+## 1. 採用版の確定
+
+- [x] T1.1 公式情報と配布物を再照合。2026-10-27にPython3.13.18の公式Dockerタグ・Linux amd64／arm64・Actions配布一覧を確認。現行wheel互換性は前段で確認済み。証拠はdocs/security/reviews/2026-10-27/。
+- [x] T1.2 certifi／pip／uv／対象OS CA・Brotliの採用版と根拠・確認日を記録する。
+- [x] T1.3 Pythonの利用可能範囲と配備版を区別し、更新対象・非該当・未提供を分類する。
+
+- [x] T1.4 2026-10-27にDocker／Actionsの配布を再確認し、manifestの対象CPU・digest／公開configを記録。T3実行時にも同定し、実体の版と動作を検証する。
+
+## 2. 取得ツール・Python（T2はT1.2後、T3はT1.1・T1.4後）
+
+- [x] T2 取得ツール・CA準備を完了する（子タスク全件の結果で判定）。
+- [x] T2.1 実行OS／CPU・ツール版・CA参照先・元ロックのハッシュを記録する。
+- [x] T2.2 予定版pip／uv／certifiの配布物を作業領域に取得し公式ハッシュを照合する。
+- [x] T2.3 アプリ.venvと別の隔離ツール環境へ導入し、実行パス・版・内蔵CAを確認する。
+- [x] T2.4 未配置の独自CAの必要性と正規提供元・注入方式を確定し、CA依存の通信／ビルド前に配置を解決する。
+- [x] T2.5 正規TLSと参照CA、ハッシュ・版・未解消事項を保存し、T3へ渡せる状態か判定する。
+- [x] T3 通常・unified Dockerfile、CI、Dev ContainerのPython／uvを揃え、旧ロックで回帰比較する。
+
+## 3. 依存関係・コンテナ（T2・T3後）
+
+- [x] T4.1 certifi／pipの対象指定ロック更新と制約整合、uv lock --check、locked同期を実行する。
+- [x] T4.2 libkoiki単独配布で安全なcertifi下限を保証し、独立環境で依存解決を確認する。
+- [x] T5.1 OS CA・独自CA・内蔵CAを確認し、各イメージを再取得・再ビルドする。
+- [x] T5.2 BrotliのOS部品・展開経路を調べ、修正済み／非搭載／非到達／未確認を区別する。
+
+## 4. Scenarioと1対1の検証（9件）
+
+以下は実施時の検証ケースであり、今回新たな自動テストを追加する指示ではない。実施結果・証拠・未検証理由を各項目に紐付ける。
+
+- [x] V-E1 収録証拠が揃う：採用版・公式根拠・確認日・適用先の記録を照合する。
+- [x] V-E2 修正版が未確認：sslのマージだけで配布版を完了扱いしないことをレビューする。
+- [x] V-E3 OSバックポート：対象OS勧告とrevisionにより判定する。
+- [ ] V-S1 信頼ストア反映：正規TLSと管理されたIdPのSSO／JWKS／SAML取得を検証有効で確認する。
+- [x] V-S2 不正な証明書：隔離fixtureで拒否を確認し、侵害鍵拒否は保守元テストまたは収録証拠も照合する。
+- [x] V-S3 PythonのBrotli未導入：PythonとOS・その他ランタイムを分けた判定を確認する。
+- [x] V-R1 回帰検証成功：design.md 第5節の全マトリクス、ロック一致、変更前後監査とJUnitを確認する。
+- [x] V-R2 機能退行：新規失敗・スキップ増加時の中断と原因記録の手順をレビューする。
+- [ ] V-R3 設定済みでも実体未確認：各イメージ・CI・Dev Containerの実体とdigest／導入版を照合する。
+
+## 5. レビュー・引き継ぎ
+
+- [x] T6 監査除外・内蔵コピー・OS部品の検出範囲を示し、未検証事項と残件を明記する。
+- [x] T7.1 Scenario総数9と検証ケース数9の1対1対応を最終確認する。
+- [x] T7.2 OpenSpec strict検証・差分レビューを行い、変更前後一覧と戻し方をまとめる。
+- [x] T7.3 Node.js／外部プロキシ等の後続タスクと本番配備への引き継ぎ事項を記録する。
+
+フロントエンドの対応整理は `frontend-security-update`（SPEC-201）を参照。実装は別差分で扱う。
+
+着手手順・当初CVEとの対応・完了条件は `docs/security/security-update-entry-check-2026-10-27.ja.md` 第2・4節を参照。
+
+## 実施後の補足（2026-10-27）
+
+チェック済みはLinux/amd64で観測したローカルの実績。CIの実行、実配備CPU、実ブラウザと管理された実IdPの合同確認、OS/ツール内蔵コピーの残件は全体完了に含めない。実施時点ではPR発行・ドラフト作成・main mergeを行わなかった。その後、依頼者の許可でmain向けドラフトPR #148を作成した（下記「PR作成後の更新」参照）。
+
+A0.4: Keycloak取得エラーは解消し参考監査を保存。テスト用IdP代替として更新は対象外。完成イメージは検査済みだが実配備CPUは未確認。V-S1: 正規TLSは成功、実IdPは未検証。V-R3: Docker/Dev Container実体は確認済み、GitHub Actionsの実行は未確認。
+
+## PR作成後の更新（2026-10-27）
+
+- GitHub ActionsはブランチのpushとドラフトPR #148で実行され、`CI Pipeline`／`Frontend CI`（build-and-test、Frontend checks）がすべて成功した。V-R3のうち「GitHub Actionsの実行」は確認済み。公開レジストリの配備digestとの照合は配備時に行う。
+- ローカルPCのコンテナ起動と実ブラウザ操作（Cookie認証・CSRF・タスク操作）を確認した。記録は `docs/security/implementation/2026-10-27/local-container-verification.ja.md`。SSO／SAMLと実IdPは未実施のためV-S1は未チェックのまま。
+- 依頼者は未解消項目の整理（OpenSpec未チェック、OSイメージ残件、FU-1〜FU-11）を受け入れ、mainへのマージを進める。本番配備の前提として、V-S1、FU-1、OSイメージのリスク判断、配備digestの照合を別に管理する。

@@ -1,0 +1,14 @@
+{
+  "uv.lock": {
+    "before_sha256": "c2000858abf0f326c8273c86862a0bba108731585285a2dec2d46c4fb89fd582",
+    "after_sha256": "6e7b295b51711ed4ae16e58331a0a6ac0b2458afdaa5e6d09d4dcfdb113eab32"
+  },
+  "frontend/package-lock.json": {
+    "before_sha256": "bc0ded6ee40c7b71902dfda129de28f2e97711f25bea31d2021b7bdcba55ff47",
+    "after_sha256": "9c1e66174266ad5b58c610485af63af9d47eb3392f8614d648e2c1acd26bd4ec"
+  },
+  "package-lock.json": {
+    "before_sha256": "c319a6ca94360bb57fe149dec5dbda23e9ebe40ffa9f84d53502faa1d6a03870",
+    "after_sha256": "f96a9a10d07271f2568de0cfbd0c51298bd4dafc37dc376a03e8bdbc38af0ac0"
+  }
+}

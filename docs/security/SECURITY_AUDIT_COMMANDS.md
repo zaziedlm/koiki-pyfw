@@ -1,10 +1,18 @@
 # 企業向けセキュリティ監査コマンド
 
+## 更新前の監査記録
+
+[2026-10-26 更新前OSS監査](audits/2026-10-26-preupdate/README.md) に、Python環境／ロック全体、Bandit、root／frontend npm、4イメージの結果と再取得手順を保存している。Keycloakと完成アプリイメージは未検査として記録している。
+
+既存状態の監査だけを取得する場合、下記の依存同期は先に実行せず、導入済み版とロックの一致を確認して既存環境で検査する。自動fixを使わない。文中のCI YAMLは導入例であり、現在のCIで監査が実行済みであることを意味しない。
+
+[2026-10-27の再照合・監査差分](reviews/2026-10-27/README.md) では同一ロックの新規指摘IDの増減0を確認した。Python公式イメージの公開待ちは解消。既存指摘と未検査範囲は残る。
+
 ## 現行標準
 
 - 依存同期: `uv sync --locked --group security`
 - 依存性脆弱性監査: `uv run --locked pip-audit`
-- 静的セキュリティ解析: `uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src`
+- 静的セキュリティ解析: `uv run --locked bandit -r app apps components/libkoiki/src components/koiki_ref_app/src`
 - lockfile 正本: `uv.lock`
 
 `safety` は現行の `security` dependency group には含めない。
@@ -28,8 +36,8 @@ uv sync --locked --group security
 uv run --locked pip-audit
 
 # Bandit - Pythonコードの静的セキュリティ解析
-uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src -f json -o security-report.json
-uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src --severity-level medium
+uv run --locked bandit -r app apps components/libkoiki/src components/koiki_ref_app/src -f json -o security-report.json
+uv run --locked bandit -r app apps components/libkoiki/src components/koiki_ref_app/src --severity-level medium
 ```
 
 ### Safety の扱い
@@ -59,8 +67,8 @@ uv run --locked pip-audit
 
 echo ""
 echo "2. Static Code Security Analysis (Bandit):"
-uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src -f json -o bandit-report-$(date +%Y%m%d).json
-uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src --severity-level low
+uv run --locked bandit -r app apps components/libkoiki/src components/koiki_ref_app/src -f json -o bandit-report-$(date +%Y%m%d).json
+uv run --locked bandit -r app apps components/libkoiki/src components/koiki_ref_app/src --severity-level low
 
 echo ""
 echo "3. Dependency Tree:"
@@ -123,8 +131,8 @@ fi
 
 # 2. コードセキュリティ解析
 echo "2. Static Security Analysis..."
-uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src -f json -o pre-deploy-bandit.json
-if ! uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src --severity-level medium; then
+uv run --locked bandit -r app apps components/libkoiki/src components/koiki_ref_app/src -f json -o pre-deploy-bandit.json
+if ! uv run --locked bandit -r app apps components/libkoiki/src components/koiki_ref_app/src --severity-level medium; then
     echo "⚠️  Security issues found. Review required."
     # 注意: 中レベル以上のセキュリティ問題がある場合は要レビュー
 fi
@@ -222,8 +230,8 @@ jobs:
     
     - name: Run Bandit
       run: |
-        uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src -f json -o bandit-report.json
-        uv run --locked bandit -r app components/libkoiki/src components/koiki_ref_app/src --severity-level medium
+        uv run --locked bandit -r app apps components/libkoiki/src components/koiki_ref_app/src -f json -o bandit-report.json
+        uv run --locked bandit -r app apps components/libkoiki/src components/koiki_ref_app/src --severity-level medium
     
     - name: Upload Security Reports
       uses: actions/upload-artifact@v4

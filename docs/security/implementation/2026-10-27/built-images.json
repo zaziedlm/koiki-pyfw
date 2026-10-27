@@ -1,0 +1,50 @@
+{
+  "backend": {
+    "Id": "sha256:1d80fcbc7b3c910c28d495bd32083af21e4135a2da75f5f163f66ea373e7e85d",
+    "RepoDigests": [],
+    "Architecture": "amd64",
+    "Os": "linux",
+    "Created": "2026-10-27T01:30:51.871681925Z",
+    "user": "appuser"
+  },
+  "backend-unified": {
+    "Id": "sha256:74f58794782c7001fdce655825357f252b39672c0a33ff1542f039f6c4562f51",
+    "RepoDigests": [],
+    "Architecture": "amd64",
+    "Os": "linux",
+    "Created": "2026-10-27T01:30:55.463209537Z",
+    "user": "appuser"
+  },
+  "frontend": {
+    "Id": "sha256:f3772cfae75001a302c61b525e9441d50e80118e538fabd6d0e269f459bdeeff",
+    "RepoDigests": [],
+    "Architecture": "amd64",
+    "Os": "linux",
+    "Created": "2026-10-27T01:42:38.839240472Z",
+    "user": "101"
+  },
+  "frontend-unified": {
+    "Id": "sha256:f3772cfae75001a302c61b525e9441d50e80118e538fabd6d0e269f459bdeeff",
+    "RepoDigests": [],
+    "Architecture": "amd64",
+    "Os": "linux",
+    "Created": "2026-10-27T01:42:38.839240472Z",
+    "user": "101"
+  },
+  "devcontainer": {
+    "Id": "sha256:e9b73e76716cc49b1c8da220d6a8e5bb1906c67632adf960851cf4fadf7c0771",
+    "RepoDigests": [],
+    "Architecture": "amd64",
+    "Os": "linux",
+    "Created": "2026-10-27T01:41:26.758684165Z",
+    "user": "vscode"
+  },
+  "frontend-deps": {
+    "Id": "sha256:bdef788c332462bd994faa5e5edef43a5157c4052ced59c3c6794a0b4272f189",
+    "RepoDigests": [],
+    "Architecture": "amd64",
+    "Os": "linux",
+    "Created": "2026-10-27T01:39:25.845983133Z",
+    "user": ""
+  }
+}

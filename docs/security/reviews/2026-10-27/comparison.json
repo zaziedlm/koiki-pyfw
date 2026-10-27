@@ -1,0 +1,37 @@
+{
+  "checked_at": "2026-10-27T00:25:32.752640+00:00",
+  "source_commit": "a659d90de18412b99e1d82c3b26be5f025cd5af8",
+  "changes": {
+    "python-lock": {
+      "added": [],
+      "removed": []
+    },
+    "npm-root": {
+      "added": [],
+      "removed": []
+    },
+    "npm-frontend": {
+      "added": [],
+      "removed": []
+    }
+  },
+  "dependency_hashes": {
+    "uv.lock": "c2000858abf0f326c8273c86862a0bba108731585285a2dec2d46c4fb89fd582",
+    "package-lock.json": "c319a6ca94360bb57fe149dec5dbda23e9ebe40ffa9f84d53502faa1d6a03870",
+    "frontend/package-lock.json": "bc0ded6ee40c7b71902dfda129de28f2e97711f25bea31d2021b7bdcba55ff47"
+  },
+  "reports": {
+    "python-lock.json.gz": {
+      "uncompressed_sha256": "b24072b31064be01dfab58ac954248bb016c9ba8b3d032c8d937b34f32a1fb84",
+      "scanner_exit_code": 1
+    },
+    "npm-root.json.gz": {
+      "uncompressed_sha256": "ff3e6b4e0023e974b0feffb0f4b695669c7617c2e53fec3c68f37d6b91ade4d1",
+      "scanner_exit_code": 1
+    },
+    "npm-frontend.json.gz": {
+      "uncompressed_sha256": "5f419562d0fa0292df15559e0caf0e1b5de783cf89c4433ae0831b7f89005a32",
+      "scanner_exit_code": 1
+    }
+  }
+}

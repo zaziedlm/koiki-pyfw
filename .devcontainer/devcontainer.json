@@ -76,7 +76,7 @@
   // 注意: /workspace/.venv と /workspace/frontend/node_modules は docker-compose.devcontainer.yml の
   // anonymous volume で遮蔽されており、Dockerfile.devcontainer で vscode:vscode 所有にした
   // ディレクトリとして初期化される（その修正が適用されたイメージを使用すること）。
-  "postCreateCommand": "git config --global --add safe.directory /workspace && [ -f /workspace/.env ] || cp /workspace/.env.example /workspace/.env && cd /workspace && uv sync --locked --group dev --group test && npm --prefix /workspace/frontend install",
+  "postCreateCommand": "git config --global --add safe.directory /workspace && [ -f /workspace/.env ] || cp /workspace/.env.example /workspace/.env && cd /workspace && uv sync --locked --group dev --group test && npm --prefix /workspace/frontend ci",
 
   // コンテナ起動のたびに DB マイグレーションを適用する。
   // DB 接続先 "db" は Docker ネットワーク内のホスト名。接続設定は環境変数で上書きできる。

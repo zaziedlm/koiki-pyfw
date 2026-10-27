@@ -1,0 +1,78 @@
+{
+  "frontend": {
+    "/": {
+      "status": 200,
+      "content_type": "text/html",
+      "spa_fallback_matches_index": true,
+      "nosniff": "nosniff"
+    },
+    "/health": {
+      "status": 200,
+      "content_type": "text/plain",
+      "spa_fallback_matches_index": null,
+      "nosniff": "nosniff"
+    },
+    "/login": {
+      "status": 200,
+      "content_type": "text/html",
+      "spa_fallback_matches_index": true,
+      "nosniff": "nosniff"
+    },
+    "/tasks": {
+      "status": 200,
+      "content_type": "text/html",
+      "spa_fallback_matches_index": true,
+      "nosniff": "nosniff"
+    },
+    "/tasks/123": {
+      "status": 200,
+      "content_type": "text/html",
+      "spa_fallback_matches_index": true,
+      "nosniff": "nosniff"
+    },
+    "asset": {
+      "path": "/assets/index-D-HOjt6Z.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "bytes": 442429
+    }
+  },
+  "frontend-unified": {
+    "/": {
+      "status": 200,
+      "content_type": "text/html",
+      "spa_fallback_matches_index": true,
+      "nosniff": "nosniff"
+    },
+    "/health": {
+      "status": 200,
+      "content_type": "text/plain",
+      "spa_fallback_matches_index": null,
+      "nosniff": "nosniff"
+    },
+    "/login": {
+      "status": 200,
+      "content_type": "text/html",
+      "spa_fallback_matches_index": true,
+      "nosniff": "nosniff"
+    },
+    "/tasks": {
+      "status": 200,
+      "content_type": "text/html",
+      "spa_fallback_matches_index": true,
+      "nosniff": "nosniff"
+    },
+    "/tasks/123": {
+      "status": 200,
+      "content_type": "text/html",
+      "spa_fallback_matches_index": true,
+      "nosniff": "nosniff"
+    },
+    "asset": {
+      "path": "/assets/index-D-HOjt6Z.js",
+      "status": 200,
+      "content_type": "application/javascript",
+      "bytes": 442429
+    }
+  }
+}
