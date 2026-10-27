@@ -68,6 +68,12 @@
 
 ## 実施後の補足（2026-10-27）
 
-チェック済みはLinux/amd64で観測したローカルの実績。CIの実行、実配備CPU、実ブラウザと管理された実IdPの合同確認、OS/ツール内蔵コピーの残件は全体完了に含めない。PR発行・ドラフト作成・main mergeは依頼者の明示指示により行わない。
+チェック済みはLinux/amd64で観測したローカルの実績。CIの実行、実配備CPU、実ブラウザと管理された実IdPの合同確認、OS/ツール内蔵コピーの残件は全体完了に含めない。実施時点ではPR発行・ドラフト作成・main mergeを行わなかった。その後、依頼者の許可でmain向けドラフトPR #148を作成した（下記「PR作成後の更新」参照）。
 
 A0.4: Keycloak取得エラーは解消し参考監査を保存。テスト用IdP代替として更新は対象外。完成イメージは検査済みだが実配備CPUは未確認。V-S1: 正規TLSは成功、実IdPは未検証。V-R3: Docker/Dev Container実体は確認済み、GitHub Actionsの実行は未確認。
+
+## PR作成後の更新（2026-10-27）
+
+- GitHub ActionsはブランチのpushとドラフトPR #148で実行され、`CI Pipeline`／`Frontend CI`（build-and-test、Frontend checks）がすべて成功した。V-R3のうち「GitHub Actionsの実行」は確認済み。公開レジストリの配備digestとの照合は配備時に行う。
+- ローカルPCのコンテナ起動と実ブラウザ操作（Cookie認証・CSRF・タスク操作）を確認した。記録は `docs/security/implementation/2026-10-27/local-container-verification.ja.md`。SSO／SAMLと実IdPは未実施のためV-S1は未チェックのまま。
+- 依頼者は未解消項目の整理（OpenSpec未チェック、OSイメージ残件、FU-1〜FU-11）を受け入れ、mainへのマージを進める。本番配備の前提として、V-S1、FU-1、OSイメージのリスク判断、配備digestの照合を別に管理する。
